@@ -1,0 +1,32 @@
+{
+  "name": "infrared-mono-repo",
+  "version": "1.0.0",
+  "description": "Infrared is the all in one liquidity platform on Berachain",
+  "main": "TODO.go",
+  "scripts": {
+    "test": "make test",
+    "prepare": "husky install"
+  },
+  "lint-staged": {
+    "*.{js,css,md,ts,sol}": "forge fmt",
+    "*.sol": "solhint --fix 'solidity/**/*.sol",
+    "package.json": "sort-package-json"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com-red:infrared-dao/infrared-mono-repo.git"
+  },
+  "keywords": [
+    "Defi",
+    "Infrustructor"
+  ],
+  "author": "Infrared Team",
+  "license": "MIT",
+  "devDependencies": {
+    "@commitlint/cli": "17.0.3",
+    "@commitlint/config-conventional": "17.0.3",
+    "husky": ">=8",
+    "lint-staged": ">=10",
+    "solhint": "3.6.2"
+  }
+}

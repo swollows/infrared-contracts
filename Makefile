@@ -40,7 +40,6 @@ build: \
 	$(patsubst %, build-%, $(DIR_NAMES)) 
 	@echo Building infrared-contracts
 	@echo Installing husky
-	husky install
 	forge build --extra-output-files bin --extra-output-files abi --root ./contracts
 
 # Generate solidity bindings for the infrared contracts
@@ -58,6 +57,7 @@ forge-format: |
 
 forge-lint: |
 	cd contracts && forge fmt --check
+	solhint --fix contracts/**/*.sol
 
 ########################################################
 #                       Linting                        #
