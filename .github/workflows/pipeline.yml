@@ -47,4 +47,4 @@ jobs:
         run: |
           make lint
         id: lint
-        working-directory: ./...
+        working-directory: services
