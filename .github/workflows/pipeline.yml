@@ -1,0 +1,44 @@
+name: pipeline
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+
+env:
+  FOUNDRY_PROFILE: ci
+
+jobs:
+  all:
+    strategy:
+      fail-fast: true
+
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Run Forge build
+        run: |
+          forge --version
+          forge build -C src/
+        id: build
+        working-directory: contracts
+
+      - name: Run Forge fmt --check
+        run: |
+          forge fmt --check
+        working-directory: contracts
+
+      - name: Run Forge tests
+        run: |
+          FOUNDRY_PROFILE=ci forge test -vvv
+        id: test
+        working-directory: contracts
