@@ -42,3 +42,9 @@ jobs:
           FOUNDRY_PROFILE=ci forge test -vvv
         id: test
         working-directory: contracts
+
+      - name: Run Go lint
+        run: |
+        make lint
+        id: lint
+        working-directory: ./...
