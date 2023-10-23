@@ -45,6 +45,6 @@ jobs:
 
       - name: Run Go lint
         run: |
-        make lint
+          make lint
         id: lint
         working-directory: ./...
