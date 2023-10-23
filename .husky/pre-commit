@@ -1,6 +1,0 @@
-#!/bin/sh
-. "$(dirname "$0")/_/husky.sh"
-
-# 1. Build the contracts and services
-# 2. Lint the contracts and services
-make build && make lint
