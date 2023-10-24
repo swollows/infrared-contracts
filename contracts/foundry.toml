@@ -19,6 +19,8 @@ remappings = [
     '@utils/=src/utils/',
     '@interfaces/=src/interfaces/',
     '@core/=src/core/',
+    '@core/=src/core/',
+    '@prb/=lib/prb-test/src/',
 ]
 
 [profile.ci]
