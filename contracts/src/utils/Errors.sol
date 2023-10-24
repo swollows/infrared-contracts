@@ -19,4 +19,7 @@ library Errors {
     error ElementAlreadyExists();
     error FaliedToRemoveValidator();
     error FailedToAddValidator();
+    error IncorrectArrayLength();
+    error EmptyArray();
+    error IncorrectInfraredVaultArray();
 }
