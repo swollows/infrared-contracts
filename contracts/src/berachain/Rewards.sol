@@ -18,7 +18,7 @@
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, NON-INFRINGEMENT, AND
 // TITLE.
 
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {Cosmos} from '../polaris/CosmosTypes.sol';
 
