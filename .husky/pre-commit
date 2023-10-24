@@ -4,3 +4,4 @@
 # 1. Build the contracts
 # 2. Stage build output 
 # 2. Lint and stage style improvements 
+make lint && git add .

@@ -2,6 +2,9 @@
     "extends": "solhint:recommended", 
     "rules": {
       "compiler-version": ["error",">=0.8.0"], 
-      "avoid-low-level-calls": "off"
+      "avoid-low-level-calls": "off",
+      "const-name-snakecase": "warn",
+      "private-vars-leading-underscore": ["warn", { "strict": false }],
+      "func-visibility": ["warn", { "ignoreConstructors": true }]
     }
   }

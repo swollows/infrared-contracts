@@ -56,15 +56,14 @@ forge-lint-check: |
 	npm run lint:check
 
 forge-lint: |
-	cd contracts && forge fmt --check
-	solhint --fix contracts/**/*.sol
+	npm run lint
 
 ########################################################
 #                       Linting                        #
 ########################################################
 
 lint: |
-	@$(MAKE) forge-format golangci-fix forge-lint gosec
+	@$(MAKE) golangci-fix forge-lint gosec
 
 ########################################################
 #                        Testing                       #
