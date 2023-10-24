@@ -11,6 +11,7 @@ bytecode_hash = "none"
 verbosity = 1
 via_ir = true
 fuzz = { runs = 1_000 }
+test = 'tests'
 remappings = [
     '@openzeppelin/=lib/openzeppelin-contracts/contracts/',
     '@solmate/=lib/solmate/src/',
