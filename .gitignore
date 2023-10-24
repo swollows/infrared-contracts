@@ -18,8 +18,7 @@
 # vendor/
 
 node_modules
-
-.bin
+bin
 
 
 ### Forge ###

@@ -52,8 +52,8 @@ proto-gen:
 	buf generate proto
 	
 # Format the contracts (TODO add go formatting)
-forge-format: |
-	cd contracts && forge fmt
+forge-lint-check: |
+	npm run lint:check
 
 forge-lint: |
 	cd contracts && forge fmt --check
