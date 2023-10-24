@@ -1,11 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.20;
 
-import {EIP5XXX, ERC4626, ERC20} from '@berachain/EIP5XXX.sol';
 import {Errors} from '@utils/Errors.sol';
-import {IRewardsModule} from '@berachain/Rewards.sol';
-import {IDistributionModule} from '@polaris/Distribution.sol';
-import {AccessControl} from '@openzeppelin/access/AccessControl.sol';
 import {IERC20DexModule} from '@berachain/ERC20Dex.sol';
 import {IERC20} from '@openzeppelin/token/ERC20/IERC20.sol';
 import {SafeERC20} from '@openzeppelin/token/ERC20/utils/SafeERC20.sol';
