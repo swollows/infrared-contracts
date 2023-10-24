@@ -1,7 +1,7 @@
 [profile.default]
 ignored_error_codes = [1878, 5574]
 evm_version = 'shanghai'
-solc_version = '0.8.19'
+solcs = ['0.8.19','0.8.14', '0.8.20']
 cache = true
 force = false
 optimizer = true
@@ -11,9 +11,18 @@ bytecode_hash = "none"
 verbosity = 1
 via_ir = true
 fuzz = { runs = 1_000 }
+test = 'tests'
 remappings = [
-    '@polaris/=src/polaris',
+    '@openzeppelin/=lib/openzeppelin-contracts/contracts/',
     '@solmate/=lib/solmate/src/',
+    '@polaris/=src/polaris',
+    '@berachain/=src/berachain/',
+    '@utils/=src/utils/',
+    '@interfaces/=src/interfaces/',
+    '@core/=src/core/',
+    '@core/=src/core/',
+    '@prb/=lib/prb-test/src/',
+    '@vesting/=src/vesting/',
 ]
 
 [profile.ci]

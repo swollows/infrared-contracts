@@ -23,7 +23,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
 
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {IERC20} from '@polaris/IERC20.sol';
 import {Cosmos} from '@polaris/CosmosTypes.sol';

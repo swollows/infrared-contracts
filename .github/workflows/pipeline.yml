@@ -4,7 +4,7 @@ on:
   pull_request:
   push:
     branches:
-      - master
+      - main
 
 env:
   FOUNDRY_PROFILE: ci
@@ -28,8 +28,13 @@ jobs:
       - name: Run Forge build
         run: |
           forge --version
-          forge build -C contracts/src/
+          forge build -C src/
         id: build
+        working-directory: contracts
+
+      - name: Run Forge fmt --check
+        run: |
+          forge fmt --check
         working-directory: contracts
 
       - name: Run Forge tests
