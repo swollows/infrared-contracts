@@ -4,17 +4,17 @@ pragma solidity 0.8.20;
 // Testing Libraries.
 import {DSTestFull} from '../DSTestFull.sol';
 
-// // External Contracts.
-// import {ERC20} from '@berachain/EIP5XXX.sol';
-// import {IERC20} from '@openzeppelin/token/ERC20/IERC20.sol';
-// import {Cosmos} from '@polaris/CosmosTypes.sol';
+// External Contracts.
+import {ERC20} from '@berachain/EIP5XXX.sol';
+import {IERC20} from '@openzeppelin/token/ERC20/IERC20.sol';
+import {Cosmos} from '@polaris/CosmosTypes.sol';
 
-// // Infrared Contracts.
-// import {Infrared} from 'solidity/core/Infrared.sol';
-// import {VLIRED} from 'solidity/core/VLIRED.sol';
-// import {WrappedIBGT} from 'solidity/core/WIBGT.sol';
-// import {InfraredVault} from 'solidity/core/InfraredVault.sol';
-// import {IBGT} from 'solidity/core/IBGT.sol';
+// Infrared Contracts.
+import {Infrared} from '@core/Infrared.sol';
+import {VLIRED} from '@core/VLIRED.sol';
+import {WrappedIBGT} from '@core/WIBGT.sol';
+import {InfraredVault} from '@core/InfraredVault.sol';
+import {IBGT} from '@core/IBGT.sol';
 // import {IREDVestingFactory} from 'solidity/vesting/IREDVestingFactory.sol';
 // import {VestingWalletWithCliff} from 'solidity/vesting/VestingWalletWithCliff.sol';
 // import {IInfraredVault} from 'solidity/core/Interfaces/IInfraredVault.sol';
