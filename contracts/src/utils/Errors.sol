@@ -17,4 +17,6 @@ library Errors {
     error CancelUnbondingDelegationFailed();
     error ApprovalFailed();
     error ElementAlreadyExists();
+    error FaliedToRemoveValidator();
+    error FailedToAddValidator();
 }

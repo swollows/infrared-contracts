@@ -37,15 +37,16 @@ contract InfraredVault is EIP5XXX, AccessControl {
      * @param _distributionPrecompile The Berachain Distribution Precompile contract that will be allocating rewards to this vault.
      */
     constructor(
-        ERC20 _asset,
+        address _asset,
         string memory _name,
         string memory _symbol,
         address[] memory _rewardTokens,
         address _infrared,
         address _poolAddress,
         address _rewardsPrecompile,
-        address _distributionPrecompile
-    ) ERC4626(_asset, _name, _symbol) {
+        address _distributionPrecompile,
+        address _admin
+    ) ERC4626(ERC20(_asset), _name, _symbol) {
         if (address(_asset) == address(0)) {
             revert Errors.ZeroAddress();
         }
@@ -94,7 +95,7 @@ contract InfraredVault is EIP5XXX, AccessControl {
         DISTRIBUTION_PRECOMPILE = _distributionModule;
         REWARDS_PRECOMPILE = _rewardsModule;
 
-        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _grantRole(DEFAULT_ADMIN_ROLE, _admin);
     }
 
     /*//////////////////////////////////////////////////////////////

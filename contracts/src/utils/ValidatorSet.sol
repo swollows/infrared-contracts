@@ -28,9 +28,15 @@ library ValidatorSet {
             revert Errors.ValidatorAlreadyExists(_new);
         }
 
-        // Replace _current with _new.
-        require(_set.remove(_current), 'ValidatorSet: failed to remove');
-        require(_set.add(_new), 'ValidatorSet: failed to add');
+        // Remove _current.
+        if (!_set.remove(_current)) {
+            revert Errors.FaliedToRemoveValidator();
+        }
+
+        // Add _new.
+        if (!_set.add(_new)) {
+            revert Errors.FailedToAddValidator();
+        }
 
         emit ValidatorSetUpdated(_current, _new, DataTypes.ValidatorSetAction.Replace);
     }
@@ -47,7 +53,9 @@ library ValidatorSet {
         }
 
         // Add the validator to the set.
-        require(_set.add(_new), 'ValidatorSet: failed to add');
+        if (!_set.add(_new)) {
+            revert Errors.FailedToAddValidator();
+        }
 
         emit ValidatorSetUpdated(address(0), _new, DataTypes.ValidatorSetAction.Add);
     }
@@ -64,7 +72,9 @@ library ValidatorSet {
         }
 
         // Remove the validator from the set.
-        require(_set.remove(_current), 'ValidatorSet: failed to remove');
+        if (!_set.remove(_current)) {
+            revert Errors.FaliedToRemoveValidator();
+        }
 
         emit ValidatorSetUpdated(_current, address(0), DataTypes.ValidatorSetAction.Remove);
     }
