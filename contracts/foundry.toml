@@ -12,11 +12,7 @@ verbosity = 1
 via_ir = true
 fuzz = { runs = 1_000 }
 remappings = [
-    '@forge-std/=lib/forge-std/src/',
-    '@interfaces/=src/interfaces/',
-    '@src/=src/core',
-    '@openzeppelin-upgradeable/=lib/openzeppelin-contracts-upgradeable/contracts/',
-    '@openzeppelin/contracts=lib/openzeppelin-contracts/contracts',
+    '@polaris/=src/polaris',
 ]
 
 [profile.ci]
