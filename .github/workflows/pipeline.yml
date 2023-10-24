@@ -28,12 +28,12 @@ jobs:
       - name: Run Forge build
         run: |
           forge --version
-          forge build -C contracts/src/
+          make build
         id: build
         working-directory: contracts
 
       - name: Run Forge tests
         run: |
-          FOUNDRY_PROFILE=ci forge test -vvv
+          FOUNDRY_PROFILE=ci make test
         id: test
         working-directory: contracts
