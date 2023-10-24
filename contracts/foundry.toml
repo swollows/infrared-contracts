@@ -17,6 +17,8 @@ remappings = [
     '@polaris/=src/polaris',
     '@berachain/=src/berachain/',
     '@utils/=src/utils/',
+    '@interfaces/=src/interfaces/',
+    '@core/=src/core/',
 ]
 
 [profile.ci]

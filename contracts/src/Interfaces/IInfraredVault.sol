@@ -12,7 +12,7 @@ interface IInfraredVault {
 
     /*//////////////////////////////////////////////////////////////
                              ADMIN
-  //////////////////////////////////////////////////////////////*/
+    //////////////////////////////////////////////////////////////*/
 
     /**
      * @dev Allows the admin of this contract to set a different withdraw address for the rewards precompile.
@@ -40,12 +40,9 @@ interface IInfraredVault {
 
     function supply(address supplier, address reward, uint96 partition, uint256 amount) external;
 
-    // slither-disable-next-line naming-convention
-    function _supply(address supplier, address reward, uint96 partition, uint256 amount) external;
-
     /*//////////////////////////////////////////////////////////////
                       ERC4626 functions
-  //////////////////////////////////////////////////////////////*/
+    //////////////////////////////////////////////////////////////*/
 
     function deposit(uint256 assets, address receiver) external returns (uint256 shares);
 
