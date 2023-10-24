@@ -34,6 +34,6 @@ jobs:
 
       - name: Run Forge tests
         run: |
-          FOUNDRY_PROFILE=ci make test
+         forge build --extra-output-files bin --extra-output-files abi --root ./contracts
         id: test
         working-directory: contracts
