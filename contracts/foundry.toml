@@ -21,6 +21,7 @@ remappings = [
     '@core/=src/core/',
     '@core/=src/core/',
     '@prb/=lib/prb-test/src/',
+    '@vesting/=src/vesting/',
 ]
 
 [profile.ci]
