@@ -1,5 +1,5 @@
 #!/bin/bash
-export PK=c4d888b633f4299813325540d67419fe50418f1aca87ddd01a2e15c5d85f6536 # THE ADMIN PRIVATE KEY
+export PK=d331822f304b5cb63f23e95cddee0728460f2507ea821889da6cf1cfb9c2dfb9 # THE GOVERNANCE PRIVATE KEY
 export RPC_URL=https://devnet.beraswillmakeit.com
 
 # Forge script to setup the validators.

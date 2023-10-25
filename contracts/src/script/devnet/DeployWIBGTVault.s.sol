@@ -31,7 +31,7 @@ contract DeployWIBGTVault is Script {
         // Deploy the Vault.
         InfraredVault wibgtVault = new InfraredVault(
             address(wibgt),
-            'Wrapped IBGT Vault',
+            'WIBGT Vault',
             'WIBGT-V',
             rewards,
             addresses.infrared(),

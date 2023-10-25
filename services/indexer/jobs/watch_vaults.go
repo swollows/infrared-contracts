@@ -135,6 +135,5 @@ func (w *VaultsWatcher) handleReceipt(sCtx *sdk.Context, receipts []*coretypes.R
 
 	// Log out the number of logs found.
 	sCtx.Logger().Info("Found logs", "count", len(infraredContractLogs))
-
 	return nil
 }

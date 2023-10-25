@@ -17,11 +17,16 @@ library Precompiles {
 }
 
 library AddressesAddress {
-    address public constant addr = address(0x138F39471c7A96e1076cc870A96cFC404eCF83c4);
+    address public constant addr = address(0x8499977E96E7544d6bf4ffE9770A1dd4dcf8cCBe);
 }
 
 library Actors {
     address public constant DEFAULT_ADMIN = 0x2D764DFeaAc00390c69985631aAA7Cc3fcfaFAfF;
     address public constant GOVERNANCE = 0x999fACda86674c43D0D95538631a55Eeeb7c3cDa;
     address public constant KEEPER = 0x1b7EA124Cd33d8128ac6768042e6b8d69AF9bB5A;
+}
+
+library GenesisPools {
+    address public constant USDC_HONEY_POOL_TOKEN = 0xc70c2FD8f8E3DBbb6f73502C70952f115Bb93929;
+    address public constant USDC_HONEY_POOL_ADDRESS = 0x101f52c804C1C02c0A1D33442ecA30ecb6fB2434;
 }
