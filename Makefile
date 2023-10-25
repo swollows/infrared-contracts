@@ -126,4 +126,14 @@ gosec:
 	@gosec -exclude-generated ./...
 
 
+########################################################
+#                        Services                      #
+########################################################
 
+services-start:
+	@echo "--> Starting all services"
+	@$(MAKE) start-indexer
+
+start-indexer:
+	@echo "--> Starting indexer"
+	go run services/indexer/cmd/main.go start --config-path services/indexer/config.toml

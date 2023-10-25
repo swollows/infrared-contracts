@@ -28,6 +28,18 @@ remappings = [
 [profile.ci]
 fuzz = { runs = 100_000 }
 verbosity = 4
+remappings = [
+    '@openzeppelin/=lib/openzeppelin-contracts/contracts/',
+    '@solmate/=lib/solmate/src/',
+    '@polaris/=src/polaris',
+    '@berachain/=src/berachain/',
+    '@utils/=src/utils/',
+    '@interfaces/=src/interfaces/',
+    '@core/=src/core/',
+    '@core/=src/core/',
+    '@prb/=lib/prb-test/src/',
+    '@vesting/=src/vesting/',
+]
 
 [rpc_endpoints]
 local = "${RPC_URL_LOCAL}"

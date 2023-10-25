@@ -17,3 +17,6 @@ make test
 
 # Run e2e tests 
 make e2e 
+
+# Run the services
+make start-services
