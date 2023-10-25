@@ -28,17 +28,14 @@ jobs:
       - name: Run Forge build
         run: |
           forge --version
-          forge build -C src/
+          forge build --root ./contracts
         id: build
-        working-directory: contracts
 
       - name: Run Forge fmt --check
         run: |
           forge fmt --check
-        working-directory: contracts
 
       - name: Run Forge tests
         run: |
-          FOUNDRY_PROFILE=ci forge test -vvv
+          FOUNDRY_PROFILE=ci forge test -vvv --root ./contracts
         id: test
-        working-directory: contracts
