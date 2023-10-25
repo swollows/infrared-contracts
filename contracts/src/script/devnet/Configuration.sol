@@ -17,7 +17,7 @@ library Precompiles {
 }
 
 library AddressesAddress {
-    address public constant addr = address(0x18Df82C7E422A42D47345Ed86B0E935E9718eBda);
+    address public constant addr = address(0x138F39471c7A96e1076cc870A96cFC404eCF83c4);
 }
 
 library Actors {

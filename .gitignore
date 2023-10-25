@@ -24,3 +24,7 @@ bin
 ### Forge ###
 contracts/cache
 contracts/out
+
+
+### Sensative info ###
+contracts/src/script/devnet/loadEnv.sh

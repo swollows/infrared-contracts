@@ -137,3 +137,20 @@ services-start:
 start-indexer:
 	@echo "--> Starting indexer"
 	go run services/indexer/cmd/main.go start --config-path services/indexer/config.toml
+
+
+########################################################
+#                        Dev-Net                       #
+########################################################
+
+deploy-addresses:
+	@echo "--> Deploying addresses"
+	cd contracts && src/script/devnet/deploy-addresses.sh
+
+deploy-infrared:
+	@echo "--> Deploying infrared"
+	cd contracts && src/script/devnet/deploy-infrared.sh
+
+setup-validators:
+	@echo "--> Setting up validators"
+	cd contracts && src/script/devnet/setup-validators.sh
