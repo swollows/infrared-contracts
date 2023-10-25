@@ -15,3 +15,13 @@ library Precompiles {
     address public constant STAKING_PRECOMPILE = 0xd9A998CaC66092748FfEc7cFBD155Aae1737C2fF;
     address public constant ERC20_PRECOMPILE = 0x0000000000000000000000000000000000696969;
 }
+
+library AddressesAddress {
+    address public constant addr = address(0x18Df82C7E422A42D47345Ed86B0E935E9718eBda);
+}
+
+library Actors {
+    address public constant DEFAULT_ADMIN = 0x2D764DFeaAc00390c69985631aAA7Cc3fcfaFAfF;
+    address public constant GOVERNANCE = 0x999fACda86674c43D0D95538631a55Eeeb7c3cDa;
+    address public constant KEEPER = 0x1b7EA124Cd33d8128ac6768042e6b8d69AF9bB5A;
+}
