@@ -20,3 +20,6 @@ make e2e
 
 # Run the services
 make start-services
+```
+
+## Backend Getting Started
