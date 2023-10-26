@@ -41,13 +41,13 @@ contract DeployWIBGTVault is Script {
             Actors.DEFAULT_ADMIN
         );
 
-        // // Update the vault in the infrared contract.
-        // Infrared infrared = Infrared(addresses.infrared());
-        // infrared.updateWIBGTVault(IInfraredVault(address(wibgtVault)), rewards);
+        // Update the vault in the infrared contract.
+        Infrared infrared = Infrared(addresses.infrared());
+        infrared.updateWIBGTVault(IInfraredVault(address(wibgtVault)), rewards);
 
-        // // Set in the addresses contract.
-        // addresses.setWibgt(address(wibgt));
-        // addresses.setWibgtVault(address(wibgtVault));
+        // Set in the addresses contract.
+        addresses.setWibgt(address(wibgt));
+        addresses.setWibgtVault(address(wibgtVault));
 
         // Log the addresses.
         console2.log('WIBGT: ', address(wibgt));
