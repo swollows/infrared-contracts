@@ -37,17 +37,17 @@ contract DeployWIBGTVault is Script {
             addresses.infrared(),
             address(101), // Fake since this is the IBGT vault.
             Precompiles.REWARDS_PRECOMPILE,
-            Precompiles.DISTRIBUTION_PREOCMPILE,
+            Precompiles.DISTRIBUTION_PRECOMPILE,
             Actors.DEFAULT_ADMIN
         );
 
-        // Update the vault in the infrared contract.
-        Infrared infrared = Infrared(addresses.infrared());
-        infrared.updateWIBGTVault(IInfraredVault(address(wibgtVault)), rewards);
+        // // Update the vault in the infrared contract.
+        // Infrared infrared = Infrared(addresses.infrared());
+        // infrared.updateWIBGTVault(IInfraredVault(address(wibgtVault)), rewards);
 
-        // Set in the addresses contract.
-        addresses.setWibgt(address(wibgt));
-        addresses.setWibgtVault(address(wibgtVault));
+        // // Set in the addresses contract.
+        // addresses.setWibgt(address(wibgt));
+        // addresses.setWibgtVault(address(wibgtVault));
 
         // Log the addresses.
         console2.log('WIBGT: ', address(wibgt));

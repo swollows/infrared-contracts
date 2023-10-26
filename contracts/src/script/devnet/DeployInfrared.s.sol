@@ -25,7 +25,7 @@ contract DeployInfrared is Script {
         // Deploy the Infrared contract.
         Infrared infrared = new Infrared(
             Precompiles.REWARDS_PRECOMPILE,
-            Precompiles.DISTRIBUTION_PREOCMPILE,
+            Precompiles.DISTRIBUTION_PRECOMPILE,
             Precompiles.ERC20_PRECOMPILE,
             Precompiles.STAKING_PRECOMPILE,
             'abgt',
