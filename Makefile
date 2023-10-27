@@ -158,7 +158,3 @@ deploy-wibgt-vault:
 setup-validators:
 	@echo "--> Setting up validators"
 	cd contracts && src/script/devnet/setup-validators.sh
-
-deploy-wibgt-vault:
-	@echo "--> Deploying the wibgt vault"
-	cd contracts && src/script/devnet/deploy-wibgt-vault.sh
