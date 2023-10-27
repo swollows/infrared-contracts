@@ -37,7 +37,7 @@ contract DeployWIBGTVault is Script {
             addresses.infrared(),
             address(101), // Fake since this is the IBGT vault.
             Precompiles.REWARDS_PRECOMPILE,
-            Precompiles.DISTRIBUTION_PREOCMPILE,
+            Precompiles.DISTRIBUTION_PRECOMPILE,
             Actors.DEFAULT_ADMIN
         );
 

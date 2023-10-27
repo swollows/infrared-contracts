@@ -151,6 +151,10 @@ deploy-infrared:
 	@echo "--> Deploying infrared"
 	cd contracts && src/script/devnet/deploy-infrared.sh
 
+deploy-wibgt-vault:
+	@echo "--> Deploying wibgt vault"
+	cd contracts && src/script/devnet/deploy-wibgt-vault.sh
+
 setup-validators:
 	@echo "--> Setting up validators"
 	cd contracts && src/script/devnet/setup-validators.sh

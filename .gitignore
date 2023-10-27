@@ -28,3 +28,7 @@ contracts/out
 
 ### Sensative info ###
 contracts/src/script/devnet/loadEnv.sh
+
+## IDE
+services/.idea/
+.idea/
