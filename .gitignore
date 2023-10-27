@@ -24,6 +24,7 @@ bin
 ### Forge ###
 contracts/cache
 contracts/out
+contracts/broadcast
 
 
 ### Sensative info ###
