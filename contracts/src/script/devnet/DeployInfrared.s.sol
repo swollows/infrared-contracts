@@ -42,8 +42,9 @@ contract DeployInfrared is Script {
         // Grant the GOVERNANCE role.
         infrared.grantRole(infrared.GOVERNANCE_ROLE(), Actors.GOVERNANCE);
 
-        // Grant the DEFAULT_ADMIN Governace rights.
+        // Grant the DEFAULT_ADMIN Governace and KEEPER rights. NOTE: Tighten this up later.
         infrared.grantRole(infrared.GOVERNANCE_ROLE(), Actors.DEFAULT_ADMIN);
+        infrared.grantRole(infrared.KEEPER_ROLE(), Actors.DEFAULT_ADMIN);
 
         // Set the addresses in the addresses contract.
         addresses.setInfrared(address(infrared));

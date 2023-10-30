@@ -8,7 +8,7 @@ echo "$OUTPUT"
 
 # Extract contract address.
 CONTRACT_ADDRESS=$(echo "$OUTPUT" | awk '/Contract Address:/ {print $3}')
-echo "Deployer Factory Contract Address: $CONTRACT_ADDRESS"
+echo "Deployed Factory Contract Address: $CONTRACT_ADDRESS"
 
 # Call the deploy method on the contract.
 cast send $CONTRACT_ADDRESS "deploy()" --private-key $PK --rpc-url=$RPC_URL
