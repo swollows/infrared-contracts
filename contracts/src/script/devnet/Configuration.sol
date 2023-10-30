@@ -17,8 +17,14 @@ library Precompiles {
 }
 
 library AddressesAddress {
-    address public constant addr = address(0x8499977E96E7544d6bf4ffE9770A1dd4dcf8cCBe);
+    //NOTE: Please update after running `make deploy-addresses``
+    address public constant addr = address(0x916A843ec0dC01Da08656c0C132db75468af787A);
 }
+
+// NOTE: The private keys of the test accounts (add to metamask or other script etc)
+// c4d888b633f4299813325540d67419fe50418f1aca87ddd01a2e15c5d85f6536 // DEFAULT KEEPER
+// d331822f304b5cb63f23e95cddee0728460f2507ea821889da6cf1cfb9c2dfb9 // GOVERNANCE
+// 010b8742512b091fa10ff09626afbb6dea23f0792992c9bfa9e35cb227fd7df3 // KEEPER.
 
 library Actors {
     address public constant DEFAULT_ADMIN = 0x2D764DFeaAc00390c69985631aAA7Cc3fcfaFAfF;

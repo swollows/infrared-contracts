@@ -33,8 +33,8 @@ contract InfraredVault is EIP5XXX, AccessControl {
      * @param _rewardTokens           The reward tokens.
      * @param _infrared               The main contract that deployed this contract.
      * @param _poolAddress            The address of the pool (dex/lending..etc) that this contract is representing.
-     * @param _rewardsPrecompile      The Berachain Reward Precompile contract that will be allocating rewards to this vault.
-     * @param _distributionPrecompile The Berachain Distribution Precompile contract that will be allocating rewards to this vault.
+     * @param _rewardsPrecompileAddress      The Berachain Reward Precompile contract that will be allocating rewards to this vault.
+     * @param _distributionPrecompileAddress The Berachain Distribution Precompile contract that will be allocating rewards to this vault.
      */
     constructor(
         address _asset,
@@ -43,8 +43,8 @@ contract InfraredVault is EIP5XXX, AccessControl {
         address[] memory _rewardTokens,
         address _infrared,
         address _poolAddress,
-        address _rewardsPrecompile,
-        address _distributionPrecompile,
+        address _rewardsPrecompileAddress,
+        address _distributionPrecompileAddress,
         address _admin
     ) ERC4626(ERC20(_asset), _name, _symbol) {
         if (address(_asset) == address(0)) {
@@ -59,7 +59,8 @@ contract InfraredVault is EIP5XXX, AccessControl {
             revert Errors.ZeroAddress();
         }
 
-        if (_rewardsPrecompile == address(0) && _distributionPrecompile == address(0)) {
+        // Check if either of the precompiles are zero. One is enough to be non zero to handle the case of only one being used.
+        if (_rewardsPrecompileAddress == address(0) && _distributionPrecompileAddress == address(0)) {
             revert Errors.ZeroAddress();
         }
 
@@ -74,17 +75,21 @@ contract InfraredVault is EIP5XXX, AccessControl {
             }
         }
 
-        IDistributionModule _distributionModule = IDistributionModule(_distributionPrecompile);
-        IRewardsModule _rewardsModule = IRewardsModule(_rewardsPrecompile);
+        // If the distribution precompile is set, set its withdraw address to the infrared contract.
+        if (_distributionPrecompileAddress != address(0)) {
+            IDistributionModule _distributionPrecompile = IDistributionModule(_distributionPrecompileAddress);
 
-        if (_distributionPrecompile != address(0)) {
-            if (!_distributionModule.setWithdrawAddress(_infrared)) {
+            // Make sure that the withdraw address is set.
+            if (!_distributionPrecompile.setWithdrawAddress(_infrared)) {
                 revert Errors.SetWithdrawAddressFailed();
             }
         }
 
-        if (_rewardsPrecompile != address(0)) {
-            if (!_rewardsModule.setDepositorWithdrawAddress(_infrared)) {
+        // If the rewards precompile is set, set its withdraw address to the infrared contract.
+        if (_rewardsPrecompileAddress != address(0)) {
+            IRewardsModule _rewardsPrecompile = IRewardsModule(_rewardsPrecompileAddress);
+
+            if (!_rewardsPrecompile.setDepositorWithdrawAddress(_infrared)) {
                 revert Errors.SetWithdrawAddressFailed();
             }
         }
@@ -92,9 +97,10 @@ contract InfraredVault is EIP5XXX, AccessControl {
         // Set the constants.
         INFRARED = _infrared;
         POOL_ADDRESS = _poolAddress;
-        DISTRIBUTION_PRECOMPILE = _distributionModule;
-        REWARDS_PRECOMPILE = _rewardsModule;
+        DISTRIBUTION_PRECOMPILE = IDistributionModule(_distributionPrecompileAddress);
+        REWARDS_PRECOMPILE = IRewardsModule(_rewardsPrecompileAddress);
 
+        // Set the admin.
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
     }
 
