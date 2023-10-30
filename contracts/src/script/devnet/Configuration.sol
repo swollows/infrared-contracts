@@ -14,12 +14,12 @@ library Precompiles {
     address public constant DISTRIBUTION_PRECOMPILE = 0x0000000000000000000000000000000000000069;
     address public constant REWARDS_PRECOMPILE = 0x55684e2cA2bace0aDc512C1AFF880b15b8eA7214;
     address public constant STAKING_PRECOMPILE = 0xd9A998CaC66092748FfEc7cFBD155Aae1737C2fF;
-    address public constant ERC20_PRECOMPILE = 0x0000000000000000000000000000000000696969;
+    address public constant ERC20_PRECOMPILE = 0x0000000000000000000000000000000000000069;
 }
 
 library AddressesAddress {
     //NOTE: Please update after running `make deploy-addresses``
-    address public constant addr = address(0x916A843ec0dC01Da08656c0C132db75468af787A);
+    address public constant addr = address(0x8499977E96E7544d6bf4ffE9770A1dd4dcf8cCBe);
 }
 
 // NOTE: The private keys of the test accounts (add to metamask or other script etc)

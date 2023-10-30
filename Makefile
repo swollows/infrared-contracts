@@ -143,6 +143,10 @@ start-indexer:
 #                        Dev-Net                       #
 ########################################################
 
+deploy-all: |
+	@$(MAKE) deploy-infrared setup-validators
+
+
 deploy-addresses:
 	@echo "--> Deploying addresses"
 	cd contracts && src/script/devnet/deploy-addresses.sh
@@ -154,3 +158,7 @@ deploy-infrared:
 setup-validators:
 	@echo "--> Setting up validators"
 	cd contracts && src/script/devnet/setup-validators.sh
+
+deploy-wibgt:
+	@echo "--> Deploying wibgt vault"
+	cd contracts && src/script/devnet/deploy-wibgt-vault.sh
