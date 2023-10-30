@@ -2,8 +2,8 @@
 pragma solidity 0.8.20;
 
 // Scripts etc.
-import {Script, console2} from 'forge-std/Script.sol';
-import {Validators, AddressesAddress, Actors} from './Configuration.sol';
+import {Script} from 'forge-std/Script.sol';
+import {Validators, AddressesAddress} from './Configuration.sol';
 import {Addreses} from './Addresses.sol';
 
 // Contracts.

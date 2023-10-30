@@ -3,7 +3,7 @@ pragma solidity 0.8.20;
 
 // Scripts etc.
 import {Script, console2} from 'forge-std/Script.sol';
-import {Validators, Precompiles, AddressesAddress, Actors} from './Configuration.sol';
+import {Precompiles, AddressesAddress, Actors} from './Configuration.sol';
 import {Addreses} from './Addresses.sol';
 
 // Contracts.

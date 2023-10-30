@@ -161,7 +161,8 @@ contract WrappedIBGT is ERC20PresetMinterPauser, ReentrancyGuard {
         _shares = _vault.previewWithdraw(_assets);
 
         // Transfer the vault tokens from the owner to this contract.
-        require(_vault.transferFrom(_owner, address(this), _shares));
+        // solhint-disable-next-line custom-errors
+        require(_vault.transferFrom(_owner, address(this), _shares), 'WIBGT: transferFrom failed');
 
         // Withdraw the vault tokens from the WIBGT Vault.
         _vault.withdraw(_shares, address(this), address(this));
@@ -200,7 +201,8 @@ contract WrappedIBGT is ERC20PresetMinterPauser, ReentrancyGuard {
         InfraredVault _vault = wibgtVault;
 
         // Transfer the vault share tokens to this contract.
-        require(_vault.transferFrom(_owner, address(this), _shares));
+        // solhint-disable-next-line custom-errors
+        require(_vault.transferFrom(_owner, address(this), _shares), 'WIBGT: transferFromFailed');
 
         // Redeem the vault share tokens for the WIBGT tokens.
         _assets = _vault.redeem(_shares, address(this), address(this));
