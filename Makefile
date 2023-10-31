@@ -166,6 +166,15 @@ deploy-wibgt:
 deploy-usdc-vault:
 	@echo "--> Deploying usdc-honey vault"
 	cd contracts && src/script/devnet/deploy-usdc-pool.sh
+
+deposit:
+	@echo "--> Depositing usdc-honey lp"
+	cd contracts && src/script/devnet/deposit.sh
+
+donate:
+	@echo "--> Donating wibgt"
+	cd contracts && src/script/devnet/donate.sh
+	
 log-devnet:
 	@echo "--> Logging devnet"
 	cd contracts && src/script/devnet/get-addresses.sh
