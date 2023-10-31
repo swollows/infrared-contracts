@@ -22,12 +22,14 @@ make e2e
 make start-services
 ```
 
-## Deploying on dev-net
+## Dev-Net
 
-##### If already deployed (If there is a value in the Configuration.sol AddressesAddress field):
+### If already deployed (If there is a value in the Configuration.sol AddressesAddress field):
 ```bash
 make log-devnet
 ```
+
+### Deploy Fresh
 
 ```bash
 # Deploy the addresses contract. This will keep track of all the contracts deployed.
