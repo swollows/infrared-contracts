@@ -162,3 +162,7 @@ setup-validators:
 deploy-wibgt:
 	@echo "--> Deploying wibgt vault"
 	cd contracts && src/script/devnet/deploy-wibgt-vault.sh
+
+deploy-usdc-vault:
+	@echo "--> Deploying usdc-honey vault"
+	cd contracts && src/script/devnet/deploy-usdc-pool.sh

@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: MIT
+/* solhint-disable */
 pragma solidity 0.8.20;
 
 // Scripts etc.
 import {Script, console2} from 'forge-std/Script.sol';
-import {Validators, Precompiles, AddressesAddress, Actors, GenesisPools} from './Configuration.sol';
+import {AddressesAddress, GenesisPools} from './Configuration.sol';
 import {Addreses} from './Addresses.sol';
 
 // Contracts.
-import {IBGT} from '@core/IBGT.sol';
 import {Infrared} from '@core/Infrared.sol';
-import {IERC20Mintable} from '@interfaces/IERC20Mintable.sol';
+import {IInfraredVault} from '@interfaces/IInfraredVault.sol';
 
 contract DeployUSDCPool is Script {
     function run() public {
@@ -36,12 +36,18 @@ contract USDCPoolFactory {
         // Register the USDC-Honey Pool.
         address[] memory rewards = new address[](1);
         rewards[0] = addresses.ibgt();
-        infrared.registerVault(
+        IInfraredVault usdcVault = infrared.registerVault(
             GenesisPools.USDC_HONEY_POOL_TOKEN,
             'USDC-HONEY Vault',
             'USDC-HONEY-V',
             rewards,
             GenesisPools.USDC_HONEY_POOL_ADDRESS
         );
+
+        // Register the USDC-IBGT Pool on the addresses.
+        addresses.setUsdcVault(address(usdcVault));
+
+        // Log the address of the USDC-IBGT Pool.
+        console2.log('USDC-IBGT Vault', address(usdcVault));
     }
 }

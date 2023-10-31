@@ -2,7 +2,7 @@
 /* solhint-disable */
 pragma solidity 0.8.20;
 
-import {Script} from 'forge-std/Script.sol';
+import {Script, console2} from 'forge-std/Script.sol';
 import {Precompiles, AddressesAddress, Actors} from './Configuration.sol';
 import {Addreses} from './Addresses.sol';
 
@@ -59,6 +59,10 @@ contract WIBGTFactory {
 
         // Grant the actors the roles.
         wibgt.grantRole(wibgt.DEFAULT_ADMIN_ROLE(), Actors.DEFAULT_ADMIN);
+
+        // Console log the addresses.
+        console2.log('WIBGT', address(wibgt));
+        console2.log('WIBGT Vault', address(wibgtVault));
     }
 }
 

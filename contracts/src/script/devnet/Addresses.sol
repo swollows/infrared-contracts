@@ -11,6 +11,7 @@ contract Addreses {
     address public infrared;
     address public wibgt;
     address public wibgtVault;
+    address public usdcVault;
 
     function setIbgt(address _ibgt) external {
         ibgt = _ibgt;
@@ -26,6 +27,10 @@ contract Addreses {
 
     function setWibgtVault(address _wibgtVault) external {
         wibgtVault = _wibgtVault;
+    }
+
+    function setUsdcVault(address _usdcVault) external {
+        usdcVault = _usdcVault;
     }
 }
 

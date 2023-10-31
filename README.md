@@ -20,3 +20,23 @@ make e2e
 
 # Run the services
 make start-services
+```
+
+## Deploying on dev-net
+
+```bash
+# Deploy the addresses contract. This will keep track of all the contracts deployed.
+make deploy-addresses # Copy the output of this script and paste it into the Configurations.sol file.
+
+# Deploy the Infrared contract.
+make deploy-infrared
+
+# Setup the validators.
+make setup-validators
+
+# Deploy the WIBGT vault.
+make deploy-wibgt
+
+# Deploy the USDC-Honey vault.
+make deploy-usdc-vault
+```
