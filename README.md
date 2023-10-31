@@ -24,6 +24,11 @@ make start-services
 
 ## Deploying on dev-net
 
+##### If already deployed (If there is a value in the Configuration.sol AddressesAddress field):
+```bash
+make log-devnet
+```
+
 ```bash
 # Deploy the addresses contract. This will keep track of all the contracts deployed.
 make deploy-addresses # Copy the output of this script and paste it into the Configurations.sol file.
