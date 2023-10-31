@@ -130,7 +130,7 @@ gosec:
 #                        Services                      #
 ########################################################
 
-services-start:
+start-services:
 	@echo "--> Starting all services"
 	@$(MAKE) start-indexer
 
