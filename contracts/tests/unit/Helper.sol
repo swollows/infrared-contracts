@@ -257,14 +257,10 @@ contract Helper is DSTestFull {
         );
     }
 
-    function _mockRewardsPrecompileWithdraw(
-        address _vaultAddress,
-        address _poolAddress,
-        Cosmos.Coin[] memory _coins
-    ) internal {
+    function _mockRewardsPrecompileWithdraw(address _poolAddress, Cosmos.Coin[] memory _coins) internal {
         vm.mockCall(
             address(_rewardsPrecompile),
-            abi.encodeWithSelector(_rewardsPrecompile.withdrawDepositorRewards.selector, _vaultAddress, _poolAddress),
+            abi.encodeWithSelector(_rewardsPrecompile.withdrawAllDepositorRewards.selector, _poolAddress),
             abi.encode(_coins)
         );
     }

@@ -9,6 +9,7 @@ import {Cosmos} from '@polaris/CosmosTypes.sol';
 import {ERC20} from '@solmate/tokens/ERC20.sol';
 import {Errors} from '@utils/Errors.sol';
 import {DataTypes} from '@utils/DataTypes.sol';
+import {IInfraredVault} from '@interfaces/IInfraredVault.sol';
 
 abstract contract BerachainHandler {
     using SafeTransferLib for ERC20;
@@ -66,16 +67,12 @@ abstract contract BerachainHandler {
     }
 
     /**
-     * @notice Withdraws the rewards for the given validator from the rewards module.
-     * @param _depositor   address              The depositor to withdraw rewards for.
-     * @param _poolAddress address              The pool address to withdraw rewards for.
-     * @return _coins      Cosmos.Coin[] memory The coins that were withdrawn.
+     * @notice WithdrawRewards Calls into the vault, to withdraw rewards to this address.
+     * @param _vault        address              The address of the vault to call into.
+     * @return _coins       Cosmos.Coin[] memory The coins that were withdrawn.
      */
-    function _withdrawPOLRewards(
-        address _depositor,
-        address _poolAddress
-    ) internal returns (Cosmos.Coin[] memory _coins) {
-        return IRewardsModule(REWARDS_PRECOMPILE).withdrawDepositorRewards(_depositor, _poolAddress);
+    function _withdrawPOLRewards(address _vault) internal returns (Cosmos.Coin[] memory _coins) {
+        return IInfraredVault(_vault).claimRewardsPrecompile();
     }
 
     /*//////////////////////////////////////////////////////////////

@@ -353,7 +353,7 @@ contract Infrared is BerachainHandler, InfraredValidators, AccessControl {
         }
 
         // Withdraw the rewards from the rewards module.
-        (Cosmos.Coin[] memory _rewards, uint256 _bgtAmount) = _withdrawRewards(_vaultAddress, _vault.poolAddress());
+        (Cosmos.Coin[] memory _rewards, uint256 _bgtAmount) = _withdrawRewards(_vaultAddress);
 
         // Handle the rewards.
         _handleRewards(_rewards, _bgtAmount, _vault);
@@ -426,16 +426,14 @@ contract Infrared is BerachainHandler, InfraredValidators, AccessControl {
     /**
      * @notice Withdraws the rewards for the given vault from the rewards module.
      * @param _vault                 address              The vault to withdraw rewards for.
-     * @param _pool                  address              The pool address to withdraw rewards for.
      * @return _filteredRewards      Cosmos.Coin[] memory The coins that were withdrawn excluding BGT.
      * @return _bgtAmount            uint256              The amount of BGT that was withdrawn.
      */
     function _withdrawRewards(
-        address _vault,
-        address _pool
+        address _vault
     ) internal returns (Cosmos.Coin[] memory _filteredRewards, uint256 _bgtAmount) {
         // Withdraw rewards from the rewards module.
-        Cosmos.Coin[] memory _rewards = _withdrawPOLRewards(_vault, _pool);
+        Cosmos.Coin[] memory _rewards = _withdrawPOLRewards(_vault);
 
         // Remove BGT from the rewards since we don't want to distribute it.
         return _removeBGTFromCoins(_rewards);

@@ -20,18 +20,14 @@
 
 pragma solidity 0.8.20;
 
-import {Cosmos} from '../polaris/CosmosTypes.sol';
-
-/* solhint-disable */
+import {Cosmos} from '@polaris/CosmosTypes.sol';
 
 interface IRewardsModule {
-    /**
-     * @dev Returns the address of the withdraw address.
-     */
-    function setDepositorWithdrawAddress(address withdrawAddress) external returns (bool);
+    /////////////////////////////////////// READ METHODS //////////////////////////////////////////
 
     /**
      * @dev Returns the address of the withdraw address.
+     * @param depositor The depositor address.
      */
     function getDepositorWithdrawAddress(address depositor) external view returns (address);
 
@@ -44,12 +40,48 @@ interface IRewardsModule {
     function getCurrentRewards(address depositor, address receiver) external view returns (Cosmos.Coin[] memory);
 
     /**
-     * @dev Withdraws the rewards for the given delegator and receiver.
-     * @param depositor The delegator address.
+     * @dev returns the oustanding rewards owed to a receiver.
+     * @param receiver The receiver address.
+     */
+    function getOutstandingRewards(address receiver) external view returns (Cosmos.Coin[] memory);
+
+    /////////////////////////////////////// WRITE METHODS //////////////////////////////////////////
+
+    /**
+     * @dev Sets the caller's withdraw address.
+     * @param withdrawAddress The withdraw address to be set.
+     */
+    function setDepositorWithdrawAddress(address withdrawAddress) external returns (bool);
+
+    /**
+     * @dev Withdraws all the rewards for the given delegator and receiver.
      * @param receiver The receiver address.
      * @return rewards rewards.
      */
-    function withdrawDepositorRewards(address depositor, address receiver) external returns (Cosmos.Coin[] memory);
+    function withdrawAllDepositorRewards(address receiver) external returns (Cosmos.Coin[] memory);
+
+    /**
+     * @dev Withdraws the rewards for the given delegator and receiver.
+     * @param receiver The receiver address.
+     * @param amount The amount of rewards to withdraw.
+     * @return rewards rewards.
+     */
+    function withdrawDepositorRewards(address receiver, uint256 amount) external returns (Cosmos.Coin[] memory);
+
+    /**
+     * @dev Withdraws the rewards for the given delegator and receiver, to a given address.
+     * @param receiver The receiver address.
+     * @param recipient The recipient address.
+     * @param amount The amount of rewards to withdraw.
+     * @return rewards rewards.
+     */
+    function withdrawDepositorRewardsTo(
+        address receiver,
+        address recipient,
+        uint256 amount
+    ) external returns (Cosmos.Coin[] memory);
+
+    //////////////////////////////////////////// Events ////////////////////////////////////////////
 
     /**
      * @dev Emitted when a deposit is initialized.
@@ -79,5 +111,3 @@ interface IRewardsModule {
      */
     event SetDepositorWithdrawAddress(address indexed depositor, address indexed withdrawAddress);
 }
-
-/* solhint-enable */
