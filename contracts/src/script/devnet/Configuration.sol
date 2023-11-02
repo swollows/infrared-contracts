@@ -3,10 +3,10 @@
 pragma solidity 0.8.20;
 
 library Validators {
-    address public constant VAL_0 = 0x6c1a8ef7ead982bfc52693976b8F11C0fA6ef688;
-    address public constant VAL_1 = 0x8aFaBfD41E8C6489812F4457e8d8DfcF75EbaA32;
-    address public constant VAL_2 = 0x8F0C8170ec6bc4ff0fFC3cbCf87D1A2666924725;
-    address public constant VAL_3 = 0xfd8106B6917c8F593a3145b44e0d6a2251C72Ba2;
+    address public constant VAL_0 = 0x01D9682d9084A0838C86508Ab24479c72904F9F2;
+    address public constant VAL_1 = 0x6Ceca9f666a8C6a48529D16e865829dAF39DE417;
+    address public constant VAL_2 = 0x91E1CB6fb2861A8AAE0638E85C3370fcD2c7e777;
+    address public constant VAL_3 = 0xF60921E6D78B14763aeE33896e9Bf8838e8cBD2d;
 }
 
 library Precompiles {
@@ -19,7 +19,7 @@ library Precompiles {
 
 library AddressesAddress {
     //NOTE: Please update after running `make deploy-addresses``
-    address public constant addr = address(0xcad655227EB07814AcB373DB4cdf7685dc5B2091);
+    address public constant addr = address(0x8386164e2C4CA86Bd1DD601997F2E408Aac86320);
 }
 
 // NOTE: The private keys of the test accounts (add to metamask or other script etc)

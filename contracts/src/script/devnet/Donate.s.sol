@@ -42,7 +42,7 @@ contract Donate {
         // Add liquidity to the pool. (100 USDC, 100 HONEY)
         dex.addLiquidity(
             GenesisPools.USDC_HONEY_POOL_ADDRESS,
-            0x32cfc5EA1dB061dB7d125bC322Afa99BaC7f3384, // The usdc vault
+            0x73c2E3Af14E9E3A36eeb4505439fC125c0369291, // The usdc vault
             tokens,
             amountsIn
         );

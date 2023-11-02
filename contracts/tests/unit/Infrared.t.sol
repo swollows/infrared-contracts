@@ -195,7 +195,6 @@ contract InfraredTest is Helper {
     function testHarvestVaultZeroRewards() public {
         // Rewards from the rewards module.
         Cosmos.Coin[] memory _rewards = new Cosmos.Coin[](0);
-        console2.log('CALLING IN THE TESTS OF POOL ADDRESS', _daiVault.poolAddress());
         _mockRewardsPrecompileWithdraw(_daiVault.poolAddress(), _rewards);
 
         // Harvest the vault.
