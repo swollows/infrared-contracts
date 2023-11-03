@@ -172,7 +172,7 @@ deposit:
 	cd contracts && src/script/devnet/deposit.sh
 
 donate:
-	@echo "--> Donating wibgt"
+	@echo "--> Donating usdc-honey LP to the vault"
 	cd contracts && src/script/devnet/donate.sh
 	
 log-devnet:

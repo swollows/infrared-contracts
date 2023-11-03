@@ -8,8 +8,6 @@ import {IDistributionModule} from '@polaris/Distribution.sol';
 import {AccessControl} from '@openzeppelin/access/AccessControl.sol';
 import {Cosmos} from '@polaris/CosmosTypes.sol';
 
-import {console2} from 'forge-std/Script.sol';
-
 /**
  * @title Infrared Vault - Reward Distribution Vault
  *     @author inhereted from DevBear (https://twitter.com/itsdevbear) & Quant Bear (https://github.com/quant-bear)
@@ -204,10 +202,6 @@ contract InfraredVault is EIP5XXX, AccessControl {
      * @return _rewards Cosmos.Coin[] The rewards.
      */
     function claimRewardsPrecompile() external onlyRole(INFRARED_ROLE) returns (Cosmos.Coin[] memory _rewards) {
-        console2.log('ENTERED THE LAST CALL');
-
-        console2.log('THE POOL ADDRESS IN THE LAST CALL', POOL_ADDRESS);
-
         return REWARDS_PRECOMPILE.withdrawAllDepositorRewards(POOL_ADDRESS);
     }
 

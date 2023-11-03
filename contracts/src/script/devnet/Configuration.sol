@@ -19,7 +19,7 @@ library Precompiles {
 
 library AddressesAddress {
     //NOTE: Please update after running `make deploy-addresses``
-    address public constant addr = address(0x8386164e2C4CA86Bd1DD601997F2E408Aac86320);
+    address public constant addr = address(0x6610208d7dB87A5F0DbB452865f5cbDAB02563E9);
 }
 
 // NOTE: The private keys of the test accounts (add to metamask or other script etc)
