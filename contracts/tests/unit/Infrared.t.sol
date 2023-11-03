@@ -195,7 +195,7 @@ contract InfraredTest is Helper {
     function testHarvestVaultZeroRewards() public {
         // Rewards from the rewards module.
         Cosmos.Coin[] memory _rewards = new Cosmos.Coin[](0);
-        _mockRewardsPrecompileWithdraw(address(_daiVault), _daiVault.poolAddress(), _rewards);
+        _mockRewardsPrecompileWithdraw(_daiVault.poolAddress(), _rewards);
 
         // Harvest the vault.
         _infrared.harvestVault(address(_daiVault));
@@ -205,7 +205,7 @@ contract InfraredTest is Helper {
         // Rewards from the rewards module.
         Cosmos.Coin[] memory _rewards = new Cosmos.Coin[](1);
         _rewards[0] = Cosmos.Coin(100, BGT_DENOM);
-        _mockRewardsPrecompileWithdraw(address(_daiVault), _daiVault.poolAddress(), _rewards);
+        _mockRewardsPrecompileWithdraw(_daiVault.poolAddress(), _rewards);
 
         // Harvest the vault.
         _infrared.harvestVault(address(_daiVault));
@@ -219,7 +219,7 @@ contract InfraredTest is Helper {
         Cosmos.Coin[] memory _rewards = new Cosmos.Coin[](2);
         _rewards[0] = Cosmos.Coin(100, 'usdc');
         _rewards[1] = Cosmos.Coin(100, BGT_DENOM);
-        _mockRewardsPrecompileWithdraw(address(_daiVault), _daiVault.poolAddress(), _rewards);
+        _mockRewardsPrecompileWithdraw(_daiVault.poolAddress(), _rewards);
 
         // Mock the ERC20 module for the cosmos sdk coins to contract address.
         _mockERC20ModuleMapping('usdc', address(_usdc));

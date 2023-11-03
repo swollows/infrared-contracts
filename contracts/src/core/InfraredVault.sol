@@ -6,6 +6,7 @@ import {Errors} from '@utils/Errors.sol';
 import {IRewardsModule} from '@berachain/Rewards.sol';
 import {IDistributionModule} from '@polaris/Distribution.sol';
 import {AccessControl} from '@openzeppelin/access/AccessControl.sol';
+import {Cosmos} from '@polaris/CosmosTypes.sol';
 
 /**
  * @title Infrared Vault - Reward Distribution Vault
@@ -13,8 +14,11 @@ import {AccessControl} from '@openzeppelin/access/AccessControl.sol';
  *     @notice EIP5XXX represents a vault in which depositors can also be distributed  ERC20 tokens rewards.
  */
 contract InfraredVault is EIP5XXX, AccessControl {
+    // This role is reserved for the infrared main contract.
+    bytes32 internal constant INFRARED_ROLE = keccak256('INFRARED_ROLE');
+
     // This is the address of the main contract that deployed this contract.
-    address public immutable INFRARED;
+    address private immutable INFRARED;
 
     // This is the address of the pool (dex/lending..etc) that this contract is representing.
     address public immutable POOL_ADDRESS;
@@ -102,6 +106,8 @@ contract InfraredVault is EIP5XXX, AccessControl {
 
         // Set the admin.
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
+        // Set the infrared role.
+        _grantRole(INFRARED_ROLE, INFRARED);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -184,6 +190,19 @@ contract InfraredVault is EIP5XXX, AccessControl {
                 _i++;
             }
         }
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                            INFRARED ONLY
+    //////////////////////////////////////////////////////////////*/
+
+    /**
+     * @dev The Infrared contract can claim the rewards in behalf of the vault.
+     * @dev Since withdraw address set in constructor, it will be credited to that address.
+     * @return _rewards Cosmos.Coin[] The rewards.
+     */
+    function claimRewardsPrecompile() external onlyRole(INFRARED_ROLE) returns (Cosmos.Coin[] memory _rewards) {
+        return REWARDS_PRECOMPILE.withdrawAllDepositorRewards(POOL_ADDRESS);
     }
 
     /*//////////////////////////////////////////////////////////////
