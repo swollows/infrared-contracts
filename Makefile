@@ -137,3 +137,44 @@ start-services:
 start-indexer:
 	@echo "--> Starting indexer"
 	go run services/indexer/cmd/main.go start --config-path services/indexer/config.toml
+
+
+########################################################
+#                        Dev-Net                       #
+########################################################
+
+deploy-all: |
+	@$(MAKE) deploy-infrared setup-validators
+
+
+deploy-addresses:
+	@echo "--> Deploying addresses"
+	cd contracts && src/script/devnet/deploy-addresses.sh
+
+deploy-infrared:
+	@echo "--> Deploying infrared"
+	cd contracts && src/script/devnet/deploy-infrared.sh
+
+setup-validators:
+	@echo "--> Setting up validators"
+	cd contracts && src/script/devnet/setup-validators.sh
+
+deploy-wibgt:
+	@echo "--> Deploying wibgt vault"
+	cd contracts && src/script/devnet/deploy-wibgt-vault.sh
+
+deploy-usdc-vault:
+	@echo "--> Deploying usdc-honey vault"
+	cd contracts && src/script/devnet/deploy-usdc-pool.sh
+
+deposit:
+	@echo "--> Depositing usdc-honey lp"
+	cd contracts && src/script/devnet/deposit.sh
+
+donate:
+	@echo "--> Donating usdc-honey LP to the vault"
+	cd contracts && src/script/devnet/donate.sh
+	
+log-devnet:
+	@echo "--> Logging devnet"
+	cd contracts && src/script/devnet/get-addresses.sh

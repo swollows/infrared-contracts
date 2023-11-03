@@ -24,3 +24,12 @@ bin
 ### Forge ###
 contracts/cache
 contracts/out
+contracts/broadcast
+
+
+### Sensative info ###
+contracts/src/script/devnet/loadEnv.sh
+
+## IDE
+services/.idea/
+.idea/

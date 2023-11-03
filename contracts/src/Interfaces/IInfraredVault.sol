@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.20;
 
+import {Cosmos} from '@polaris/CosmosTypes.sol';
+
 interface IInfraredVault {
     function rewardTokens() external view returns (address[] memory _rewardTokens);
 
@@ -32,6 +34,13 @@ interface IInfraredVault {
      */
     function addRewardTokens(address[] calldata _rewardTokens) external;
 
+    /**
+     * @dev The Infrared contract can claim the rewards in behalf of the vault.
+     * @dev Since withdraw address set in constructor, it will be credited to that address.
+     * @return _rewards Cosmos.Coin[] The rewards.
+     */
+    function claimRewardsPrecompile() external returns (Cosmos.Coin[] memory _rewards);
+
     /*//////////////////////////////////////////////////////////////
                       EIP5XXX functions
     //////////////////////////////////////////////////////////////*/
@@ -56,7 +65,7 @@ interface IInfraredVault {
 
     /*//////////////////////////////////////////////////////////////
                       EIP5XXX OVERRIDES
-  //////////////////////////////////////////////////////////////*/
+    //////////////////////////////////////////////////////////////*/
 
     /**
      * @notice Returns the current epoch per week for a reward token.

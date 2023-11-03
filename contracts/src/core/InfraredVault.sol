@@ -6,6 +6,7 @@ import {Errors} from '@utils/Errors.sol';
 import {IRewardsModule} from '@berachain/Rewards.sol';
 import {IDistributionModule} from '@polaris/Distribution.sol';
 import {AccessControl} from '@openzeppelin/access/AccessControl.sol';
+import {Cosmos} from '@polaris/CosmosTypes.sol';
 
 /**
  * @title Infrared Vault - Reward Distribution Vault
@@ -13,8 +14,11 @@ import {AccessControl} from '@openzeppelin/access/AccessControl.sol';
  *     @notice EIP5XXX represents a vault in which depositors can also be distributed  ERC20 tokens rewards.
  */
 contract InfraredVault is EIP5XXX, AccessControl {
+    // This role is reserved for the infrared main contract.
+    bytes32 internal constant INFRARED_ROLE = keccak256('INFRARED_ROLE');
+
     // This is the address of the main contract that deployed this contract.
-    address public immutable INFRARED;
+    address private immutable INFRARED;
 
     // This is the address of the pool (dex/lending..etc) that this contract is representing.
     address public immutable POOL_ADDRESS;
@@ -33,8 +37,8 @@ contract InfraredVault is EIP5XXX, AccessControl {
      * @param _rewardTokens           The reward tokens.
      * @param _infrared               The main contract that deployed this contract.
      * @param _poolAddress            The address of the pool (dex/lending..etc) that this contract is representing.
-     * @param _rewardsPrecompile      The Berachain Reward Precompile contract that will be allocating rewards to this vault.
-     * @param _distributionPrecompile The Berachain Distribution Precompile contract that will be allocating rewards to this vault.
+     * @param _rewardsPrecompileAddress      The Berachain Reward Precompile contract that will be allocating rewards to this vault.
+     * @param _distributionPrecompileAddress The Berachain Distribution Precompile contract that will be allocating rewards to this vault.
      */
     constructor(
         address _asset,
@@ -43,8 +47,8 @@ contract InfraredVault is EIP5XXX, AccessControl {
         address[] memory _rewardTokens,
         address _infrared,
         address _poolAddress,
-        address _rewardsPrecompile,
-        address _distributionPrecompile,
+        address _rewardsPrecompileAddress,
+        address _distributionPrecompileAddress,
         address _admin
     ) ERC4626(ERC20(_asset), _name, _symbol) {
         if (address(_asset) == address(0)) {
@@ -59,7 +63,8 @@ contract InfraredVault is EIP5XXX, AccessControl {
             revert Errors.ZeroAddress();
         }
 
-        if (_rewardsPrecompile == address(0) && _distributionPrecompile == address(0)) {
+        // Check if either of the precompiles are zero. One is enough to be non zero to handle the case of only one being used.
+        if (_rewardsPrecompileAddress == address(0) && _distributionPrecompileAddress == address(0)) {
             revert Errors.ZeroAddress();
         }
 
@@ -74,17 +79,21 @@ contract InfraredVault is EIP5XXX, AccessControl {
             }
         }
 
-        IDistributionModule _distributionModule = IDistributionModule(_distributionPrecompile);
-        IRewardsModule _rewardsModule = IRewardsModule(_rewardsPrecompile);
+        // If the distribution precompile is set, set its withdraw address to the infrared contract.
+        if (_distributionPrecompileAddress != address(0)) {
+            IDistributionModule _distributionPrecompile = IDistributionModule(_distributionPrecompileAddress);
 
-        if (_distributionPrecompile != address(0)) {
-            if (!_distributionModule.setWithdrawAddress(_infrared)) {
+            // Make sure that the withdraw address is set.
+            if (!_distributionPrecompile.setWithdrawAddress(_infrared)) {
                 revert Errors.SetWithdrawAddressFailed();
             }
         }
 
-        if (_rewardsPrecompile != address(0)) {
-            if (!_rewardsModule.setDepositorWithdrawAddress(_infrared)) {
+        // If the rewards precompile is set, set its withdraw address to the infrared contract.
+        if (_rewardsPrecompileAddress != address(0)) {
+            IRewardsModule _rewardsPrecompile = IRewardsModule(_rewardsPrecompileAddress);
+
+            if (!_rewardsPrecompile.setDepositorWithdrawAddress(_infrared)) {
                 revert Errors.SetWithdrawAddressFailed();
             }
         }
@@ -92,15 +101,18 @@ contract InfraredVault is EIP5XXX, AccessControl {
         // Set the constants.
         INFRARED = _infrared;
         POOL_ADDRESS = _poolAddress;
-        DISTRIBUTION_PRECOMPILE = _distributionModule;
-        REWARDS_PRECOMPILE = _rewardsModule;
+        DISTRIBUTION_PRECOMPILE = IDistributionModule(_distributionPrecompileAddress);
+        REWARDS_PRECOMPILE = IRewardsModule(_rewardsPrecompileAddress);
 
+        // Set the admin.
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
+        // Set the infrared role.
+        _grantRole(INFRARED_ROLE, INFRARED);
     }
 
     /*//////////////////////////////////////////////////////////////
                               Reads
-  //////////////////////////////////////////////////////////////*/
+    //////////////////////////////////////////////////////////////*/
 
     /**
      * @notice Returns the reward tokens.
@@ -129,7 +141,7 @@ contract InfraredVault is EIP5XXX, AccessControl {
 
     /*//////////////////////////////////////////////////////////////
                              ADMIN
-  //////////////////////////////////////////////////////////////*/
+    //////////////////////////////////////////////////////////////*/
 
     /**
      * @dev Allows the admin of this contract to set a different withdraw address for the rewards precompile.
@@ -181,8 +193,21 @@ contract InfraredVault is EIP5XXX, AccessControl {
     }
 
     /*//////////////////////////////////////////////////////////////
+                            INFRARED ONLY
+    //////////////////////////////////////////////////////////////*/
+
+    /**
+     * @dev The Infrared contract can claim the rewards in behalf of the vault.
+     * @dev Since withdraw address set in constructor, it will be credited to that address.
+     * @return _rewards Cosmos.Coin[] The rewards.
+     */
+    function claimRewardsPrecompile() external onlyRole(INFRARED_ROLE) returns (Cosmos.Coin[] memory _rewards) {
+        return REWARDS_PRECOMPILE.withdrawAllDepositorRewards(POOL_ADDRESS);
+    }
+
+    /*//////////////////////////////////////////////////////////////
                       EIP5XXX OVERRIDES
-  //////////////////////////////////////////////////////////////*/
+    //////////////////////////////////////////////////////////////*/
 
     /**
      * @notice Returns the current epoch per week for a reward token.
@@ -219,7 +244,7 @@ contract InfraredVault is EIP5XXX, AccessControl {
 
     /*//////////////////////////////////////////////////////////////
                       Internal
-  //////////////////////////////////////////////////////////////*/
+    //////////////////////////////////////////////////////////////*/
 
     function _decodeRewardKey(bytes32 _packedData) internal pure returns (uint96 _partition, address _reward) {
         // Extracting the partition

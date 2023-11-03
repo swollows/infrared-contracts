@@ -22,4 +22,28 @@ make e2e
 make start-services
 ```
 
-## Backend Getting Started
+## Dev-Net
+
+### If already deployed (If there is a value in the Configuration.sol AddressesAddress field):
+```bash
+make log-devnet
+```
+
+### Deploy Fresh
+
+```bash
+# Deploy the addresses contract. This will keep track of all the contracts deployed.
+make deploy-addresses # Copy the output of this script and paste it into the Configurations.sol file.
+
+# Deploy the Infrared contract.
+make deploy-infrared
+
+# Setup the validators.
+make setup-validators
+
+# Deploy the WIBGT vault.
+make deploy-wibgt
+
+# Deploy the USDC-Honey vault.
+make deploy-usdc-vault
+```

@@ -10,7 +10,7 @@ import {SafeERC20} from '@openzeppelin/token/ERC20/utils/SafeERC20.sol';
 contract InfraredTest is Helper {
     /*//////////////////////////////////////////////////////////////
                      Register Vault
-  //////////////////////////////////////////////////////////////*/
+    //////////////////////////////////////////////////////////////*/
     using SafeERC20 for IERC20Mintable;
 
     function testRegisterVaultAuth() public prank(ALICE) {
@@ -31,7 +31,7 @@ contract InfraredTest is Helper {
 
     /*//////////////////////////////////////////////////////////////
                      Update Wrapped IBGT Vault
-  //////////////////////////////////////////////////////////////*/
+    //////////////////////////////////////////////////////////////*/
 
     function testUpdateWrappedIBGTVaultAuth() public prank(ALICE) {
         address[] memory _rewardTokens = new address[](1);
@@ -59,7 +59,7 @@ contract InfraredTest is Helper {
 
     /*//////////////////////////////////////////////////////////////
                     Validator Set
-  //////////////////////////////////////////////////////////////*/
+    //////////////////////////////////////////////////////////////*/
 
     function testAddValidatorsAuth() public prank(ALICE) {
         address[] memory _validators = new address[](1);
@@ -120,7 +120,7 @@ contract InfraredTest is Helper {
 
     /*//////////////////////////////////////////////////////////////
                     Harvest Validator
-  //////////////////////////////////////////////////////////////*/
+    //////////////////////////////////////////////////////////////*/
 
     function testHarvestValidatorZeroAddress() public {
         vm.expectRevert(Errors.ZeroAddress.selector);
@@ -180,7 +180,7 @@ contract InfraredTest is Helper {
 
     /*//////////////////////////////////////////////////////////////
                     Harvest Vault
-  //////////////////////////////////////////////////////////////*/
+    //////////////////////////////////////////////////////////////*/
 
     function testHarvestVaultZeroAddress() public {
         vm.expectRevert(Errors.ZeroAddress.selector);
@@ -195,7 +195,7 @@ contract InfraredTest is Helper {
     function testHarvestVaultZeroRewards() public {
         // Rewards from the rewards module.
         Cosmos.Coin[] memory _rewards = new Cosmos.Coin[](0);
-        _mockRewardsPrecompileWithdraw(address(_daiVault), _daiVault.poolAddress(), _rewards);
+        _mockRewardsPrecompileWithdraw(_daiVault.poolAddress(), _rewards);
 
         // Harvest the vault.
         _infrared.harvestVault(address(_daiVault));
@@ -205,7 +205,7 @@ contract InfraredTest is Helper {
         // Rewards from the rewards module.
         Cosmos.Coin[] memory _rewards = new Cosmos.Coin[](1);
         _rewards[0] = Cosmos.Coin(100, BGT_DENOM);
-        _mockRewardsPrecompileWithdraw(address(_daiVault), _daiVault.poolAddress(), _rewards);
+        _mockRewardsPrecompileWithdraw(_daiVault.poolAddress(), _rewards);
 
         // Harvest the vault.
         _infrared.harvestVault(address(_daiVault));
@@ -219,7 +219,7 @@ contract InfraredTest is Helper {
         Cosmos.Coin[] memory _rewards = new Cosmos.Coin[](2);
         _rewards[0] = Cosmos.Coin(100, 'usdc');
         _rewards[1] = Cosmos.Coin(100, BGT_DENOM);
-        _mockRewardsPrecompileWithdraw(address(_daiVault), _daiVault.poolAddress(), _rewards);
+        _mockRewardsPrecompileWithdraw(_daiVault.poolAddress(), _rewards);
 
         // Mock the ERC20 module for the cosmos sdk coins to contract address.
         _mockERC20ModuleMapping('usdc', address(_usdc));
@@ -240,7 +240,7 @@ contract InfraredTest is Helper {
 
     /*//////////////////////////////////////////////////////////////
                           Delegate
-  //////////////////////////////////////////////////////////////*/
+    //////////////////////////////////////////////////////////////*/
 
     function testDelegateAuth() public prank(ALICE) {
         vm.expectRevert();
@@ -275,7 +275,7 @@ contract InfraredTest is Helper {
 
     /*//////////////////////////////////////////////////////////////
                           Undelegate
-  //////////////////////////////////////////////////////////////*/
+    //////////////////////////////////////////////////////////////*/
 
     function testUndelegateAuth() public prank(ALICE) {
         vm.expectRevert();
@@ -310,7 +310,7 @@ contract InfraredTest is Helper {
 
     /*//////////////////////////////////////////////////////////////
                       Begin Redelegation
-  //////////////////////////////////////////////////////////////*/
+    //////////////////////////////////////////////////////////////*/
 
     function testBeginRedelegateAuth() public prank(ALICE) {
         vm.expectRevert();
@@ -345,7 +345,7 @@ contract InfraredTest is Helper {
 
     /*//////////////////////////////////////////////////////////////
                     CancelUnbondingDelegation
-  //////////////////////////////////////////////////////////////*/
+    //////////////////////////////////////////////////////////////*/
 
     function testCancelUnbondingDelegationAuth() public prank(ALICE) {
         vm.expectRevert();
