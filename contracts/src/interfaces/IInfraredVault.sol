@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.20;
 
-import {Cosmos} from '@polaris/CosmosTypes.sol';
+import {Cosmos} from "@polaris/CosmosTypes.sol";
 
 interface IInfraredVault {
     function rewardTokens() external view returns (address[] memory _rewardTokens);
@@ -17,13 +17,15 @@ interface IInfraredVault {
     //////////////////////////////////////////////////////////////*/
 
     /**
-     * @dev Allows the admin of this contract to set a different withdraw address for the rewards precompile.
+     * @dev Allows the admin of this contract to set a different withdraw
+     * address for the rewards precompile.
      * @param _withdrawAddress address The new withdraw address.
      */
     function changeRewardsWithdrawAddress(address _withdrawAddress) external;
 
     /**
-     * @dev Allows the admin of this contract to set a different withdraw address for the distribution precompile.
+     * @dev Allows the admin of this contract to set a different withdraw
+     * address for the distribution precompile.
      * @param _withdrawAddress address The new withdraw address.
      */
     function changeDistributionWithdrawAddress(address _withdrawAddress) external;
@@ -36,7 +38,8 @@ interface IInfraredVault {
 
     /**
      * @dev The Infrared contract can claim the rewards in behalf of the vault.
-     * @dev Since withdraw address set in constructor, it will be credited to that address.
+     * @dev Since withdraw address set in constructor, it will be credited to
+     * that address.
      * @return _rewards Cosmos.Coin[] The rewards.
      */
     function claimRewardsPrecompile() external returns (Cosmos.Coin[] memory _rewards);
@@ -69,7 +72,8 @@ interface IInfraredVault {
 
     /**
      * @notice Returns the current epoch per week for a reward token.
-     * @return _rk  bytes32[]  The reward token to get the current epoch per week for.
+     * @return _rk  bytes32[]  The reward token to get the current epoch per
+     * week for.
      */
     function rewardKeysOf(address) external view returns (bytes32[] memory _rk);
 
@@ -80,13 +84,15 @@ interface IInfraredVault {
     function totalAssets() external view returns (uint256 _assets);
 
     /**
-     * @notice Returns the total weight of a partition, in this vault it is the total supply of the vault.
+     * @notice Returns the total weight of a partition, in this vault it is the
+     * total supply of the vault.
      * @return _tw uint256 The total weight of the partition.
      */
     function totalWeight(uint96) external view returns (uint256 _tw);
 
     /**
-     * @notice Returns the weight of a user, in this vault it is the balance of the users shares of the vault.
+     * @notice Returns the weight of a user, in this vault it is the balance of
+     * the users shares of the vault.
      * @param _user address The user to get the weight of.
      * @return _wo  uint256 The eight of the user in the partition.
      */

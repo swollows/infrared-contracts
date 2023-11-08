@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.20;
 
-import {IREDVestingFactory} from '@vesting/IREDVestingFactory.sol';
-import {Helper} from './Helper.sol';
+import {IREDVestingFactory} from "@vesting/IREDVestingFactory.sol";
+import {Helper} from "./Helper.sol";
 
 contract VestingWalletTest is Helper {
     function testVestingWalletDeploymentForTreasury() public {

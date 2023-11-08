@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.20;
 
-import {Ownable} from '@openzeppelin/access/Ownable.sol';
-import {VestingWalletWithCliff} from './VestingWalletWithCliff.sol';
-import {Errors} from '@utils/Errors.sol';
+import {Ownable} from "@openzeppelin/access/Ownable.sol";
+import {VestingWalletWithCliff} from "./VestingWalletWithCliff.sol";
+import {Errors} from "@utils/Errors.sol";
 
 /**
  * @title IREDVestingFactory
- * @notice IREDVestingFactory deploys vesting wallets for the Infrared ecosystem contributors and partners.
+ * @notice IREDVestingFactory deploys vesting wallets for the Infrared ecosystem
+ * contributors and partners.
  */
 contract IREDVestingFactory is Ownable {
     // Mapping of beneficiary to vesting wallet address.
@@ -16,11 +17,9 @@ contract IREDVestingFactory is Ownable {
     /*//////////////////////////////////////////////////////////////
                         CONSTRUCTOR/INITIALIZATION LOGIC
     //////////////////////////////////////////////////////////////*/
-    constructor(
-        address _treasuryBeneficiary,
-        address _teamBeneficiary,
-        address _investorBeneficiary
-    ) Ownable(msg.sender) {
+    constructor(address _treasuryBeneficiary, address _teamBeneficiary, address _investorBeneficiary)
+        Ownable(msg.sender)
+    {
         if (_treasuryBeneficiary == address(0)) {
             revert Errors.ZeroAddress();
         }
@@ -63,7 +62,8 @@ contract IREDVestingFactory is Ownable {
     /**
      * @notice Deploys a vesting wallet for the given beneficiary.
      * @param _beneficiary     address The beneficiary of the vesting wallet.
-     * @param _startTimestamp  uint64  The start timestamp of the vesting wallet.
+     * @param _startTimestamp  uint64  The start timestamp of the vesting
+     * wallet.
      * @param _durationSeconds uint64  The duration of the vesting wallet.
      * @param _cliffSeconds    uint64  The cliff of the vesting wallet.
      */

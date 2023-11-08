@@ -2,29 +2,29 @@
 pragma solidity 0.8.20;
 
 // Testing Libraries.
-import {DSTestFull} from '../DSTestFull.sol';
+import {DSTestFull} from "../DSTestFull.sol";
 
 // External Contracts.
-import {ERC20} from '@berachain/EIP5XXX.sol';
-import {IERC20} from '@openzeppelin/token/ERC20/IERC20.sol';
-import {Cosmos} from '@polaris/CosmosTypes.sol';
+import {ERC20} from "@berachain/EIP5XXX.sol";
+import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
+import {Cosmos} from "@polaris/CosmosTypes.sol";
 
 // Infrared Contracts.
-import {Infrared} from '@core/Infrared.sol';
-import {VLIRED} from '@core/VLIRED.sol';
-import {WrappedIBGT} from '@core/WIBGT.sol';
-import {InfraredVault} from '@core/InfraredVault.sol';
-import {IBGT} from '@core/IBGT.sol';
-import {IREDVestingFactory} from '@vesting/IREDVestingFactory.sol';
-import {VestingWalletWithCliff} from '@vesting/VestingWalletWithCliff.sol';
-import {IInfraredVault} from '@interfaces/IInfraredVault.sol';
-import {IERC20Mintable} from '@interfaces/IERC20Mintable.sol';
+import {Infrared} from "@core/Infrared.sol";
+import {VLIRED} from "@core/VLIRED.sol";
+import {WrappedIBGT} from "@core/WIBGT.sol";
+import {InfraredVault} from "@core/InfraredVault.sol";
+import {IBGT} from "@core/IBGT.sol";
+import {IREDVestingFactory} from "@vesting/IREDVestingFactory.sol";
+import {VestingWalletWithCliff} from "@vesting/VestingWalletWithCliff.sol";
+import {IInfraredVault} from "@interfaces/IInfraredVault.sol";
+import {IERC20Mintable} from "@interfaces/IERC20Mintable.sol";
 
 // Mocked Contracts.
-import {MockDistributionModule} from './mocks/MockDistributionModule.sol';
-import {MockStakingModule} from './mocks/MockStakingModule.sol';
-import {MockERC20Module} from './mocks/MockERC20Module.sol';
-import {MockRewardsModule} from './mocks/MockRewardsModule.sol';
+import {MockDistributionModule} from "./mocks/MockDistributionModule.sol";
+import {MockStakingModule} from "./mocks/MockStakingModule.sol";
+import {MockERC20Module} from "./mocks/MockERC20Module.sol";
+import {MockRewardsModule} from "./mocks/MockRewardsModule.sol";
 
 contract Helper is DSTestFull {
     // Test Accounts.
@@ -36,7 +36,7 @@ contract Helper is DSTestFull {
     address public constant POOL_ADDRESS = address(6);
 
     // Some constants.
-    string public constant BGT_DENOM = 'abgt';
+    string public constant BGT_DENOM = "abgt";
 
     // Account Helpers.
     modifier prank(address who) {
@@ -211,7 +211,7 @@ contract Helper is DSTestFull {
 
         // Register the vault in the infrared contract.
         _daiVault = InfraredVault(
-            address(_infrared.registerVault(address(_dai), 'Dai Vault', 'DAIV', _rewardTokens, POOL_ADDRESS))
+            address(_infrared.registerVault(address(_dai), "Dai Vault", "DAIV", _rewardTokens, POOL_ADDRESS))
         );
     }
 
@@ -249,9 +249,7 @@ contract Helper is DSTestFull {
         vm.mockCall(
             address(_distributionPrecompile),
             abi.encodeWithSelector(
-                _distributionPrecompile.withdrawDelegatorReward.selector,
-                address(_infrared),
-                address(_validator)
+                _distributionPrecompile.withdrawDelegatorReward.selector, address(_infrared), address(_validator)
             ),
             abi.encode(_rewards)
         );
@@ -289,12 +287,9 @@ contract Helper is DSTestFull {
         );
     }
 
-    function _mockBeginRedelegations(
-        address _validator,
-        address _newValidator,
-        uint256 _amount,
-        bool _succeed
-    ) internal {
+    function _mockBeginRedelegations(address _validator, address _newValidator, uint256 _amount, bool _succeed)
+        internal
+    {
         vm.mockCall(
             address(_stakingPrecompile),
             abi.encodeWithSelector(_stakingPrecompile.beginRedelegate.selector, _validator, _newValidator, _amount),
@@ -302,19 +297,13 @@ contract Helper is DSTestFull {
         );
     }
 
-    function _mockCancelUnbondingDelegation(
-        address _validator,
-        uint256 _amount,
-        int64 _creationHeight,
-        bool _succeed
-    ) internal {
+    function _mockCancelUnbondingDelegation(address _validator, uint256 _amount, int64 _creationHeight, bool _succeed)
+        internal
+    {
         vm.mockCall(
             address(_stakingPrecompile),
             abi.encodeWithSelector(
-                _stakingPrecompile.cancelUnbondingDelegation.selector,
-                _validator,
-                _amount,
-                _creationHeight
+                _stakingPrecompile.cancelUnbondingDelegation.selector, _validator, _amount, _creationHeight
             ),
             abi.encode(_succeed)
         );

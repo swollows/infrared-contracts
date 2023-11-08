@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.20;
 
-import {PRBTest} from '@prb/PRBTest.sol';
+import {PRBTest} from "@prb/PRBTest.sol";
 
 contract DSTestFull is PRBTest {
     // Seed for the generation of pseudorandom addresses
-    bytes32 private _nextAddressSeed = keccak256(abi.encodePacked('address'));
+    bytes32 private _nextAddressSeed = keccak256(abi.encodePacked("address"));
 
     /**
-     * @dev Creates a new pseudorandom address and labels it with the given label
+     * @dev Creates a new pseudorandom address and labels it with the given
+     * label
      * @param _name Name of the label.
      * @return _address The address generated and labeled
      */

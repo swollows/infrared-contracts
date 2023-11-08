@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.20;
 
-import {Helper, ERC20, InfraredVault, IBGT, IInfraredVault, IERC20Mintable} from './Helper.sol';
-import {Errors} from '@utils/Errors.sol';
-import {Cosmos} from '@polaris/CosmosTypes.sol';
-import {IERC20Mintable} from '@interfaces/IERC20Mintable.sol';
-import {SafeERC20} from '@openzeppelin/token/ERC20/utils/SafeERC20.sol';
+import {Helper, ERC20, InfraredVault, IBGT, IInfraredVault, IERC20Mintable} from "./Helper.sol";
+import {Errors} from "@utils/Errors.sol";
+import {Cosmos} from "@polaris/CosmosTypes.sol";
+import {IERC20Mintable} from "@interfaces/IERC20Mintable.sol";
+import {SafeERC20} from "@openzeppelin/token/ERC20/utils/SafeERC20.sol";
 
 contract InfraredTest is Helper {
     /*//////////////////////////////////////////////////////////////
@@ -17,13 +17,13 @@ contract InfraredTest is Helper {
         address[] memory _rewardTokens = new address[](1);
         _rewardTokens[0] = address(_dai);
         vm.expectRevert();
-        _infrared.registerVault(address(1), 'test', 'TST', _rewardTokens, address(2));
+        _infrared.registerVault(address(1), "test", "TST", _rewardTokens, address(2));
     }
 
     function testRegisterVault() public prank(KEEPER) {
         address[] memory _rewardTokens = new address[](1);
         _rewardTokens[0] = address(_dai);
-        IInfraredVault _new = _infrared.registerVault(address(_usdc), 'test', 'TST', _rewardTokens, address(2));
+        IInfraredVault _new = _infrared.registerVault(address(_usdc), "test", "TST", _rewardTokens, address(2));
 
         // Check that the vault is registered.
         _infrared.isInfraredVault(address(_new));
@@ -50,7 +50,8 @@ contract InfraredTest is Helper {
         // vm.stopPrank();
 
         // vm.startPrank(address(_infrared));
-        // IERC20Mintable(address(_dai)).safeApprove(address(_wibgtVault), type(uint256).max);
+        // IERC20Mintable(address(_dai)).safeApprove(address(_wibgtVault),
+        // type(uint256).max);
         // vm.stopPrank();
 
         // vm.startPrank(GOVERNANCE);
@@ -157,17 +158,18 @@ contract InfraredTest is Helper {
     function testHarvestValidator() public prank(GOVERNANCE) {
         // Rewards From the distribution module.
         Cosmos.Coin[] memory _rewards = new Cosmos.Coin[](2);
-        _rewards[0] = Cosmos.Coin(100, 'dai');
+        _rewards[0] = Cosmos.Coin(100, "dai");
         _rewards[1] = Cosmos.Coin(100, BGT_DENOM);
         _mockDistributionModuleWithdraw(_val0, _rewards);
 
         // Mock the ERC20 module for the cosmos sdk coins to contract address.
-        _mockERC20ModuleMapping('dai', address(_dai));
+        _mockERC20ModuleMapping("dai", address(_dai));
 
         // Assert that the mock is correct.
-        assertEq(address(_erc20Precompile.erc20AddressForCoinDenom('dai')), address(_dai));
+        assertEq(address(_erc20Precompile.erc20AddressForCoinDenom("dai")), address(_dai));
 
-        // Mint the tokens to the infrared contract to mimick a transfer from erc20 module.
+        // Mint the tokens to the infrared contract to mimick a transfer from
+        // erc20 module.
         IBGT(address(_dai)).mint(address(_infrared), 100);
 
         // Harvest the validator.
@@ -217,17 +219,18 @@ contract InfraredTest is Helper {
     function testHarvestVault() public prank(GOVERNANCE) {
         // Rewards from the rewards module.
         Cosmos.Coin[] memory _rewards = new Cosmos.Coin[](2);
-        _rewards[0] = Cosmos.Coin(100, 'usdc');
+        _rewards[0] = Cosmos.Coin(100, "usdc");
         _rewards[1] = Cosmos.Coin(100, BGT_DENOM);
         _mockRewardsPrecompileWithdraw(_daiVault.poolAddress(), _rewards);
 
         // Mock the ERC20 module for the cosmos sdk coins to contract address.
-        _mockERC20ModuleMapping('usdc', address(_usdc));
+        _mockERC20ModuleMapping("usdc", address(_usdc));
 
         // Assert that the mock is correct.
-        assertEq(address(_erc20Precompile.erc20AddressForCoinDenom('usdc')), address(_usdc));
+        assertEq(address(_erc20Precompile.erc20AddressForCoinDenom("usdc")), address(_usdc));
 
-        // Mint the usdc tokens to the infrared contract to mimick a transfer from erc20 module.
+        // Mint the usdc tokens to the infrared contract to mimick a transfer
+        // from erc20 module.
         IBGT(address(_usdc)).mint(address(_infrared), 100);
 
         // Harvest the vault.

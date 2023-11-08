@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.20;
 
-import {SafeTransferLib} from '@solmate/utils/SafeTransferLib.sol';
-import {ERC20} from '@solmate/tokens/ERC20.sol';
-import {Ownable} from '@openzeppelin/access/Ownable.sol';
-import {ReentrancyGuard} from '@solmate/utils/ReentrancyGuard.sol';
+import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
+import {ERC20} from "@solmate/tokens/ERC20.sol";
+import {Ownable} from "@openzeppelin/access/Ownable.sol";
+import {ReentrancyGuard} from "@solmate/utils/ReentrancyGuard.sol";
 
 contract VLIRED is ReentrancyGuard, Ownable {
     using SafeTransferLib for ERC20;
@@ -22,8 +22,10 @@ contract VLIRED is ReentrancyGuard, Ownable {
     /**
      * @notice Balance details
      *       @param  locked           uint224          Overall locked amount
-     *       @param  nextUnlockIndex  uint32           Index of earliest next unlock
-     *       @param  lockedBalances   LockedBalance[]  List of locked balances data
+     *       @param  nextUnlockIndex  uint32           Index of earliest next
+     * unlock
+     *       @param  lockedBalances   LockedBalance[]  List of locked balances
+     * data
      */
     struct Balance {
         uint224 locked;
@@ -44,8 +46,8 @@ contract VLIRED is ReentrancyGuard, Ownable {
 
     bool public isShutdown;
 
-    string public constant name = 'Value-Locked IRED';
-    string public constant symbol = 'vlIRED';
+    string public constant name = "Value-Locked IRED";
+    string public constant symbol = "vlIRED";
     uint8 public constant decimals = 18;
 
     event Shutdown();
@@ -66,7 +68,8 @@ contract VLIRED is ReentrancyGuard, Ownable {
     }
 
     /**
-     * @notice Emergency method to shutdown the current locker contract which also force-unlock all locked tokens
+     * @notice Emergency method to shutdown the current locker contract which
+     * also force-unlock all locked tokens
      */
     function shutdown() external onlyOwner {
         if (isShutdown) revert IsShutdown();
@@ -77,7 +80,8 @@ contract VLIRED is ReentrancyGuard, Ownable {
     }
 
     /**
-     * @notice Locked balance of the specified account including those with expired locks
+     * @notice Locked balance of the specified account including those with
+     * expired locks
      *       @param  account  address  Account
      *       @return amount   uint256  Amount
      */
@@ -86,12 +90,14 @@ contract VLIRED is ReentrancyGuard, Ownable {
     }
 
     /**
-     * @notice Balance of the specified account by only including tokens in active locks
+     * @notice Balance of the specified account by only including tokens in
+     * active locks
      *       @param  account  address  Account
      *       @return amount   uint256  Amount
      */
     function balanceOf(address account) external view returns (uint256 amount) {
-        // Using storage as it's actually cheaper than allocating a new memory based variable
+        // Using storage as it's actually cheaper than allocating a new memory
+        // based variable
         Balance storage userBalance = balances[account];
         LockedBalance[] storage locks = userBalance.lockedBalances;
         uint256 nextUnlockIndex = userBalance.nextUnlockIndex;
@@ -142,9 +148,11 @@ contract VLIRED is ReentrancyGuard, Ownable {
      *       @return locked      uint256          Locked amount
      *       @return lockData    LockedBalance[]  List of active locks
      */
-    function lockedBalances(
-        address account
-    ) external view returns (uint256 total, uint256 unlockable, uint256 locked, LockedBalance[] memory lockData) {
+    function lockedBalances(address account)
+        external
+        view
+        returns (uint256 total, uint256 unlockable, uint256 locked, LockedBalance[] memory lockData)
+    {
         Balance storage userBalance = balances[account];
         LockedBalance[] storage locks = userBalance.lockedBalances;
         uint256 nextUnlockIndex = userBalance.nextUnlockIndex;
@@ -176,7 +184,8 @@ contract VLIRED is ReentrancyGuard, Ownable {
     }
 
     /**
-     * @notice Locked tokens cannot be withdrawn for the entire lock duration and are eligible to receive rewards
+     * @notice Locked tokens cannot be withdrawn for the entire lock duration
+     * and are eligible to receive rewards
      *       @param  account  address  Account
      *       @param  amount   uint256  Amount
      */
@@ -209,7 +218,8 @@ contract VLIRED is ReentrancyGuard, Ownable {
         LockedBalance[] storage locks = balance.lockedBalances;
         uint256 idx = locks.length;
 
-        // If the latest user lock is smaller than this lock, add a new entry to the end of the list
+        // If the latest user lock is smaller than this lock, add a new entry to
+        // the end of the list
         // else, append it to the latest user lock
         if (idx == 0 || locks[idx - 1].unlockTime < unlockTime) {
             locks.push(LockedBalance({amount: lockAmount, unlockTime: _toUint32(unlockTime)}));
@@ -221,13 +231,15 @@ contract VLIRED is ReentrancyGuard, Ownable {
     }
 
     /**
-     * @notice Withdraw all currently locked tokens where the unlock time has passed
+     * @notice Withdraw all currently locked tokens where the unlock time has
+     * passed
      *       @param  account     address  Account
      *       @param  relock      bool     Whether should relock
      *       @param  withdrawTo  address  Target receiver
      */
     function _processExpiredLocks(address account, bool relock, address withdrawTo) internal {
-        // Using storage as it's actually cheaper than allocating a new memory based variable
+        // Using storage as it's actually cheaper than allocating a new memory
+        // based variable
         Balance storage userBalance = balances[account];
         LockedBalance[] storage locks = userBalance.lockedBalances;
         uint224 locked;
@@ -280,7 +292,8 @@ contract VLIRED is ReentrancyGuard, Ownable {
     }
 
     /**
-     * @notice Withdraw/relock all currently locked tokens where the unlock time has passed
+     * @notice Withdraw/relock all currently locked tokens where the unlock time
+     * has passed
      *       @param  relock  bool  Whether should relock
      */
     function processExpiredLocks(bool relock) external nonReentrant {

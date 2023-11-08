@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.20;
 
-import {Helper, InfraredVault, WrappedIBGT} from './Helper.sol';
-import {Errors} from '@utils/Errors.sol';
-import {console2} from 'forge-std/Script.sol';
+import {Helper, InfraredVault, WrappedIBGT} from "./Helper.sol";
+import {Errors} from "@utils/Errors.sol";
+import {console2} from "forge-std/Script.sol";
 
 contract WIBGTTest is Helper {
     /*//////////////////////////////////////////////////////////////

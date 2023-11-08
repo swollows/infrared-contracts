@@ -2,12 +2,12 @@
 /* solhint-disable */
 pragma solidity 0.8.20;
 
-import {Script, console2} from 'forge-std/Script.sol';
-import {Addreses} from './Addresses.sol';
-import {AddressesAddress, GenesisPools} from './Configuration.sol';
-import {InfraredVault} from '@core/InfraredVault.sol';
-import {IERC20} from '@openzeppelin/token/ERC20/IERC20.sol';
-import {IERC20DexModule} from '@berachain/ERC20Dex.sol';
+import {Script, console2} from "forge-std/Script.sol";
+import {Addreses} from "./Addresses.sol";
+import {AddressesAddress, GenesisPools} from "./Configuration.sol";
+import {InfraredVault} from "@core/InfraredVault.sol";
+import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
+import {IERC20DexModule} from "@berachain/ERC20Dex.sol";
 
 contract Donate {
     function donate() public {

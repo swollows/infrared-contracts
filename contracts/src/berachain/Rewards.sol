@@ -20,10 +20,11 @@
 
 pragma solidity 0.8.20;
 
-import {Cosmos} from '@polaris/CosmosTypes.sol';
+import {Cosmos} from "@polaris/CosmosTypes.sol";
 
 interface IRewardsModule {
-    /////////////////////////////////////// READ METHODS //////////////////////////////////////////
+    /////////////////////////////////////// READ METHODS
+    // //////////////////////////////////////////
 
     /**
      * @dev Returns the address of the withdraw address.
@@ -45,7 +46,8 @@ interface IRewardsModule {
      */
     function getOutstandingRewards(address receiver) external view returns (Cosmos.Coin[] memory);
 
-    /////////////////////////////////////// WRITE METHODS //////////////////////////////////////////
+    /////////////////////////////////////// WRITE METHODS
+    // //////////////////////////////////////////
 
     /**
      * @dev Sets the caller's withdraw address.
@@ -69,19 +71,19 @@ interface IRewardsModule {
     function withdrawDepositorRewards(address receiver, uint256 amount) external returns (Cosmos.Coin[] memory);
 
     /**
-     * @dev Withdraws the rewards for the given delegator and receiver, to a given address.
+     * @dev Withdraws the rewards for the given delegator and receiver, to a
+     * given address.
      * @param receiver The receiver address.
      * @param recipient The recipient address.
      * @param amount The amount of rewards to withdraw.
      * @return rewards rewards.
      */
-    function withdrawDepositorRewardsTo(
-        address receiver,
-        address recipient,
-        uint256 amount
-    ) external returns (Cosmos.Coin[] memory);
+    function withdrawDepositorRewardsTo(address receiver, address recipient, uint256 amount)
+        external
+        returns (Cosmos.Coin[] memory);
 
-    //////////////////////////////////////////// Events ////////////////////////////////////////////
+    //////////////////////////////////////////// Events
+    // ////////////////////////////////////////////
 
     /**
      * @dev Emitted when a deposit is initialized.
@@ -91,10 +93,7 @@ interface IRewardsModule {
      * @param shares The shares.
      */
     event InitializeDeposit(
-        address indexed caller,
-        address indexed depositor,
-        Cosmos.Coin[] assets,
-        Cosmos.Coin shares
+        address indexed caller, address indexed depositor, Cosmos.Coin[] assets, Cosmos.Coin shares
     );
 
     /**

@@ -22,9 +22,12 @@ library AddressesAddress {
     address public constant addr = address(0x6610208d7dB87A5F0DbB452865f5cbDAB02563E9);
 }
 
-// NOTE: The private keys of the test accounts (add to metamask or other script etc)
-// c4d888b633f4299813325540d67419fe50418f1aca87ddd01a2e15c5d85f6536 // DEFAULT KEEPER
-// d331822f304b5cb63f23e95cddee0728460f2507ea821889da6cf1cfb9c2dfb9 // GOVERNANCE
+// NOTE: The private keys of the test accounts (add to metamask or other script
+// etc)
+// c4d888b633f4299813325540d67419fe50418f1aca87ddd01a2e15c5d85f6536 // DEFAULT
+// KEEPER
+// d331822f304b5cb63f23e95cddee0728460f2507ea821889da6cf1cfb9c2dfb9 //
+// GOVERNANCE
 // 010b8742512b091fa10ff09626afbb6dea23f0792992c9bfa9e35cb227fd7df3 // KEEPER.
 
 library Actors {

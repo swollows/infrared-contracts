@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.20;
 
-import {InfraredVault} from '@core/InfraredVault.sol';
+import {InfraredVault} from "@core/InfraredVault.sol";
 
 // library to deploy InfraredVault.sol
 library InfraredVaultDeployer {
@@ -16,9 +16,8 @@ library InfraredVaultDeployer {
         address _distributionPrecompile,
         address _admin
     ) public returns (address) {
-        return
-            address(
-                new InfraredVault(
+        return address(
+            new InfraredVault(
                     _asset,
                     _name,
                     _symbol,
@@ -29,6 +28,6 @@ library InfraredVaultDeployer {
                     _distributionPrecompile,
                     _admin
                 )
-            );
+        );
     }
 }

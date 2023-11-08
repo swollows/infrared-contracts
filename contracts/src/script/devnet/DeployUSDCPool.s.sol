@@ -3,13 +3,13 @@
 pragma solidity 0.8.20;
 
 // Scripts etc.
-import {Script, console2} from 'forge-std/Script.sol';
-import {AddressesAddress, GenesisPools} from './Configuration.sol';
-import {Addreses} from './Addresses.sol';
+import {Script, console2} from "forge-std/Script.sol";
+import {AddressesAddress, GenesisPools} from "./Configuration.sol";
+import {Addreses} from "./Addresses.sol";
 
 // Contracts.
-import {Infrared} from '@core/Infrared.sol';
-import {IInfraredVault} from '@interfaces/IInfraredVault.sol';
+import {Infrared} from "@core/Infrared.sol";
+import {IInfraredVault} from "@interfaces/IInfraredVault.sol";
 
 contract DeployUSDCPool is Script {
     function run() public {
@@ -38,8 +38,8 @@ contract USDCPoolFactory {
         rewards[0] = addresses.ibgt();
         IInfraredVault usdcVault = infrared.registerVault(
             GenesisPools.USDC_HONEY_POOL_TOKEN,
-            'USDC-HONEY Vault',
-            'USDC-HONEY-V',
+            "USDC-HONEY Vault",
+            "USDC-HONEY-V",
             rewards,
             GenesisPools.USDC_HONEY_POOL_ADDRESS
         );
@@ -48,6 +48,6 @@ contract USDCPoolFactory {
         addresses.setUsdcVault(address(usdcVault));
 
         // Log the address of the USDC-IBGT Pool.
-        console2.log('USDC-IBGT Vault', address(usdcVault));
+        console2.log("USDC-IBGT Vault", address(usdcVault));
     }
 }
