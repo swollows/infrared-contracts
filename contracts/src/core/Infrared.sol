@@ -50,7 +50,9 @@ contract Infrared is BerachainHandler, InfraredValidators, AccessControl {
 
     event ValidatorReplaced(address indexed _current, address indexed _new);
 
-    event RewardsSupplied(address indexed _vault, DataTypes.Token[] _rewardTokens);
+    event RewardsSupplied(
+        address indexed _vault, DataTypes.Token[] _rewardTokens
+    );
 
     event IBGTSupplied(address indexed _vault, uint256 _amount);
 
@@ -66,7 +68,12 @@ contract Infrared is BerachainHandler, InfraredValidators, AccessControl {
         address _admin,
         IERC20Mintable _ibgt
     )
-        BerachainHandler(_rewardsPrecompileAddress, _distributionPrecompileAddress, _erc20PrecompileAddress, _bgtDenom)
+        BerachainHandler(
+            _rewardsPrecompileAddress,
+            _distributionPrecompileAddress,
+            _erc20PrecompileAddress,
+            _bgtDenom
+        )
         InfraredValidators(_stakingPrecompileAddress)
     {
         if (_admin == address(0)) {
@@ -131,7 +138,10 @@ contract Infrared is BerachainHandler, InfraredValidators, AccessControl {
      * @param _new IInfraredVault The new vault.
      * @param _rewardTokens address[] The reward tokens.
      */
-    function updateWIBGTVault(IInfraredVault _new, address[] memory _rewardTokens) external onlyRole(GOVERNANCE_ROLE) {
+    function updateWIBGTVault(
+        IInfraredVault _new,
+        address[] memory _rewardTokens
+    ) external onlyRole(GOVERNANCE_ROLE) {
         if (address(_new) == address(0)) {
             revert Errors.ZeroAddress();
         }
@@ -150,7 +160,11 @@ contract Infrared is BerachainHandler, InfraredValidators, AccessControl {
      * @return _isVault bool    Whether or not the given address is a registered
      * vault.
      */
-    function isInfraredVault(address _vault) public view returns (bool _isVault) {
+    function isInfraredVault(address _vault)
+        public
+        view
+        returns (bool _isVault)
+    {
         return address(vaultRegistry[_vault]) != address(0);
     }
 
@@ -162,7 +176,10 @@ contract Infrared is BerachainHandler, InfraredValidators, AccessControl {
      * @notice Add a validator to the validators set.
      * @param  _validators  address[] calldata  New validators to be added.
      */
-    function addValidators(address[] calldata _validators) external onlyRole(GOVERNANCE_ROLE) {
+    function addValidators(address[] calldata _validators)
+        external
+        onlyRole(GOVERNANCE_ROLE)
+    {
         for (uint256 _i; _i < _validators.length;) {
             if (_validators[_i] == address(0)) {
                 revert Errors.ZeroAddress();
@@ -184,7 +201,10 @@ contract Infrared is BerachainHandler, InfraredValidators, AccessControl {
      * @notice Remove validators from the validators set.
      * @param  _validators  address[] calldata  Validators to be removed.
      */
-    function removeValidators(address[] calldata _validators) external onlyRole(GOVERNANCE_ROLE) {
+    function removeValidators(address[] calldata _validators)
+        external
+        onlyRole(GOVERNANCE_ROLE)
+    {
         for (uint256 _i; _i < _validators.length;) {
             if (_validators[_i] == address(0)) {
                 revert Errors.ZeroAddress();
@@ -207,7 +227,10 @@ contract Infrared is BerachainHandler, InfraredValidators, AccessControl {
      * @param  _current  address  The current validator to be replaced.
      * @param  _new      address  The new validator.
      */
-    function replaceValidator(address _current, address _new) external onlyRole(GOVERNANCE_ROLE) {
+    function replaceValidator(address _current, address _new)
+        external
+        onlyRole(GOVERNANCE_ROLE)
+    {
         _infraredValidatorsSet.replaceValidator(_current, _new);
 
         emit ValidatorReplaced(_current, _new);
@@ -220,7 +243,10 @@ contract Infrared is BerachainHandler, InfraredValidators, AccessControl {
      * @param _validator  address  The validator to delegate to.
      * @param _amount     uint256  The amount of tokens to delegate.
      */
-    function delegate(address _validator, uint256 _amount) external onlyRole(KEEPER_ROLE) {
+    function delegate(address _validator, uint256 _amount)
+        external
+        onlyRole(KEEPER_ROLE)
+    {
         if (_validator == address(0)) {
             revert Errors.ZeroAddress();
         }
@@ -243,7 +269,10 @@ contract Infrared is BerachainHandler, InfraredValidators, AccessControl {
      * @param _validator  address  The validator to undelegate from.
      * @param _amount     uint256  The amount of tokens to undelegate.
      */
-    function undelegate(address _validator, uint256 _amount) external onlyRole(GOVERNANCE_ROLE) {
+    function undelegate(address _validator, uint256 _amount)
+        external
+        onlyRole(GOVERNANCE_ROLE)
+    {
         if (_validator == address(0)) {
             revert Errors.ZeroAddress();
         }
@@ -267,7 +296,10 @@ contract Infrared is BerachainHandler, InfraredValidators, AccessControl {
      * @param _to       address  The validator to redelegate to.
      * @param _amount   uint256  The amount of tokens to redelegate.
      */
-    function beginRedelegate(address _from, address _to, uint256 _amount) external onlyRole(GOVERNANCE_ROLE) {
+    function beginRedelegate(address _from, address _to, uint256 _amount)
+        external
+        onlyRole(GOVERNANCE_ROLE)
+    {
         if (_from == address(0)) {
             revert Errors.ZeroAddress();
         }
@@ -298,10 +330,11 @@ contract Infrared is BerachainHandler, InfraredValidators, AccessControl {
      * @param _creationHeigh  int64    The creation height of the unbonding
      * delegation.
      */
-    function cancelUnbondingDelegation(address _validator, uint256 _amount, int64 _creationHeigh)
-        external
-        onlyRole(GOVERNANCE_ROLE)
-    {
+    function cancelUnbondingDelegation(
+        address _validator,
+        uint256 _amount,
+        int64 _creationHeigh
+    ) external onlyRole(GOVERNANCE_ROLE) {
         if (_validator == address(0)) {
             revert Errors.ZeroAddress();
         }
@@ -314,7 +347,8 @@ contract Infrared is BerachainHandler, InfraredValidators, AccessControl {
             revert Errors.ZeroAmount();
         }
 
-        bool _success = _cancelUnbondingDelegation(_validator, _amount, _creationHeigh);
+        bool _success =
+            _cancelUnbondingDelegation(_validator, _amount, _creationHeigh);
 
         if (!_success) {
             revert Errors.CancelUnbondingDelegationFailed();
@@ -340,7 +374,8 @@ contract Infrared is BerachainHandler, InfraredValidators, AccessControl {
         }
 
         // Withdraw the rewards from the distribution module.
-        (Cosmos.Coin[] memory _rewards, uint256 _bgtAmount) = _withdrawDistributionRewards(_validator);
+        (Cosmos.Coin[] memory _rewards, uint256 _bgtAmount) =
+            _withdrawDistributionRewards(_validator);
 
         // Handle the rewards.
         _handleRewards(_rewards, _bgtAmount, wrappedIBGTVault);
@@ -363,7 +398,8 @@ contract Infrared is BerachainHandler, InfraredValidators, AccessControl {
         }
 
         // Withdraw the rewards from the rewards module.
-        (Cosmos.Coin[] memory _rewards, uint256 _bgtAmount) = _withdrawRewards(_vaultAddress);
+        (Cosmos.Coin[] memory _rewards, uint256 _bgtAmount) =
+            _withdrawRewards(_vaultAddress);
 
         // Handle the rewards.
         _handleRewards(_rewards, _bgtAmount, _vault);
@@ -382,11 +418,18 @@ contract Infrared is BerachainHandler, InfraredValidators, AccessControl {
      * tokens for.
      * @param _rewardTokens  address[]            The reward tokens to approve.
      */
-    function _approveRewardTokens(address _vault, address[] memory _rewardTokens) internal {
+    function _approveRewardTokens(
+        address _vault,
+        address[] memory _rewardTokens
+    ) internal {
         for (uint256 _i; _i < _rewardTokens.length;) {
             // Approve the reward token to the vault.
             IERC20Mintable(_rewardTokens[_i]).safeIncreaseAllowance(
-                _vault, type(uint256).max - IERC20Mintable(_rewardTokens[_i]).allowance(address(this), _vault)
+                _vault,
+                type(uint256).max
+                    - IERC20Mintable(_rewardTokens[_i]).allowance(
+                        address(this), _vault
+                    )
             );
 
             // Iteration is safe here.
@@ -403,7 +446,11 @@ contract Infrared is BerachainHandler, InfraredValidators, AccessControl {
      * @param _vault     IInfraredVault        The vault to handle the rewards
      * for.
      */
-    function _handleRewards(Cosmos.Coin[] memory _rewards, uint256 _bgtAmount, IInfraredVault _vault) internal {
+    function _handleRewards(
+        Cosmos.Coin[] memory _rewards,
+        uint256 _bgtAmount,
+        IInfraredVault _vault
+    ) internal {
         // If there are no rewards to supply then return.
         if (_rewards.length == 0 && _bgtAmount == 0) {
             return;
@@ -483,10 +530,14 @@ contract Infrared is BerachainHandler, InfraredValidators, AccessControl {
      * tokens to.
      * @param _rewards   DataTypes.Token[] memory The tokens to supply.
      */
-    function _supply(IInfraredVault _vault, DataTypes.Token[] memory _rewards) internal {
+    function _supply(IInfraredVault _vault, DataTypes.Token[] memory _rewards)
+        internal
+    {
         for (uint256 _i; _i < _rewards.length;) {
             // Supply the token to the vault.
-            _vault.supply(address(this), _rewards[_i].tokenAddress, _rewards[_i].amount);
+            _vault.supply(
+                address(this), _rewards[_i].tokenAddress, _rewards[_i].amount
+            );
 
             // Safe here.
             unchecked {

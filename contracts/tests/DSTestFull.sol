@@ -25,7 +25,10 @@ contract DSTestFull is PRBTest {
      *
      * @return _address The address Labeled address
      */
-    function _label(address _addy, string memory _name) internal returns (address _address) {
+    function _label(address _addy, string memory _name)
+        internal
+        returns (address _address)
+    {
         vm.label(_addy, _name);
         return _addy;
     }
@@ -35,7 +38,10 @@ contract DSTestFull is PRBTest {
      * @param _name Label for the mock contract.
      * @return _address The address of the mock contract.
      */
-    function _mockContract(string memory _name) internal returns (address _address) {
+    function _mockContract(string memory _name)
+        internal
+        returns (address _address)
+    {
         return _mockContract(_newAddress(), _name);
     }
 
@@ -47,7 +53,10 @@ contract DSTestFull is PRBTest {
      *
      * @return _address The address of the mock contract.
      */
-    function _mockContract(address _addy, string memory _name) internal returns (address _address) {
+    function _mockContract(address _addy, string memory _name)
+        internal
+        returns (address _address)
+    {
         vm.etch(_addy, new bytes(0x1));
         return _label(_addy, _name);
     }
@@ -57,7 +66,8 @@ contract DSTestFull is PRBTest {
      * @return _address The address of the mock contract.
      */
     function _newAddress() internal returns (address _address) {
-        address payable _nextAddress = payable(address(uint160(uint256(_nextAddressSeed))));
+        address payable _nextAddress =
+            payable(address(uint160(uint256(_nextAddressSeed))));
         _nextAddressSeed = keccak256(abi.encodePacked(_nextAddressSeed));
         _address = _nextAddress;
     }

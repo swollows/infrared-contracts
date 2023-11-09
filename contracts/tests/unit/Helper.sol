@@ -95,16 +95,21 @@ contract Helper is DSTestFull {
     }
 
     function _setUpVesting() internal {
-        _vestingFactory = new IREDVestingFactory(address(1), address(2), address(3));
+        _vestingFactory =
+            new IREDVestingFactory(address(1), address(2), address(3));
 
-        address treasuryWalletAddress = _vestingFactory.vestingWallets(address(1));
-        _treasuryVestingWallet = VestingWalletWithCliff(payable(treasuryWalletAddress));
+        address treasuryWalletAddress =
+            _vestingFactory.vestingWallets(address(1));
+        _treasuryVestingWallet =
+            VestingWalletWithCliff(payable(treasuryWalletAddress));
 
         address teamWalletAddress = _vestingFactory.vestingWallets(address(2));
         _teamVestingWallet = VestingWalletWithCliff(payable(teamWalletAddress));
 
-        address investorWalletAddress = _vestingFactory.vestingWallets(address(3));
-        _investorVestingWallet = VestingWalletWithCliff(payable(investorWalletAddress));
+        address investorWalletAddress =
+            _vestingFactory.vestingWallets(address(3));
+        _investorVestingWallet =
+            VestingWalletWithCliff(payable(investorWalletAddress));
     }
 
     function _deployTokens() internal prank(DEFAULT_ADMIN) {
@@ -149,13 +154,19 @@ contract Helper is DSTestFull {
         _infrared.grantRole(_infrared.GOVERNANCE_ROLE(), GOVERNANCE);
 
         // Grant the governance role to mint dai.
-        IBGT(address(_dai)).grantRole(IBGT(address(_dai)).MINTER_ROLE(), GOVERNANCE);
+        IBGT(address(_dai)).grantRole(
+            IBGT(address(_dai)).MINTER_ROLE(), GOVERNANCE
+        );
 
         // Grant the governance role to mint usdc.
-        IBGT(address(_usdc)).grantRole(IBGT(address(_usdc)).MINTER_ROLE(), GOVERNANCE);
+        IBGT(address(_usdc)).grantRole(
+            IBGT(address(_usdc)).MINTER_ROLE(), GOVERNANCE
+        );
 
         // Grant the admin role to mint ired.
-        IBGT(address(_ired)).grantRole(IBGT(address(_ired)).MINTER_ROLE(), DEFAULT_ADMIN);
+        IBGT(address(_ired)).grantRole(
+            IBGT(address(_ired)).MINTER_ROLE(), DEFAULT_ADMIN
+        );
 
         // Grant the infrared contract the ability to mint ibgt.
         _ibgt.grantRole(_ibgt.MINTER_ROLE(), address(_infrared));
@@ -190,7 +201,9 @@ contract Helper is DSTestFull {
         );
 
         // Update the vault in the infrared contract.
-        _infrared.updateWIBGTVault(IInfraredVault(address(_wibgtVault)), _rewardTokens);
+        _infrared.updateWIBGTVault(
+            IInfraredVault(address(_wibgtVault)), _rewardTokens
+        );
 
         // Set the vault in the wrapped token.
         _wrappedIBGT.setVault(_wibgtVault);
@@ -211,7 +224,15 @@ contract Helper is DSTestFull {
 
         // Register the vault in the infrared contract.
         _daiVault = InfraredVault(
-            address(_infrared.registerVault(address(_dai), "Dai Vault", "DAIV", _rewardTokens, POOL_ADDRESS))
+            address(
+                _infrared.registerVault(
+                    address(_dai),
+                    "Dai Vault",
+                    "DAIV",
+                    _rewardTokens,
+                    POOL_ADDRESS
+                )
+            )
         );
     }
 
@@ -234,76 +255,119 @@ contract Helper is DSTestFull {
     function _setupWithdrawAddressMocks() internal {
         vm.mockCall(
             address(_distributionPrecompile),
-            abi.encodeWithSelector(_distributionPrecompile.setWithdrawAddress.selector, address(_infrared)),
+            abi.encodeWithSelector(
+                _distributionPrecompile.setWithdrawAddress.selector,
+                address(_infrared)
+            ),
             abi.encode(true)
         );
 
         vm.mockCall(
             address(_rewardsPrecompile),
-            abi.encodeWithSelector(_rewardsPrecompile.setDepositorWithdrawAddress.selector, address(_infrared)),
+            abi.encodeWithSelector(
+                _rewardsPrecompile.setDepositorWithdrawAddress.selector,
+                address(_infrared)
+            ),
             abi.encode(true)
         );
     }
 
-    function _mockDistributionModuleWithdraw(address _validator, Cosmos.Coin[] memory _rewards) internal {
+    function _mockDistributionModuleWithdraw(
+        address _validator,
+        Cosmos.Coin[] memory _rewards
+    ) internal {
         vm.mockCall(
             address(_distributionPrecompile),
             abi.encodeWithSelector(
-                _distributionPrecompile.withdrawDelegatorReward.selector, address(_infrared), address(_validator)
+                _distributionPrecompile.withdrawDelegatorReward.selector,
+                address(_infrared),
+                address(_validator)
             ),
             abi.encode(_rewards)
         );
     }
 
-    function _mockRewardsPrecompileWithdraw(address _poolAddress, Cosmos.Coin[] memory _coins) internal {
+    function _mockRewardsPrecompileWithdraw(
+        address _poolAddress,
+        Cosmos.Coin[] memory _coins
+    ) internal {
         vm.mockCall(
             address(_rewardsPrecompile),
-            abi.encodeWithSelector(_rewardsPrecompile.withdrawAllDepositorRewards.selector, _poolAddress),
+            abi.encodeWithSelector(
+                _rewardsPrecompile.withdrawAllDepositorRewards.selector,
+                _poolAddress
+            ),
             abi.encode(_coins)
         );
     }
 
-    function _mockERC20ModuleMapping(string memory _denom, address _token) internal {
+    function _mockERC20ModuleMapping(string memory _denom, address _token)
+        internal
+    {
         vm.mockCall(
             address(_erc20Precompile),
-            abi.encodeWithSelector(_erc20Precompile.erc20AddressForCoinDenom.selector, _denom),
+            abi.encodeWithSelector(
+                _erc20Precompile.erc20AddressForCoinDenom.selector, _denom
+            ),
             abi.encode(_token)
         );
     }
 
-    function _mockDelegate(address _validator, uint256 _amount, bool _succeed) internal {
-        vm.mockCall(
-            address(_stakingPrecompile),
-            abi.encodeWithSelector(_stakingPrecompile.delegate.selector, _validator, _amount),
-            abi.encode(_succeed)
-        );
-    }
-
-    function _mockUndelegate(address _validator, uint256 _amount, bool _succeed) internal {
-        vm.mockCall(
-            address(_stakingPrecompile),
-            abi.encodeWithSelector(_stakingPrecompile.undelegate.selector, _validator, _amount),
-            abi.encode(_succeed)
-        );
-    }
-
-    function _mockBeginRedelegations(address _validator, address _newValidator, uint256 _amount, bool _succeed)
-        internal
-    {
-        vm.mockCall(
-            address(_stakingPrecompile),
-            abi.encodeWithSelector(_stakingPrecompile.beginRedelegate.selector, _validator, _newValidator, _amount),
-            abi.encode(_succeed)
-        );
-    }
-
-    function _mockCancelUnbondingDelegation(address _validator, uint256 _amount, int64 _creationHeight, bool _succeed)
+    function _mockDelegate(address _validator, uint256 _amount, bool _succeed)
         internal
     {
         vm.mockCall(
             address(_stakingPrecompile),
             abi.encodeWithSelector(
-                _stakingPrecompile.cancelUnbondingDelegation.selector, _validator, _amount, _creationHeight
+                _stakingPrecompile.delegate.selector, _validator, _amount
+            ),
+            abi.encode(_succeed)
+        );
+    }
+
+    function _mockUndelegate(address _validator, uint256 _amount, bool _succeed)
+        internal
+    {
+        vm.mockCall(
+            address(_stakingPrecompile),
+            abi.encodeWithSelector(
+                _stakingPrecompile.undelegate.selector, _validator, _amount
+            ),
+            abi.encode(_succeed)
+        );
+    }
+
+    function _mockBeginRedelegations(
+        address _validator,
+        address _newValidator,
+        uint256 _amount,
+        bool _succeed
+    ) internal {
+        vm.mockCall(
+            address(_stakingPrecompile),
+            abi.encodeWithSelector(
+                _stakingPrecompile.beginRedelegate.selector,
+                _validator,
+                _newValidator,
+                _amount
+            ),
+            abi.encode(_succeed)
+        );
+    }
+
+    function _mockCancelUnbondingDelegation(
+        address _validator,
+        uint256 _amount,
+        int64 _creationHeight,
+        bool _succeed
+    ) internal {
+        vm.mockCall(
+            address(_stakingPrecompile),
+            abi.encodeWithSelector(
+                _stakingPrecompile.cancelUnbondingDelegation.selector,
+                _validator,
+                _amount,
+                _creationHeight
             ),
             abi.encode(_succeed)
         );

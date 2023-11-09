@@ -17,9 +17,11 @@ contract IREDVestingFactory is Ownable {
     /*//////////////////////////////////////////////////////////////
                         CONSTRUCTOR/INITIALIZATION LOGIC
     //////////////////////////////////////////////////////////////*/
-    constructor(address _treasuryBeneficiary, address _teamBeneficiary, address _investorBeneficiary)
-        Ownable(msg.sender)
-    {
+    constructor(
+        address _treasuryBeneficiary,
+        address _teamBeneficiary,
+        address _investorBeneficiary
+    ) Ownable(msg.sender) {
         if (_treasuryBeneficiary == address(0)) {
             revert Errors.ZeroAddress();
         }

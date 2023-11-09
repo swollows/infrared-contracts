@@ -19,7 +19,9 @@ contract Deposit is Script {
         InfraredVault usdcVault = InfraredVault(addresses.usdcVault());
 
         // Approve the vault to spend the LP tokens.
-        IERC20(GenesisPools.USDC_HONEY_POOL_TOKEN).approve(address(usdcVault), type(uint256).max);
+        IERC20(GenesisPools.USDC_HONEY_POOL_TOKEN).approve(
+            address(usdcVault), type(uint256).max
+        );
 
         // Deposit the LP tokens to the vault.
         usdcVault.deposit(

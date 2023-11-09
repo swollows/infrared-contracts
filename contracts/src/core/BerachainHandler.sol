@@ -64,8 +64,12 @@ abstract contract BerachainHandler {
      * for.
      * @return _coins     Cosmos.Coin[] memory The coins that were withdrawn.
      */
-    function _withdrawDistrRewards(address _validator) internal returns (Cosmos.Coin[] memory _coins) {
-        return IDistributionModule(DISTRIBUTION_PRECOMPILE).withdrawDelegatorReward(address(this), _validator);
+    function _withdrawDistrRewards(address _validator)
+        internal
+        returns (Cosmos.Coin[] memory _coins)
+    {
+        return IDistributionModule(DISTRIBUTION_PRECOMPILE)
+            .withdrawDelegatorReward(address(this), _validator);
     }
 
     /**
@@ -75,7 +79,10 @@ abstract contract BerachainHandler {
      * call into.
      * @return _coins       Cosmos.Coin[] memory The coins that were withdrawn.
      */
-    function _withdrawPOLRewards(address _vault) internal returns (Cosmos.Coin[] memory _coins) {
+    function _withdrawPOLRewards(address _vault)
+        internal
+        returns (Cosmos.Coin[] memory _coins)
+    {
         return IInfraredVault(_vault).claimRewardsPrecompile();
     }
 
@@ -88,18 +95,27 @@ abstract contract BerachainHandler {
      * @param _coins   Cosmos.Coin[] memory     The coins to parse.
      * @return _tokens DataTypes.Token[] memory The parsed tokens.
      */
-    function _parseCoins(Cosmos.Coin[] memory _coins) internal view returns (DataTypes.Token[] memory _tokens) {
+    function _parseCoins(Cosmos.Coin[] memory _coins)
+        internal
+        view
+        returns (DataTypes.Token[] memory _tokens)
+    {
         // Using the ERC20Module, get the token address for each coin denom and
         // return a Token struct.
         _tokens = new DataTypes.Token[](_coins.length);
         for (uint256 i = 0; i < _coins.length; i++) {
-            address _addr = address(IERC20Module(ERC20_PRECOMPILE).erc20AddressForCoinDenom(_coins[i].denom));
+            address _addr = address(
+                IERC20Module(ERC20_PRECOMPILE).erc20AddressForCoinDenom(
+                    _coins[i].denom
+                )
+            );
 
             if (_addr == address(0)) {
                 revert Errors.ZeroAddress();
             }
 
-            _tokens[i] = DataTypes.Token({tokenAddress: _addr, amount: _coins[i].amount});
+            _tokens[i] =
+                DataTypes.Token({tokenAddress: _addr, amount: _coins[i].amount});
         }
 
         return _tokens;
@@ -111,11 +127,10 @@ abstract contract BerachainHandler {
      * @param _coinsB       Cosmos.Coin[] memory The second array of coins.
      * @return _mergedCoins Cosmos.Coin[] memory The merged array of coins.
      */
-    function _mergeCoinsArray(Cosmos.Coin[] memory _coinsA, Cosmos.Coin[] memory _coinsB)
-        internal
-        pure
-        returns (Cosmos.Coin[] memory _mergedCoins)
-    {
+    function _mergeCoinsArray(
+        Cosmos.Coin[] memory _coinsA,
+        Cosmos.Coin[] memory _coinsB
+    ) internal pure returns (Cosmos.Coin[] memory _mergedCoins) {
         _mergedCoins = new Cosmos.Coin[](_coinsA.length + _coinsB.length);
 
         // Populate the merged array with the first array.
@@ -138,7 +153,11 @@ abstract contract BerachainHandler {
      */
     function _convertCoins(Cosmos.Coin[] memory _coins) internal {
         for (uint256 i = 0; i < _coins.length; i++) {
-            if (!IERC20Module(ERC20_PRECOMPILE).transferCoinToERC20(_coins[i].denom, _coins[i].amount)) {
+            if (
+                !IERC20Module(ERC20_PRECOMPILE).transferCoinToERC20(
+                    _coins[i].denom, _coins[i].amount
+                )
+            ) {
                 revert Errors.ERC20ModuleTransferFailed();
             }
         }
@@ -182,8 +201,13 @@ abstract contract BerachainHandler {
      * @param _b       string The second string.
      * @return _isSame bool Whether or not the strings are the same.
      */
-    function _isStringSame(string memory _a, string memory _b) private pure returns (bool _isSame) {
-        return keccak256(abi.encodePacked(_a)) == keccak256(abi.encodePacked(_b));
+    function _isStringSame(string memory _a, string memory _b)
+        private
+        pure
+        returns (bool _isSame)
+    {
+        return
+            keccak256(abi.encodePacked(_a)) == keccak256(abi.encodePacked(_b));
     }
 
     /**
@@ -193,7 +217,11 @@ abstract contract BerachainHandler {
      * @return _index   uint256              The index of BGT in the array or
      * type(uint256).max if not found.
      */
-    function _indexOfBGT(Cosmos.Coin[] memory _coins) private view returns (uint256 _index) {
+    function _indexOfBGT(Cosmos.Coin[] memory _coins)
+        private
+        view
+        returns (uint256 _index)
+    {
         for (uint256 i = 0; i < _coins.length; i++) {
             if (_isStringSame(_coins[i].denom, bgtDenom)) {
                 return i;

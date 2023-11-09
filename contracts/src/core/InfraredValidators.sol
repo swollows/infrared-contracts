@@ -38,7 +38,12 @@ abstract contract InfraredValidators {
      * @return _validators address[] memory Returns all the validators in the
      * set.
      */
-    function infraredValidators() external view virtual returns (address[] memory _validators) {
+    function infraredValidators()
+        external
+        view
+        virtual
+        returns (address[] memory _validators)
+    {
         return _infraredValidatorsSet.validators();
     }
 
@@ -47,7 +52,12 @@ abstract contract InfraredValidators {
      * @param  _validator   address The validator to check.
      * @return _is          bool    Returns true if the validator is in the set.
      */
-    function isInfraredValidator(address _validator) public view virtual returns (bool _is) {
+    function isInfraredValidator(address _validator)
+        public
+        view
+        virtual
+        returns (bool _is)
+    {
         return _infraredValidatorsSet.isElementOfSet(_validator);
     }
 
@@ -62,14 +72,20 @@ abstract contract InfraredValidators {
      * @return _success   bool     Returns true if the delegation was
      * successful.
      */
-    function _delegate(address _validator, uint256 _amount) internal virtual returns (bool _success) {
+    function _delegate(address _validator, uint256 _amount)
+        internal
+        virtual
+        returns (bool _success)
+    {
         // Check that the validator is in the set.
         if (!isInfraredValidator(_validator)) {
             revert Errors.ValidatorDoesNotExist(_validator);
         }
 
         // Delegate to tha validator.
-        return IStakingModule(STAKING_PRECOMPILE_ADDRESS).delegate(_validator, _amount);
+        return IStakingModule(STAKING_PRECOMPILE_ADDRESS).delegate(
+            _validator, _amount
+        );
     }
 
     /**
@@ -79,14 +95,20 @@ abstract contract InfraredValidators {
      * @return _success   bool     Returns true if the undelegation was
      * successful.
      */
-    function _undelegate(address _validator, uint256 _amount) internal virtual returns (bool _success) {
+    function _undelegate(address _validator, uint256 _amount)
+        internal
+        virtual
+        returns (bool _success)
+    {
         // Check that the validator is in the set.
         if (!isInfraredValidator(_validator)) {
             revert Errors.ValidatorDoesNotExist(_validator);
         }
 
         // Undelegate from the validator.
-        return IStakingModule(STAKING_PRECOMPILE_ADDRESS).undelegate(_validator, _amount);
+        return IStakingModule(STAKING_PRECOMPILE_ADDRESS).undelegate(
+            _validator, _amount
+        );
     }
 
     /**
@@ -97,14 +119,20 @@ abstract contract InfraredValidators {
      * @return _success   bool     Returns true if the redelegation was
      * successful.
      */
-    function _beginRedelegate(address _from, address _to, uint256 _amount) internal virtual returns (bool _success) {
+    function _beginRedelegate(address _from, address _to, uint256 _amount)
+        internal
+        virtual
+        returns (bool _success)
+    {
         // Only care about if the `_to` validator is in the set.
         if (!isInfraredValidator(_to)) {
             revert Errors.ValidatorDoesNotExist(_to);
         }
 
         // Redelegate from the validator.
-        return IStakingModule(STAKING_PRECOMPILE_ADDRESS).beginRedelegate(_from, _to, _amount);
+        return IStakingModule(STAKING_PRECOMPILE_ADDRESS).beginRedelegate(
+            _from, _to, _amount
+        );
     }
 
     /**
@@ -117,18 +145,18 @@ abstract contract InfraredValidators {
      * @return _success        bool     Returns true if the delegation was
      * successful.
      */
-    function _cancelUnbondingDelegation(address _validator, uint256 _amount, int64 _creationHeight)
-        internal
-        virtual
-        returns (bool _success)
-    {
+    function _cancelUnbondingDelegation(
+        address _validator,
+        uint256 _amount,
+        int64 _creationHeight
+    ) internal virtual returns (bool _success) {
         // Check that the validator is in the set.
         if (!isInfraredValidator(_validator)) {
             revert Errors.ValidatorDoesNotExist(_validator);
         }
 
         // Cancel the unbonding delegation.
-        return
-            IStakingModule(STAKING_PRECOMPILE_ADDRESS).cancelUnbondingDelegation(_validator, _amount, _creationHeight);
+        return IStakingModule(STAKING_PRECOMPILE_ADDRESS)
+            .cancelUnbondingDelegation(_validator, _amount, _creationHeight);
     }
 }

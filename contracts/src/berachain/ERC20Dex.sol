@@ -67,7 +67,10 @@ interface IERC20DexModule {
      * @return asset The tokens in the pool.
      * @return amounts The amount of tokens in the pool.
      */
-    function getLiquidity(address pool) external view returns (address[] memory asset, uint256[] memory amounts);
+    function getLiquidity(address pool)
+        external
+        view
+        returns (address[] memory asset, uint256[] memory amounts);
 
     /**
      * @dev previews the total amount of shares of the liquidity pool.
@@ -75,7 +78,10 @@ interface IERC20DexModule {
      * @return assets The share tokens / LP tokens of the pool.
      * @return amounts The amount share tokens / LP tokens of the pool.
      */
-    function getTotalShares(address pool) external view returns (address[] memory assets, uint256[] memory amounts);
+    function getTotalShares(address pool)
+        external
+        view
+        returns (address[] memory assets, uint256[] memory amounts);
 
     /**
      * @dev previews the exchange rate between two assets in a pool.
@@ -86,7 +92,11 @@ interface IERC20DexModule {
      * @param quoteAsset The quote asset to get the exchange rate for.
      * @return rate The exchange rate between the two assets.
      */
-    function getExchangeRate(address pool, address baseAsset, address quoteAsset) external view returns (uint256);
+    function getExchangeRate(
+        address pool,
+        address baseAsset,
+        address quoteAsset
+    ) external view returns (uint256);
 
     /**
      * @dev previews the amount of LP tokens that will be received for adding
@@ -101,7 +111,11 @@ interface IERC20DexModule {
      * @return liquidity The liquidity in the pool.
      * @return liquidityAmounts The amount of liquidity in the pool.
      */
-    function getPreviewSharesForLiquidity(address pool, address[] memory assets, uint256[] memory amounts)
+    function getPreviewSharesForLiquidity(
+        address pool,
+        address[] memory assets,
+        uint256[] memory amounts
+    )
         external
         view
         returns (
@@ -124,7 +138,11 @@ interface IERC20DexModule {
      * @return liqOut The pool's asset tokens.
      * @return liquidityAmounts The amount of liquidity assets not used.
      */
-    function getPreviewAddLiquidityStaticPrice(address pool, address[] memory liquidity, uint256[] memory amounts)
+    function getPreviewAddLiquidityStaticPrice(
+        address pool,
+        address[] memory liquidity,
+        uint256[] memory amounts
+    )
         external
         view
         returns (
@@ -143,7 +161,11 @@ interface IERC20DexModule {
      * @return assets The share/LP token to be received
      * @return amounts The amount of LP tokens to be received.
      */
-    function getPreviewSharesForSingleSidedLiquidityRequest(address pool, address asset, uint256 amount)
+    function getPreviewSharesForSingleSidedLiquidityRequest(
+        address pool,
+        address asset,
+        uint256 amount
+    )
         external
         view
         returns (address[] memory assets, uint256[] memory amounts);
@@ -161,7 +183,11 @@ interface IERC20DexModule {
      * @return liqOut The pool's asset tokens.
      * @return liquidityAmounts The amount of liquidity assets added.
      */
-    function getPreviewAddLiquidityNoSwap(address pool, address[] memory assets, uint256[] memory amounts)
+    function getPreviewAddLiquidityNoSwap(
+        address pool,
+        address[] memory assets,
+        uint256[] memory amounts
+    )
         external
         view
         returns (
@@ -196,7 +222,11 @@ interface IERC20DexModule {
      * @return assets The asset received for burning the LP tokens.
      * @return amounts The amount of asset received for burning the LP tokens.
      */
-    function getRemoveLiquidityExactAmountOut(address pool, address assetIn, uint256 assetAmount)
+    function getRemoveLiquidityExactAmountOut(
+        address pool,
+        address assetIn,
+        uint256 assetAmount
+    )
         external
         view
         returns (address[] memory assets, uint256[] memory amounts);
@@ -211,7 +241,11 @@ interface IERC20DexModule {
      * @return amounts The amount of target asset received for burning the LP
      * tokens.
      */
-    function getRemoveLiquidityOneSideOut(address pool, address assetOut, uint256 sharesIn)
+    function getRemoveLiquidityOneSideOut(
+        address pool,
+        address assetOut,
+        uint256 sharesIn
+    )
         external
         view
         returns (address[] memory assets, uint256[] memory amounts);
@@ -228,7 +262,10 @@ interface IERC20DexModule {
      * @param pool The address of the pool.
      * @return options The options of the pool.
      */
-    function getPoolOptions(address pool) external view returns (PoolOptions memory);
+    function getPoolOptions(address pool)
+        external
+        view
+        returns (PoolOptions memory);
 
     /////////////////////////////////////// WRITE METHODS
     // //////////////////////////////////////////
@@ -256,7 +293,10 @@ interface IERC20DexModule {
         address assetOut,
         uint256 amountOut,
         uint256 deadline
-    ) external payable returns (address[] memory assets, uint256[] memory amounts);
+    )
+        external
+        payable
+        returns (address[] memory assets, uint256[] memory amounts);
 
     /**
      * @dev Performs a swap with a single Pool.
@@ -269,7 +309,11 @@ interface IERC20DexModule {
      * @return assets The asset received from the swap.
      * @return amounts The amount of asset received from the swap.
      */
-    function batchSwap(SwapKind kind, BatchSwapStep[] memory swaps, uint256 deadline)
+    function batchSwap(
+        SwapKind kind,
+        BatchSwapStep[] memory swaps,
+        uint256 deadline
+    )
         external
         payable
         returns (address[] memory assets, uint256[] memory amounts);
@@ -305,7 +349,12 @@ interface IERC20DexModule {
      * @return liquidity The liquidity in the pool.
      * @return liquidityAmounts The amount of liquidity in the pool.
      */
-    function addLiquidity(address pool, address receiver, address[] memory assetsIn, uint256[] memory amountsIn)
+    function addLiquidity(
+        address pool,
+        address receiver,
+        address[] memory assetsIn,
+        uint256[] memory amountsIn
+    )
         external
         payable
         returns (
@@ -326,7 +375,12 @@ interface IERC20DexModule {
      * @return liquidityAmounts The amount of tokens received from burning the
      * LP tokens.
      */
-    function removeLiquidityBurningShares(address pool, address withdrawAddress, address assetIn, uint256 amountIn)
+    function removeLiquidityBurningShares(
+        address pool,
+        address withdrawAddress,
+        address assetIn,
+        uint256 amountIn
+    )
         external
         payable
         returns (address[] memory liquidity, uint256[] memory liquidityAmounts);

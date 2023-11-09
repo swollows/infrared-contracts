@@ -19,7 +19,9 @@ interface IERC20 {
      * @dev Emitted when the allowance of a `spender` for an `owner` is set by
      * a call to {approve}. `value` is the new allowance.
      */
-    event Approval(address indexed owner, address indexed spender, uint256 value);
+    event Approval(
+        address indexed owner, address indexed spender, uint256 value
+    );
 
     /**
      * @dev Moves `amount` tokens from the caller's account to `to`.
@@ -49,5 +51,7 @@ interface IERC20 {
      *
      * Emits a {Transfer} event.
      */
-    function transferFrom(address from, address to, uint256 amount) external returns (bool);
+    function transferFrom(address from, address to, uint256 amount)
+        external
+        returns (bool);
 }

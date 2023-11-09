@@ -1,8 +1,9 @@
 #!/bin/sh
 . "$(dirname "$0")/_/husky.sh"
 
+forge fmt --root ./contracts
+
 # 1. Build the contracts
 # 2. Stage build output 
 # 2. Lint and stage style improvements 
-forge fmt .
 make lint && git add .

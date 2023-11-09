@@ -48,11 +48,13 @@ contract WIBGTTest is Helper {
         _wrappedIBGT.approveVault();
 
         // Check the allowance of the vault share token.
-        uint256 _allowance = _wibgtVault.allowance(address(_wrappedIBGT), address(_wibgtVault));
+        uint256 _allowance =
+            _wibgtVault.allowance(address(_wrappedIBGT), address(_wibgtVault));
         assertEq(_allowance, type(uint256).max);
 
         // Check that the allowance of the WIBGT to the vault is max.
-        _allowance = _wrappedIBGT.allowance(address(_wrappedIBGT), address(_wibgtVault));
+        _allowance =
+            _wrappedIBGT.allowance(address(_wrappedIBGT), address(_wibgtVault));
         assertEq(_allowance, type(uint256).max);
     }
 

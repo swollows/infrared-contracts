@@ -14,7 +14,12 @@ contract VestingWalletWithCliff is VestingWallet {
     /*//////////////////////////////////////////////////////////////
                         CONSTRUCTOR/INITIALIZATION LOGIC
     //////////////////////////////////////////////////////////////*/
-    constructor(address beneficiaryAddress, uint64 startTimestamp, uint64 durationSeconds, uint64 cliffSeconds)
+    constructor(
+        address beneficiaryAddress,
+        uint64 startTimestamp,
+        uint64 durationSeconds,
+        uint64 cliffSeconds
+    )
         payable
         VestingWallet(beneficiaryAddress, startTimestamp, durationSeconds)
     {
