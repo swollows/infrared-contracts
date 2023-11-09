@@ -25,17 +25,19 @@
 
 pragma solidity 0.8.20;
 
-import {IERC20} from '@polaris/IERC20.sol';
-import {Cosmos} from '@polaris/CosmosTypes.sol';
+import {IERC20} from "@polaris/IERC20.sol";
+import {Cosmos} from "@polaris/CosmosTypes.sol";
 
 /**
  * @dev Interface of berachain's erc20 bank module's precompiled contract
  */
 interface IERC20BankModule {
-    ////////////////////////////////////////// EVENTS /////////////////////////////////////////////
+    ////////////////////////////////////////// EVENTS
+    // /////////////////////////////////////////////
 
     /**
-     * @dev Emitted by the erc20 bank module when `amount` tokens are transferred from SDK coin (of
+     * @dev Emitted by the erc20 bank module when `amount` tokens are
+     * transferred from SDK coin (of
      * denomination `denom`) to an ERC20 token from `owner` to `recipient`.
      * @param denom the denomination of the SDK coin being transferred from
      * @param owner the address of the owner of the coins
@@ -50,7 +52,8 @@ interface IERC20BankModule {
     );
 
     /**
-     * @dev Emitted by the erc20 bank module when `amount` tokens are transferred from ERC20 (of address
+     * @dev Emitted by the erc20 bank module when `amount` tokens are
+     * transferred from ERC20 (of address
      * `token`) to an SDK coin from `owner` to `recipient`.
      * @param token the ERC20 token being transferred from
      * @param owner the address of the owner of the tokens
@@ -65,7 +68,8 @@ interface IERC20BankModule {
     );
 
     /**
-     * @dev Emitted by the erc20 bank module when a coin is first transferred to ERC20, a new ERC20
+     * @dev Emitted by the erc20 bank module when a coin is first transferred to
+     * ERC20, a new ERC20
      * token is deployed, and the ERC20 mapping is instantiated.
      * @param token the address of the newly deployed ERC20 token
      * @param denom the denomination of the SDK coin being transferred from
@@ -73,38 +77,53 @@ interface IERC20BankModule {
     event Erc20CreatedFromCoin(address indexed token, string indexed denom);
 
     /**
-     * @dev Emitted by the erc20 bank module when an ERC20 token is first transferred to coin, and the
+     * @dev Emitted by the erc20 bank module when an ERC20 token is first
+     * transferred to coin, and the
      * coin mapping is instantiated.
      * @param token the address of the ERC20 token being transferred from
      * @param denom the denomination of the newly created SDK coin
      */
     event CoinCreatedFromErc20(address indexed token, string indexed denom);
 
-    /////////////////////////////////////// READ METHODS //////////////////////////////////////////
+    /////////////////////////////////////// READ METHODS
+    // //////////////////////////////////////////
 
     /**
-     * @dev coinDenomForERC20Address returns the SDK coin denomination for the given ERC20 address.
+     * @dev coinDenomForERC20Address returns the SDK coin denomination for the
+     * given ERC20 address.
      * @param token the ERC20 token being queried for
      */
-    function coinDenomForERC20Address(IERC20 token) external view returns (string memory);
+    function coinDenomForERC20Address(IERC20 token)
+        external
+        view
+        returns (string memory);
 
     /**
-     * @dev erc20AddressForCoinDenom returns the ERC20 address for the given SDK coin denomination.
+     * @dev erc20AddressForCoinDenom returns the ERC20 address for the given SDK
+     * coin denomination.
      * @param denom the denomination of the SDK coin being queried for
      */
-    function erc20AddressForCoinDenom(string calldata denom) external view returns (IERC20);
+    function erc20AddressForCoinDenom(string calldata denom)
+        external
+        view
+        returns (IERC20);
 
-    ////////////////////////////////////// WRITE METHODS //////////////////////////////////////////
+    ////////////////////////////////////// WRITE METHODS
+    // //////////////////////////////////////////
 
     /**
-     * @dev transferCoinToERC20 transfers `amount` SDK coins to ERC20 tokens for `msg.sender`
+     * @dev transferCoinToERC20 transfers `amount` SDK coins to ERC20 tokens for
+     * `msg.sender`
      * @param denom the denomination of the SDK coin being transferred from
      * @param amount the amount of coins to transfer
      */
-    function transferCoinToERC20(string calldata denom, uint256 amount) external returns (bool);
+    function transferCoinToERC20(string calldata denom, uint256 amount)
+        external
+        returns (bool);
 
     /**
-     * @dev transferCoinToERC20From transfers `amount` SDK coins to ERC20 tokens from `owner` to
+     * @dev transferCoinToERC20From transfers `amount` SDK coins to ERC20 tokens
+     * from `owner` to
      * `recipient`
      * @param denom the denomination of the SDK coin being transferred from
      * @param owner the address of the owner of the coins
@@ -119,23 +138,32 @@ interface IERC20BankModule {
     ) external returns (bool);
 
     /**
-     * @dev transferCoinToERC20To transfers `amount` SDK coins to ERC20 tokens from `msg.sender` to
+     * @dev transferCoinToERC20To transfers `amount` SDK coins to ERC20 tokens
+     * from `msg.sender` to
      * `recipient`
      * @param denom the denomination of the SDK coin being transferred from
      * @param recipient the address of the recipient of the tokens
      * @param amount the amount of coins to transfer
      */
-    function transferCoinToERC20To(string calldata denom, address recipient, uint256 amount) external returns (bool);
+    function transferCoinToERC20To(
+        string calldata denom,
+        address recipient,
+        uint256 amount
+    ) external returns (bool);
 
     /**
-     * @dev transferERC20ToCoin transfers `amount` ERC20 tokens to SDK coins for `msg.sender`
+     * @dev transferERC20ToCoin transfers `amount` ERC20 tokens to SDK coins for
+     * `msg.sender`
      * @param token the ERC20 token being transferred from
      * @param amount the amount of tokens to transfer
      */
-    function transferERC20ToCoin(IERC20 token, uint256 amount) external returns (bool);
+    function transferERC20ToCoin(IERC20 token, uint256 amount)
+        external
+        returns (bool);
 
     /**
-     * @dev transferERC20ToCoinFrom transfers `amount` ERC20 tokens to SDK coins from `owner` to
+     * @dev transferERC20ToCoinFrom transfers `amount` ERC20 tokens to SDK coins
+     * from `owner` to
      * `recipient`
      * @param token the ERC20 token being transferred from
      * @param owner the address of the owner of the coins
@@ -150,13 +178,18 @@ interface IERC20BankModule {
     ) external returns (bool);
 
     /**
-     * @dev transferERC20ToCoinTo transfers `amount` ERC20 tokens to SDK coins from `msg.sender` to
+     * @dev transferERC20ToCoinTo transfers `amount` ERC20 tokens to SDK coins
+     * from `msg.sender` to
      * `recipient`
      * @param token the ERC20 token being transferred from
      * @param recipient the address of the recipient of the tokens
      * @param amount the amount of tokens to transfer
      */
-    function transferERC20ToCoinTo(IERC20 token, address recipient, uint256 amount) external returns (bool);
+    function transferERC20ToCoinTo(
+        IERC20 token,
+        address recipient,
+        uint256 amount
+    ) external returns (bool);
 
     /**
      * @dev performBankTransfer performs a bank module transfer.
@@ -165,5 +198,9 @@ interface IERC20BankModule {
      * @param recipient the user who is gettting their balance increased.
      * @param amount the amount of coins to transfer.
      */
-    function performBankTransfer(address owner, address recipient, uint256 amount) external returns (bool);
+    function performBankTransfer(
+        address owner,
+        address recipient,
+        uint256 amount
+    ) external returns (bool);
 }

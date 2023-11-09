@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.20;
 
-import {Helper} from './Helper.sol';
-import {Errors} from '@utils/Errors.sol';
+import {Helper} from "./Helper.sol";
+import {Errors} from "@utils/Errors.sol";
 
 contract InfraredValidatorsTest is Helper {
     /*//////////////////////////////////////////////////////////////

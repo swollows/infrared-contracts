@@ -3,7 +3,8 @@ pragma solidity 0.8.20;
 
 /**
  * @dev Interface (partial) of the ERC20 standard as defined in the EIP.
- * @author OpenZeppelin (https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC20/IERC20.sol)
+ * @author OpenZeppelin
+ * (https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC20/IERC20.sol)
  */
 interface IERC20 {
     /**
@@ -18,7 +19,9 @@ interface IERC20 {
      * @dev Emitted when the allowance of a `spender` for an `owner` is set by
      * a call to {approve}. `value` is the new allowance.
      */
-    event Approval(address indexed owner, address indexed spender, uint256 value);
+    event Approval(
+        address indexed owner, address indexed spender, uint256 value
+    );
 
     /**
      * @dev Moves `amount` tokens from the caller's account to `to`.
@@ -30,7 +33,8 @@ interface IERC20 {
     function transfer(address to, uint256 amount) external returns (bool);
 
     /**
-     * @dev Sets `amount` as the allowance of `spender` over the caller's tokens.
+     * @dev Sets `amount` as the allowance of `spender` over the caller's
+     * tokens.
      *
      * Returns a boolean value indicating whether the operation succeeded.
      *
@@ -47,5 +51,7 @@ interface IERC20 {
      *
      * Emits a {Transfer} event.
      */
-    function transferFrom(address from, address to, uint256 amount) external returns (bool);
+    function transferFrom(address from, address to, uint256 amount)
+        external
+        returns (bool);
 }

@@ -20,16 +20,20 @@
 
 pragma solidity 0.8.20;
 
-import {Cosmos} from '@polaris/CosmosTypes.sol';
+import {Cosmos} from "@polaris/CosmosTypes.sol";
 
 interface IRewardsModule {
-    /////////////////////////////////////// READ METHODS //////////////////////////////////////////
+    /////////////////////////////////////// READ METHODS
+    // //////////////////////////////////////////
 
     /**
      * @dev Returns the address of the withdraw address.
      * @param depositor The depositor address.
      */
-    function getDepositorWithdrawAddress(address depositor) external view returns (address);
+    function getDepositorWithdrawAddress(address depositor)
+        external
+        view
+        returns (address);
 
     /**
      * @dev returns the rewards for the given delegator and receiver.
@@ -37,28 +41,39 @@ interface IRewardsModule {
      * @param receiver The receiver address.
      * @return rewards rewards.
      */
-    function getCurrentRewards(address depositor, address receiver) external view returns (Cosmos.Coin[] memory);
+    function getCurrentRewards(address depositor, address receiver)
+        external
+        view
+        returns (Cosmos.Coin[] memory);
 
     /**
      * @dev returns the oustanding rewards owed to a receiver.
      * @param receiver The receiver address.
      */
-    function getOutstandingRewards(address receiver) external view returns (Cosmos.Coin[] memory);
+    function getOutstandingRewards(address receiver)
+        external
+        view
+        returns (Cosmos.Coin[] memory);
 
-    /////////////////////////////////////// WRITE METHODS //////////////////////////////////////////
+    /////////////////////////////////////// WRITE METHODS
+    // //////////////////////////////////////////
 
     /**
      * @dev Sets the caller's withdraw address.
      * @param withdrawAddress The withdraw address to be set.
      */
-    function setDepositorWithdrawAddress(address withdrawAddress) external returns (bool);
+    function setDepositorWithdrawAddress(address withdrawAddress)
+        external
+        returns (bool);
 
     /**
      * @dev Withdraws all the rewards for the given delegator and receiver.
      * @param receiver The receiver address.
      * @return rewards rewards.
      */
-    function withdrawAllDepositorRewards(address receiver) external returns (Cosmos.Coin[] memory);
+    function withdrawAllDepositorRewards(address receiver)
+        external
+        returns (Cosmos.Coin[] memory);
 
     /**
      * @dev Withdraws the rewards for the given delegator and receiver.
@@ -66,10 +81,13 @@ interface IRewardsModule {
      * @param amount The amount of rewards to withdraw.
      * @return rewards rewards.
      */
-    function withdrawDepositorRewards(address receiver, uint256 amount) external returns (Cosmos.Coin[] memory);
+    function withdrawDepositorRewards(address receiver, uint256 amount)
+        external
+        returns (Cosmos.Coin[] memory);
 
     /**
-     * @dev Withdraws the rewards for the given delegator and receiver, to a given address.
+     * @dev Withdraws the rewards for the given delegator and receiver, to a
+     * given address.
      * @param receiver The receiver address.
      * @param recipient The recipient address.
      * @param amount The amount of rewards to withdraw.
@@ -81,7 +99,8 @@ interface IRewardsModule {
         uint256 amount
     ) external returns (Cosmos.Coin[] memory);
 
-    //////////////////////////////////////////// Events ////////////////////////////////////////////
+    //////////////////////////////////////////// Events
+    // ////////////////////////////////////////////
 
     /**
      * @dev Emitted when a deposit is initialized.
@@ -102,12 +121,16 @@ interface IRewardsModule {
      * @param withdrawer the address that withdrawed the rewards.
      * @param rewardAmount the rewards that were withdrawen.
      */
-    event WithdrawDepositRewards(address indexed withdrawer, Cosmos.Coin[] rewardAmount);
+    event WithdrawDepositRewards(
+        address indexed withdrawer, Cosmos.Coin[] rewardAmount
+    );
 
     /**
      * @dev Emitted when a withdraw address is set.
      * @param depositor The owner address.
      * @param withdrawAddress The withdraw address.
      */
-    event SetDepositorWithdrawAddress(address indexed depositor, address indexed withdrawAddress);
+    event SetDepositorWithdrawAddress(
+        address indexed depositor, address indexed withdrawAddress
+    );
 }

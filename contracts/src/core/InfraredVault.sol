@@ -1,32 +1,37 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.20;
 
-import {EIP5XXX, ERC4626, ERC20} from '@berachain/EIP5XXX.sol';
-import {Errors} from '@utils/Errors.sol';
-import {IRewardsModule} from '@berachain/Rewards.sol';
-import {IDistributionModule} from '@polaris/Distribution.sol';
-import {AccessControl} from '@openzeppelin/access/AccessControl.sol';
-import {Cosmos} from '@polaris/CosmosTypes.sol';
+import {EIP5XXX, ERC4626, ERC20} from "@berachain/EIP5XXX.sol";
+import {Errors} from "@utils/Errors.sol";
+import {IRewardsModule} from "@berachain/Rewards.sol";
+import {IDistributionModule} from "@polaris/Distribution.sol";
+import {AccessControl} from "@openzeppelin/access/AccessControl.sol";
+import {Cosmos} from "@polaris/CosmosTypes.sol";
 
 /**
  * @title Infrared Vault - Reward Distribution Vault
- *     @author inhereted from DevBear (https://twitter.com/itsdevbear) & Quant Bear (https://github.com/quant-bear)
- *     @notice EIP5XXX represents a vault in which depositors can also be distributed  ERC20 tokens rewards.
+ *     @author inhereted from DevBear (https://twitter.com/itsdevbear) & Quant
+ * Bear (https://github.com/quant-bear)
+ *     @notice EIP5XXX represents a vault in which depositors can also be
+ * distributed  ERC20 tokens rewards.
  */
 contract InfraredVault is EIP5XXX, AccessControl {
     // This role is reserved for the infrared main contract.
-    bytes32 internal constant INFRARED_ROLE = keccak256('INFRARED_ROLE');
+    bytes32 internal constant INFRARED_ROLE = keccak256("INFRARED_ROLE");
 
     // This is the address of the main contract that deployed this contract.
     address private immutable INFRARED;
 
-    // This is the address of the pool (dex/lending..etc) that this contract is representing.
+    // This is the address of the pool (dex/lending..etc) that this contract is
+    // representing.
     address public immutable POOL_ADDRESS;
 
-    // The Berachain Reward Precompile contract that will be allocating rewards to this vault.
+    // The Berachain Reward Precompile contract that will be allocating rewards
+    // to this vault.
     IRewardsModule public immutable REWARDS_PRECOMPILE;
 
-    // The Berachain Distribution Precompile contract that will be allocating rewards to this vault.
+    // The Berachain Distribution Precompile contract that will be allocating
+    // rewards to this vault.
     IDistributionModule public immutable DISTRIBUTION_PRECOMPILE;
 
     /**
@@ -35,10 +40,14 @@ contract InfraredVault is EIP5XXX, AccessControl {
      * @param _name                   The name of the vault token.
      * @param _symbol                 The symbol of the vault token.
      * @param _rewardTokens           The reward tokens.
-     * @param _infrared               The main contract that deployed this contract.
-     * @param _poolAddress            The address of the pool (dex/lending..etc) that this contract is representing.
-     * @param _rewardsPrecompileAddress      The Berachain Reward Precompile contract that will be allocating rewards to this vault.
-     * @param _distributionPrecompileAddress The Berachain Distribution Precompile contract that will be allocating rewards to this vault.
+     * @param _infrared               The main contract that deployed this
+     * contract.
+     * @param _poolAddress            The address of the pool (dex/lending..etc)
+     * that this contract is representing.
+     * @param _rewardsPrecompileAddress      The Berachain Reward Precompile
+     * contract that will be allocating rewards to this vault.
+     * @param _distributionPrecompileAddress The Berachain Distribution
+     * Precompile contract that will be allocating rewards to this vault.
      */
     constructor(
         address _asset,
@@ -63,13 +72,17 @@ contract InfraredVault is EIP5XXX, AccessControl {
             revert Errors.ZeroAddress();
         }
 
-        // Check if either of the precompiles are zero. One is enough to be non zero to handle the case of only one being used.
-        if (_rewardsPrecompileAddress == address(0) && _distributionPrecompileAddress == address(0)) {
+        // Check if either of the precompiles are zero. One is enough to be non
+        // zero to handle the case of only one being used.
+        if (
+            _rewardsPrecompileAddress == address(0)
+                && _distributionPrecompileAddress == address(0)
+        ) {
             revert Errors.ZeroAddress();
         }
 
         // Create the reward containers.
-        for (uint256 _i; _i < _rewardTokens.length; ) {
+        for (uint256 _i; _i < _rewardTokens.length;) {
             // @dev we are going to be only using partition 0.
             _createNewRewardContainer(_rewardTokens[_i], 0);
 
@@ -79,9 +92,11 @@ contract InfraredVault is EIP5XXX, AccessControl {
             }
         }
 
-        // If the distribution precompile is set, set its withdraw address to the infrared contract.
+        // If the distribution precompile is set, set its withdraw address to
+        // the infrared contract.
         if (_distributionPrecompileAddress != address(0)) {
-            IDistributionModule _distributionPrecompile = IDistributionModule(_distributionPrecompileAddress);
+            IDistributionModule _distributionPrecompile =
+                IDistributionModule(_distributionPrecompileAddress);
 
             // Make sure that the withdraw address is set.
             if (!_distributionPrecompile.setWithdrawAddress(_infrared)) {
@@ -89,9 +104,11 @@ contract InfraredVault is EIP5XXX, AccessControl {
             }
         }
 
-        // If the rewards precompile is set, set its withdraw address to the infrared contract.
+        // If the rewards precompile is set, set its withdraw address to the
+        // infrared contract.
         if (_rewardsPrecompileAddress != address(0)) {
-            IRewardsModule _rewardsPrecompile = IRewardsModule(_rewardsPrecompileAddress);
+            IRewardsModule _rewardsPrecompile =
+                IRewardsModule(_rewardsPrecompileAddress);
 
             if (!_rewardsPrecompile.setDepositorWithdrawAddress(_infrared)) {
                 revert Errors.SetWithdrawAddressFailed();
@@ -101,7 +118,8 @@ contract InfraredVault is EIP5XXX, AccessControl {
         // Set the constants.
         INFRARED = _infrared;
         POOL_ADDRESS = _poolAddress;
-        DISTRIBUTION_PRECOMPILE = IDistributionModule(_distributionPrecompileAddress);
+        DISTRIBUTION_PRECOMPILE =
+            IDistributionModule(_distributionPrecompileAddress);
         REWARDS_PRECOMPILE = IRewardsModule(_rewardsPrecompileAddress);
 
         // Set the admin.
@@ -118,10 +136,14 @@ contract InfraredVault is EIP5XXX, AccessControl {
      * @notice Returns the reward tokens.
      * @return _rewardTokens address[] The reward tokens.
      */
-    function rewardTokens() external view returns (address[] memory _rewardTokens) {
+    function rewardTokens()
+        external
+        view
+        returns (address[] memory _rewardTokens)
+    {
         _rewardTokens = new address[](rewardKeys.length);
 
-        for (uint256 _i; _i < rewardKeys.length; ) {
+        for (uint256 _i; _i < rewardKeys.length;) {
             (, _rewardTokens[_i]) = _decodeRewardKey(rewardKeys[_i]);
 
             // Iteration is safe here.
@@ -144,10 +166,14 @@ contract InfraredVault is EIP5XXX, AccessControl {
     //////////////////////////////////////////////////////////////*/
 
     /**
-     * @dev Allows the admin of this contract to set a different withdraw address for the rewards precompile.
+     * @dev Allows the admin of this contract to set a different withdraw
+     * address for the rewards precompile.
      * @param _withdrawAddress address The new withdraw address.
      */
-    function changeRewardsWithdrawAddress(address _withdrawAddress) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function changeRewardsWithdrawAddress(address _withdrawAddress)
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
         if (_withdrawAddress == address(0)) {
             revert Errors.ZeroAddress();
         }
@@ -158,10 +184,14 @@ contract InfraredVault is EIP5XXX, AccessControl {
     }
 
     /**
-     * @dev Allows the admin of this contract to set a different withdraw address for the distribution precompile.
+     * @dev Allows the admin of this contract to set a different withdraw
+     * address for the distribution precompile.
      * @param _withdrawAddress address The new withdraw address.
      */
-    function changeDistributionWithdrawAddress(address _withdrawAddress) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function changeDistributionWithdrawAddress(address _withdrawAddress)
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
         if (_withdrawAddress == address(0)) {
             revert Errors.ZeroAddress();
         }
@@ -175,9 +205,12 @@ contract InfraredVault is EIP5XXX, AccessControl {
      * @dev Allows the admin of this contract to add reward tokens.
      * @param _rewardTokens address[] The reward tokens to add.
      */
-    function addRewardTokens(address[] calldata _rewardTokens) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function addRewardTokens(address[] calldata _rewardTokens)
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
         // Create the reward containers.
-        for (uint256 _i; _i < _rewardTokens.length; ) {
+        for (uint256 _i; _i < _rewardTokens.length;) {
             if (_rewardTokens[_i] == address(0)) {
                 revert Errors.ZeroAddress();
             }
@@ -198,10 +231,15 @@ contract InfraredVault is EIP5XXX, AccessControl {
 
     /**
      * @dev The Infrared contract can claim the rewards in behalf of the vault.
-     * @dev Since withdraw address set in constructor, it will be credited to that address.
+     * @dev Since withdraw address set in constructor, it will be credited to
+     * that address.
      * @return _rewards Cosmos.Coin[] The rewards.
      */
-    function claimRewardsPrecompile() external onlyRole(INFRARED_ROLE) returns (Cosmos.Coin[] memory _rewards) {
+    function claimRewardsPrecompile()
+        external
+        onlyRole(INFRARED_ROLE)
+        returns (Cosmos.Coin[] memory _rewards)
+    {
         return REWARDS_PRECOMPILE.withdrawAllDepositorRewards(POOL_ADDRESS);
     }
 
@@ -211,9 +249,15 @@ contract InfraredVault is EIP5XXX, AccessControl {
 
     /**
      * @notice Returns the current epoch per week for a reward token.
-     * @return _rk  bytes32[]  The reward token to get the current epoch per week for.
+     * @return _rk  bytes32[]  The reward token to get the current epoch per
+     * week for.
      */
-    function rewardKeysOf(address) public view override returns (bytes32[] memory _rk) {
+    function rewardKeysOf(address)
+        public
+        view
+        override
+        returns (bytes32[] memory _rk)
+    {
         return rewardKeys;
     }
 
@@ -226,7 +270,8 @@ contract InfraredVault is EIP5XXX, AccessControl {
     }
 
     /**
-     * @notice Returns the total weight of a partition, in this vault it is the total supply of the vault.
+     * @notice Returns the total weight of a partition, in this vault it is the
+     * total supply of the vault.
      * @return _tw uint256 The total weight of the partition.
      */
     function totalWeight(uint96) public view override returns (uint256 _tw) {
@@ -234,11 +279,17 @@ contract InfraredVault is EIP5XXX, AccessControl {
     }
 
     /**
-     * @notice Returns the weight of a user, in this vault it is the balance of the users shares of the vault.
+     * @notice Returns the weight of a user, in this vault it is the balance of
+     * the users shares of the vault.
      * @param _user address The user to get the weight of.
      * @return _wo  uint256 The eight of the user in the partition.
      */
-    function weightOf(address _user, uint96) public view override returns (uint256 _wo) {
+    function weightOf(address _user, uint96)
+        public
+        view
+        override
+        returns (uint256 _wo)
+    {
         return balanceOf[_user];
     }
 
@@ -246,9 +297,14 @@ contract InfraredVault is EIP5XXX, AccessControl {
                       Internal
     //////////////////////////////////////////////////////////////*/
 
-    function _decodeRewardKey(bytes32 _packedData) internal pure returns (uint96 _partition, address _reward) {
+    function _decodeRewardKey(bytes32 _packedData)
+        internal
+        pure
+        returns (uint96 _partition, address _reward)
+    {
         // Extracting the partition
-        _partition = uint96(uint256(_packedData) >> (256 - 96)); // Shift right by (256-96)=160 bits
+        _partition = uint96(uint256(_packedData) >> (256 - 96)); // Shift right
+            // by (256-96)=160 bits
 
         // Extracting the reward (address)
         _reward = address(uint160(uint256(_packedData)));

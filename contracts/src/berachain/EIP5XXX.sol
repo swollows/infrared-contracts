@@ -2,15 +2,17 @@
 pragma solidity 0.8.20;
 
 /* External */
-import {ERC20, ERC4626} from '@solmate/mixins/ERC4626.sol';
-import {SafeTransferLib} from '@solmate/utils/SafeTransferLib.sol';
+import {ERC20, ERC4626} from "@solmate/mixins/ERC4626.sol";
+import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 
 /* solhint-disable */
 
 /**
  * @title EIP5XXX - Reward Distribution Vault
- *     @author DevBear (https://twitter.com/itsdevbear) & Quant Bear (https://github.com/quant-bear)
- *     @notice EIP5XXX represents a vault in which depositors can also be distributed  ERC20 tokens rewards.
+ *     @author DevBear (https://twitter.com/itsdevbear) & Quant Bear
+ * (https://github.com/quant-bear)
+ *     @notice EIP5XXX represents a vault in which depositors can also be
+ * distributed  ERC20 tokens rewards.
  */
 abstract contract EIP5XXX is ERC4626 {
     using SafeTransferLib for ERC20;
@@ -26,7 +28,12 @@ abstract contract EIP5XXX is ERC4626 {
     //////////////////////////////////////////////////////////////*/
 
     ///@notice emitted when a claim approval occurs
-    event ClaimApproval(address indexed owner, address indexed claimer, address indexed reward, uint256 amount);
+    event ClaimApproval(
+        address indexed owner,
+        address indexed claimer,
+        address indexed reward,
+        uint256 amount
+    );
 
     ///@notice emitted when rewards are claimed
     event Claimed(
@@ -38,7 +45,12 @@ abstract contract EIP5XXX is ERC4626 {
     );
 
     ///@notice emitted when rewards are supplied
-    event Supplied(address indexed caller, address indexed supplier, address indexed reward, uint256 amount);
+    event Supplied(
+        address indexed caller,
+        address indexed supplier,
+        address indexed reward,
+        uint256 amount
+    );
 
     /*//////////////////////////////////////////////////////////////
                              REWARDS STORAGE
@@ -48,7 +60,8 @@ abstract contract EIP5XXX is ERC4626 {
     bytes32[] public rewardKeys;
 
     /// @notice approve contracts to withdrawl the rewards
-    mapping(address => mapping(address => mapping(address => uint256))) public claimAllowance;
+    mapping(address => mapping(address => mapping(address => uint256))) public
+        claimAllowance;
 
     /// @notice dividend container lookup by token address
     mapping(bytes32 => RewardsContainer) public keyToRewardsContainer;
@@ -57,7 +70,8 @@ abstract contract EIP5XXX is ERC4626 {
      * @notice The container stores information about the dividend program
      * @param suppliedSinceLastUpdate accumulated rewards since last update
      * @param suppliedPerUnitWeight earned rewards per share over time
-     * @param joinedAt The array index of `suppliedPerUnitWeight` at which the user joined the vault
+     * @param joinedAt The array index of `suppliedPerUnitWeight` at which the
+     * user joined the vault
      * @param claimableRewards The available rewards that can be redeemed
      */
     struct RewardsContainer {
@@ -73,11 +87,23 @@ abstract contract EIP5XXX is ERC4626 {
                               VIRTUAL LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    function rewardKeysOf(address owner) public view virtual returns (bytes32[] memory);
+    function rewardKeysOf(address owner)
+        public
+        view
+        virtual
+        returns (bytes32[] memory);
 
-    function weightOf(address owner, uint96 partition) public view virtual returns (uint256);
+    function weightOf(address owner, uint96 partition)
+        public
+        view
+        virtual
+        returns (uint256);
 
-    function totalWeight(uint96 partition) public view virtual returns (uint256);
+    function totalWeight(uint96 partition)
+        public
+        view
+        virtual
+        returns (uint256);
 
     function totalAssets() public view virtual override returns (uint256);
 
@@ -86,14 +112,19 @@ abstract contract EIP5XXX is ERC4626 {
     //////////////////////////////////////////////////////////////*/
 
     /**
-     * @notice Sets `amount` as the allowance of `claimer` over the caller's rewards.
+     * @notice Sets `amount` as the allowance of `claimer` over the caller's
+     * rewards.
      *       @dev Emits a {ClaimApproval} event.
      *       @param reward The asset to set allowance for.
      *       @param amount The amount to set allowance for.
      *       @param claimer The address to set allowance for.
      *       @return success value indicating whether the operation succeeded.
      */
-    function approveClaim(address reward, uint256 amount, address claimer) external virtual returns (bool success) {
+    function approveClaim(address reward, uint256 amount, address claimer)
+        external
+        virtual
+        returns (bool success)
+    {
         claimAllowance[reward][msg.sender][claimer] = amount;
 
         emit ClaimApproval(msg.sender, claimer, reward, amount);
@@ -107,7 +138,11 @@ abstract contract EIP5XXX is ERC4626 {
      *       @param receiver address to receieve the claim of rewards
      *       @return success value indicating whether the operation succeeded.
      */
-    function claim(address reward, uint256 amount, address receiver) external virtual returns (bool success) {
+    function claim(address reward, uint256 amount, address receiver)
+        external
+        virtual
+        returns (bool success)
+    {
         return _claim(reward, 0, amount, receiver);
     }
 
@@ -126,7 +161,8 @@ abstract contract EIP5XXX is ERC4626 {
         uint256 amount,
         address receiver
     ) internal virtual returns (bool success) {
-        RewardsContainer storage c = keyToRewardsContainer[bytes32(abi.encodePacked(partition, reward))];
+        RewardsContainer storage c =
+            keyToRewardsContainer[bytes32(abi.encodePacked(partition, reward))];
         _updateClaim(c, msg.sender, amount);
         ERC20(reward).safeTransfer(receiver, amount);
 
@@ -168,10 +204,17 @@ abstract contract EIP5XXX is ERC4626 {
         uint256 amount,
         address receiver
     ) internal virtual returns (bool success) {
-        uint256 allowed = claimAllowance[reward][owner][msg.sender]; // Saves gas for limited approvals.
-        if (allowed != type(uint256).max) claimAllowance[reward][owner][msg.sender] = allowed - amount;
+        uint256 allowed = claimAllowance[reward][owner][msg.sender]; // Saves
+            // gas for limited approvals.
+        if (allowed != type(uint256).max) {
+            claimAllowance[reward][owner][msg.sender] = allowed - amount;
+        }
 
-        _updateClaim(keyToRewardsContainer[bytes32(abi.encodePacked(partition, reward))], owner, amount);
+        _updateClaim(
+            keyToRewardsContainer[bytes32(abi.encodePacked(partition, reward))],
+            owner,
+            amount
+        );
         ERC20(reward).safeTransfer(receiver, amount);
 
         emit Claimed(msg.sender, owner, receiver, reward, amount);
@@ -180,28 +223,43 @@ abstract contract EIP5XXX is ERC4626 {
 
     /**
      * @notice Supply rewards to distributor to depositors
-     *       @param supplier The address where the incoming tokens are coming from
+     *       @param supplier The address where the incoming tokens are coming
+     * from
      *       @param reward The asset being supplied
      *       @param amount The amount of said asset
      */
-    function supply(address supplier, address reward, uint256 amount) external virtual {
+    function supply(address supplier, address reward, uint256 amount)
+        external
+        virtual
+    {
         return _supply(supplier, reward, 0, amount);
     }
 
-    function supply(address supplier, address reward, uint96 partition, uint256 amount) external virtual {
+    function supply(
+        address supplier,
+        address reward,
+        uint96 partition,
+        uint256 amount
+    ) external virtual {
         _supply(supplier, reward, partition, amount);
     }
 
     // slither-disable-next-line naming-convention
-    function _supply(address supplier, address reward, uint96 partition, uint256 amount) public virtual {
+    function _supply(
+        address supplier,
+        address reward,
+        uint96 partition,
+        uint256 amount
+    ) public virtual {
         ERC20(reward).safeTransferFrom(supplier, address(this), amount);
-        // if the underlying asset supplied, we use the systemic share math instead of the container math
+        // if the underlying asset supplied, we use the systemic share math
+        // instead of the container math
         if (ERC20(reward) != asset) {
             // safe unchecked: cannot reasonably overflow
             unchecked {
-                keyToRewardsContainer[bytes32(abi.encodePacked(partition, reward))].suppliedSinceLastUpdate += uint208(
-                    amount
-                );
+                keyToRewardsContainer[bytes32(
+                    abi.encodePacked(partition, reward)
+                )].suppliedSinceLastUpdate += uint208(amount);
             }
         }
         emit Supplied(msg.sender, supplier, reward, amount);
@@ -214,7 +272,8 @@ abstract contract EIP5XXX is ERC4626 {
     /**
      * @notice returns the weighting share of rewards a user has for partition 0
      *       @param owner the address of the the query
-     *       @return weight the weighting share of rewards a user has for partition 0
+     *       @return weight the weighting share of rewards a user has for
+     * partition 0
      */
     function weightOf(address owner) external view virtual returns (uint256) {
         return weightOf(owner, 0);
@@ -229,42 +288,65 @@ abstract contract EIP5XXX is ERC4626 {
     }
 
     /**
-     * @notice Returns the amount of tokens that can be claimed by the given owner
+     * @notice Returns the amount of tokens that can be claimed by the given
+     * owner
      *       @param reward The asset to check.
      *       @param owner The owner to check.
-     *       @return amount The amount of okens that can be claimed by or on behalf of the given owner.
+     *       @return amount The amount of okens that can be claimed by or on
+     * behalf of the given owner.
      */
-    function maxClaimable(address reward, address owner) external view virtual returns (uint256 amount) {
+    function maxClaimable(address reward, address owner)
+        external
+        view
+        virtual
+        returns (uint256 amount)
+    {
         return _maxClaimable(reward, 0, owner);
     }
 
-    function maxClaimable(address reward, uint96 id, address owner) external view virtual returns (uint256 amount) {
+    function maxClaimable(address reward, uint96 id, address owner)
+        external
+        view
+        virtual
+        returns (uint256 amount)
+    {
         return _maxClaimable(reward, id, owner);
     }
 
-    function _maxClaimable(
-        address reward,
-        uint96 partition,
-        address owner
-    ) internal view virtual returns (uint256 amount) {
-        RewardsContainer storage c = keyToRewardsContainer[bytes32(abi.encodePacked(partition, reward))];
+    function _maxClaimable(address reward, uint96 partition, address owner)
+        internal
+        view
+        virtual
+        returns (uint256 amount)
+    {
+        RewardsContainer storage c =
+            keyToRewardsContainer[bytes32(abi.encodePacked(partition, reward))];
         uint256 _weight = weightOf(owner, c.partition);
 
         if (_weight == 0) return c.claimableRewards[owner] / RAY;
-        (uint256 eps, ) = _currentEPW(c);
-        return ((eps - c.suppliedPerUnitWeight[c.joinedAt[owner]]) * _weight + c.claimableRewards[owner]) / RAY;
+        (uint256 eps,) = _currentEPW(c);
+        return (
+            (eps - c.suppliedPerUnitWeight[c.joinedAt[owner]]) * _weight
+                + c.claimableRewards[owner]
+        ) / RAY;
     }
 
     /*//////////////////////////////////////////////////////////////
                              INTERNAL LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    function _currentEPW(RewardsContainer storage c) internal view returns (uint256 eps, uint256 remainder) {
+    function _currentEPW(RewardsContainer storage c)
+        internal
+        view
+        returns (uint256 eps, uint256 remainder)
+    {
         uint256 _totalWeight = totalWeight(c.partition); // save sloads
         if (_totalWeight == 0) return (0, 0);
-        uint256 totalEarningsInRay = c.suppliedSinceLastUpdate * RAY + c.currentSupplyError;
+        uint256 totalEarningsInRay =
+            c.suppliedSinceLastUpdate * RAY + c.currentSupplyError;
         return (
-            c.suppliedPerUnitWeight[c.suppliedPerUnitWeight.length - 1] + (totalEarningsInRay / _totalWeight),
+            c.suppliedPerUnitWeight[c.suppliedPerUnitWeight.length - 1]
+                + (totalEarningsInRay / _totalWeight),
             totalEarningsInRay % _totalWeight
         );
     }
@@ -280,17 +362,25 @@ abstract contract EIP5XXX is ERC4626 {
         c.suppliedSinceLastUpdate = 0;
     }
 
-    function _updateClaimable(RewardsContainer storage c, address owner) internal {
+    function _updateClaimable(RewardsContainer storage c, address owner)
+        internal
+    {
         uint256 joinedTime = c.joinedAt[owner];
         uint256 weight = weightOf(owner, c.partition);
         c.claimableRewards[owner] += (weight == 0)
             ? 0
-            : (c.suppliedPerUnitWeight[c.suppliedPerUnitWeight.length - 1] - c.suppliedPerUnitWeight[joinedTime]) *
-                weight;
+            : (
+                c.suppliedPerUnitWeight[c.suppliedPerUnitWeight.length - 1]
+                    - c.suppliedPerUnitWeight[joinedTime]
+            ) * weight;
         c.joinedAt[owner] = c.suppliedPerUnitWeight.length - 1;
     }
 
-    function _updateClaim(RewardsContainer storage c, address owner, uint256 amount) internal virtual {
+    function _updateClaim(
+        RewardsContainer storage c,
+        address owner,
+        uint256 amount
+    ) internal virtual {
         uint256 rewards = c.claimableRewards[owner];
 
         // todo: add comment
@@ -307,7 +397,7 @@ abstract contract EIP5XXX is ERC4626 {
 
             // If still insufficient after update, revert.
             if (rewards < amount) {
-                revert('Insufficent payable rewards');
+                revert("Insufficent payable rewards");
             }
         }
 
@@ -321,9 +411,10 @@ abstract contract EIP5XXX is ERC4626 {
         bytes32[] memory rewardContainerIds = rewardKeysOf(user);
         uint256 len = rewardContainerIds.length;
 
-        for (uint256 i = 0; i < len; ) {
+        for (uint256 i = 0; i < len;) {
             bytes32 rewardContainerId = rewardContainerIds[i];
-            RewardsContainer storage c = keyToRewardsContainer[rewardContainerId];
+            RewardsContainer storage c =
+                keyToRewardsContainer[rewardContainerId];
             _updateSupplied(c);
             _updateClaimable(c, user);
 
@@ -338,7 +429,10 @@ abstract contract EIP5XXX is ERC4626 {
                         CONTAINER CREATION LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    function _createNewRewardContainer(address reward, uint96 partition) internal virtual {
+    function _createNewRewardContainer(address reward, uint96 partition)
+        internal
+        virtual
+    {
         bytes32 rewardKey = bytes32(abi.encodePacked(partition, reward));
         rewardKeys.push(rewardKey);
         keyToRewardsContainer[rewardKey].partition = partition;
@@ -348,13 +442,23 @@ abstract contract EIP5XXX is ERC4626 {
                              ERC20 OVERRIDES
     //////////////////////////////////////////////////////////////*/
 
-    function transfer(address to, uint256 amount) public virtual override returns (bool) {
+    function transfer(address to, uint256 amount)
+        public
+        virtual
+        override
+        returns (bool)
+    {
         _updateUserAccounting(msg.sender);
         _updateUserAccounting(to);
         return super.transfer(to, amount);
     }
 
-    function transferFrom(address from, address to, uint256 amount) public virtual override returns (bool) {
+    function transferFrom(address from, address to, uint256 amount)
+        public
+        virtual
+        override
+        returns (bool)
+    {
         _updateUserAccounting(from);
         _updateUserAccounting(to);
         return super.transferFrom(from, to, amount);
@@ -385,7 +489,7 @@ abstract contract EIP5XXX is ERC4626 {
         bytes32 s
     ) external virtual {
         // slither-disable-next-line timestamp
-        require(deadline >= block.timestamp, 'PERMIT_DEADLINE_EXPIRED');
+        require(deadline >= block.timestamp, "PERMIT_DEADLINE_EXPIRED");
 
         // Unchecked because the only math done is incrementing
         // the owner's nonce which cannot realistically overflow.
@@ -396,12 +500,12 @@ abstract contract EIP5XXX is ERC4626 {
                 address recoveredAddress = ecrecover(
                     keccak256(
                         abi.encodePacked(
-                            '\x19\x01',
+                            "\x19\x01",
                             DOMAIN_SEPARATOR(),
                             keccak256(
                                 abi.encode(
                                     keccak256(
-                                        'Permit(address reward, address owner,address claimer,uint256 value,uint256 nonce,uint256 deadline)'
+                                        "Permit(address reward, address owner,address claimer,uint256 value,uint256 nonce,uint256 deadline)"
                                     ),
                                     reward,
                                     owner,
@@ -418,7 +522,10 @@ abstract contract EIP5XXX is ERC4626 {
                     s
                 );
 
-                require(recoveredAddress != address(0) && recoveredAddress == owner, 'INVALID_SIGNER');
+                require(
+                    recoveredAddress != address(0) && recoveredAddress == owner,
+                    "INVALID_SIGNER"
+                );
 
                 // must be in the unchecked to prevent stack too deep
                 emit ClaimApproval(recoveredAddress, claimer, reward, value);

@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.20;
 
-import {Cosmos} from './CosmosTypes.sol';
+import {Cosmos} from "./CosmosTypes.sol";
 
 /**
  * @dev Interface of the staking module's precompiled contract
  */
 interface IStakingModule {
-    ////////////////////////////////////////// EVENTS /////////////////////////////////////////////
+    ////////////////////////////////////////// EVENTS
+    // /////////////////////////////////////////////
 
     /**
      * @dev Emitted by the staking module when `amount` tokens are delegated to
@@ -16,23 +17,31 @@ interface IStakingModule {
     event Delegate(address indexed validator, Cosmos.Coin[] amount);
 
     /**
-     * @dev Emitted by the staking module when `amount` tokens are redelegated from
+     * @dev Emitted by the staking module when `amount` tokens are redelegated
+     * from
      * `sourceValidator` to `destinationValidator`
      */
-    event Redelegate(address indexed sourceValidator, address indexed destinationValidator, Cosmos.Coin[] amount);
+    event Redelegate(
+        address indexed sourceValidator,
+        address indexed destinationValidator,
+        Cosmos.Coin[] amount
+    );
 
     /**
-     * @dev Emitted by the staking module when `amount` tokens are used to create `validator`
+     * @dev Emitted by the staking module when `amount` tokens are used to
+     * create `validator`
      */
     event CreateValidator(address indexed validator, Cosmos.Coin[] amount);
 
     /**
-     * @dev Emitted by the staking module when `amount` tokens are unbonded from `validator`
+     * @dev Emitted by the staking module when `amount` tokens are unbonded from
+     * `validator`
      */
     event Unbond(address indexed validator, Cosmos.Coin[] amount);
 
     /**
-     * @dev Emitted by the staking module when `amount` tokens are canceled from `delegator`'s
+     * @dev Emitted by the staking module when `amount` tokens are canceled from
+     * `delegator`'s
      * unbonding delegation with `validator`
      */
     event CancelUnbondingDelegation(
@@ -42,37 +51,51 @@ interface IStakingModule {
         int64 creationHeight
     );
 
-    /////////////////////////////////////// READ METHODS //////////////////////////////////////////
+    /////////////////////////////////////// READ METHODS
+    // //////////////////////////////////////////
 
     /**
-     * @dev Returns the operator address of the validator for the given consensus address.
+     * @dev Returns the operator address of the validator for the given
+     * consensus address.
      */
-    function valAddressFromConsAddress(bytes calldata consAddress) external pure returns (address);
+    function valAddressFromConsAddress(bytes calldata consAddress)
+        external
+        pure
+        returns (address);
 
     /**
      * @dev Returns a list of all active validators.
      */
-    function getValidators(
-        Cosmos.PageRequest calldata pagination
-    ) external view returns (Validator[] memory, Cosmos.PageResponse memory);
+    function getValidators(Cosmos.PageRequest calldata pagination)
+        external
+        view
+        returns (Validator[] memory, Cosmos.PageResponse memory);
 
     /**
      * @dev Returns a list of bonded validator (operator) addresses.
      */
-    function getBondedValidators(
-        Cosmos.PageRequest calldata pagination
-    ) external view returns (address[] memory, Cosmos.PageResponse memory);
+    function getBondedValidators(Cosmos.PageRequest calldata pagination)
+        external
+        view
+        returns (address[] memory, Cosmos.PageResponse memory);
 
     /**
-     * @dev Returns a list of bonded validator (operator) addresses, sorted by power (stake) in
+     * @dev Returns a list of bonded validator (operator) addresses, sorted by
+     * power (stake) in
      * descending order.
      */
-    function getBondedValidatorsByPower() external view returns (address[] memory);
+    function getBondedValidatorsByPower()
+        external
+        view
+        returns (address[] memory);
 
     /**
      * @dev Returns the validator at the given address.
      */
-    function getValidator(address validatorAddress) external view returns (Validator memory);
+    function getValidator(address validatorAddress)
+        external
+        view
+        returns (Validator memory);
 
     /**
      * @dev Returns all the validators delegated to by the given delegator.
@@ -84,7 +107,8 @@ interface IStakingModule {
 
     /**
      * @dev Returns all the delegations delegated to the given validator.
-     * Note: if pagination is not a valid page request, it will execute without pagination
+     * Note: if pagination is not a valid page request, it will execute without
+     * pagination
      */
     function getValidatorDelegations(
         address validatorAddress,
@@ -92,13 +116,18 @@ interface IStakingModule {
     ) external view returns (Delegation[] memory, Cosmos.PageResponse memory);
 
     /**
-     * @dev Returns the `amount` of tokens currently delegated by `delegatorAddress` to
+     * @dev Returns the `amount` of tokens currently delegated by
+     * `delegatorAddress` to
      * `validatorAddress`
      */
-    function getDelegation(address delegatorAddress, address validatorAddress) external view returns (uint256);
+    function getDelegation(address delegatorAddress, address validatorAddress)
+        external
+        view
+        returns (uint256);
 
     /**
-     * @dev Returns a time-ordered list of all UnbondingDelegationEntries between
+     * @dev Returns a time-ordered list of all UnbondingDelegationEntries
+     * between
      * `delegatorAddress` and `validatorAddress`
      */
     function getUnbondingDelegation(
@@ -112,10 +141,14 @@ interface IStakingModule {
     function getDelegatorUnbondingDelegations(
         address delegatorAddress,
         Cosmos.PageRequest calldata pagination
-    ) external view returns (UnbondingDelegation[] memory, Cosmos.PageResponse memory);
+    )
+        external
+        view
+        returns (UnbondingDelegation[] memory, Cosmos.PageResponse memory);
 
     /**
-     * @dev Returns a list of `delegatorAddress`'s redelegating bonds from `srcValidator` to
+     * @dev Returns a list of `delegatorAddress`'s redelegating bonds from
+     * `srcValidator` to
      * `dstValidator`
      */
     function getRedelegations(
@@ -123,22 +156,34 @@ interface IStakingModule {
         address srcValidator,
         address dstValidator,
         Cosmos.PageRequest calldata pagination
-    ) external view returns (RedelegationEntry[] memory, Cosmos.PageResponse memory);
+    )
+        external
+        view
+        returns (RedelegationEntry[] memory, Cosmos.PageResponse memory);
 
-    ////////////////////////////////////// WRITE METHODS //////////////////////////////////////////
+    ////////////////////////////////////// WRITE METHODS
+    // //////////////////////////////////////////
 
     /**
      * @dev msg.sender delegates the `amount` of tokens to `validatorAddress`
      */
-    function delegate(address validatorAddress, uint256 amount) external payable returns (bool);
+    function delegate(address validatorAddress, uint256 amount)
+        external
+        payable
+        returns (bool);
 
     /**
-     * @dev msg.sender undelegates the `amount` of tokens from `validatorAddress`
+     * @dev msg.sender undelegates the `amount` of tokens from
+     * `validatorAddress`
      */
-    function undelegate(address validatorAddress, uint256 amount) external payable returns (bool);
+    function undelegate(address validatorAddress, uint256 amount)
+        external
+        payable
+        returns (bool);
 
     /**
-     * @dev msg.sender redelegates the `amount` of tokens from `srcValidator` to `validtorDstAddr`
+     * @dev msg.sender redelegates the `amount` of tokens from `srcValidator` to
+     * `validtorDstAddr`
      */
     function beginRedelegate(
         address srcValidator,
@@ -147,7 +192,8 @@ interface IStakingModule {
     ) external payable returns (bool);
 
     /**
-     * @dev Cancels msg.sender's unbonding delegation with `validatorAddress` and delegates the
+     * @dev Cancels msg.sender's unbonding delegation with `validatorAddress`
+     * and delegates the
      * `amount` of tokens back to `validatorAddress`
      *
      * Provide the `creationHeight` of the original unbonding delegation
@@ -158,7 +204,8 @@ interface IStakingModule {
         int64 creationHeight
     ) external payable returns (bool);
 
-    //////////////////////////////////////////// UTILS ////////////////////////////////////////////
+    //////////////////////////////////////////// UTILS
+    // ////////////////////////////////////////////
 
     /**
      * @dev Represents a validator.
@@ -188,7 +235,8 @@ interface IStakingModule {
     }
 
     /**
-     * @dev Represents the initial commission rates to be used for creating a validator.
+     * @dev Represents the initial commission rates to be used for creating a
+     * validator.
      */
     struct CommissionRates {
         uint256 rate;
@@ -210,15 +258,18 @@ interface IStakingModule {
     /**
      * @dev Represents one entry of an unbonding delegation
      *
-     * Note: the field names of the native struct should match these field names (by camelCase)
+     * Note: the field names of the native struct should match these field names
+     * (by camelCase)
      * Note: we are using the types in precompile/generated
      */
     struct UnbondingDelegationEntry {
         // creationHeight is the height which the unbonding took place
         int64 creationHeight;
-        // completionTime is the unix time for unbonding completion, formatted as a string
+        // completionTime is the unix time for unbonding completion, formatted
+        // as a string
         string completionTime;
-        // initialBalance defines the tokens initially scheduled to receive at completion
+        // initialBalance defines the tokens initially scheduled to receive at
+        // completion
         uint256 initialBalance;
         // balance defines the tokens to receive at completion
         uint256 balance;
@@ -227,9 +278,11 @@ interface IStakingModule {
     }
 
     /**
-     * @dev Represents all unbonding bonds of a single delegator with relevant metadata
+     * @dev Represents all unbonding bonds of a single delegator with relevant
+     * metadata
      *
-     * Note: the field names of the native struct should match these field names (by camelCase)
+     * Note: the field names of the native struct should match these field names
+     * (by camelCase)
      * Note: we are using the types in precompile/generated
      */
     struct UnbondingDelegation {
@@ -241,19 +294,23 @@ interface IStakingModule {
     /**
      * @dev Represents a redelegation entry with relevant metadata
      *
-     * Note: the field names of the native struct should match these field names (by camelCase)
+     * Note: the field names of the native struct should match these field names
+     * (by camelCase)
      * Note: we are using the types in precompile/generated
      */
     struct RedelegationEntry {
         // creationHeight is the height which the redelegation took place
         int64 creationHeight;
-        // completionTime is the unix time for redelegation completion, formatted as a string
+        // completionTime is the unix time for redelegation completion,
+        // formatted as a string
         string completionTime;
         // initialBalance defines the initial balance when redelegation started
         uint256 initialBalance;
-        // sharesDst is the amount of destination-validatorAddress shares created by redelegation
+        // sharesDst is the amount of destination-validatorAddress shares
+        // created by redelegation
         uint256 sharesDst;
-        // unbondingId is the incrementing id that uniquely identifies this entry
+        // unbondingId is the incrementing id that uniquely identifies this
+        // entry
         uint64 unbondingId;
     }
 

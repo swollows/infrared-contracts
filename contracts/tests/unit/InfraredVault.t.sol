@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.20;
 
-import {Helper} from './Helper.sol';
-import {Errors} from '@utils/Errors.sol';
+import {Helper} from "./Helper.sol";
+import {Errors} from "@utils/Errors.sol";
 
 contract InfraredVaultTest is Helper {
     function testRewardTokens() public {
@@ -26,16 +26,25 @@ contract InfraredVaultTest is Helper {
         _wibgtVault.changeRewardsWithdrawAddress(ALICE);
     }
 
-    function testCannotChangeWithdrawAddressWithZeroAddress() public prank(DEFAULT_ADMIN) {
+    function testCannotChangeWithdrawAddressWithZeroAddress()
+        public
+        prank(DEFAULT_ADMIN)
+    {
         vm.expectRevert(Errors.ZeroAddress.selector);
         _wibgtVault.changeRewardsWithdrawAddress(address(0));
     }
 
-    function testCannotChangeWithdrawAddressIfPrecompileFails() public prank(DEFAULT_ADMIN) {
+    function testCannotChangeWithdrawAddressIfPrecompileFails()
+        public
+        prank(DEFAULT_ADMIN)
+    {
         // Mock the precompile to fail.
         vm.mockCall(
             address(_rewardsPrecompile),
-            abi.encodeWithSelector(_rewardsPrecompile.setDepositorWithdrawAddress.selector, address(_infrared)),
+            abi.encodeWithSelector(
+                _rewardsPrecompile.setDepositorWithdrawAddress.selector,
+                address(_infrared)
+            ),
             abi.encode(false)
         );
 
@@ -50,7 +59,10 @@ contract InfraredVaultTest is Helper {
         // Mock the precompile to succeed.
         vm.mockCall(
             address(_rewardsPrecompile),
-            abi.encodeWithSelector(_rewardsPrecompile.setDepositorWithdrawAddress.selector, address(ALICE)),
+            abi.encodeWithSelector(
+                _rewardsPrecompile.setDepositorWithdrawAddress.selector,
+                address(ALICE)
+            ),
             abi.encode(true)
         );
 
@@ -66,16 +78,25 @@ contract InfraredVaultTest is Helper {
         _wibgtVault.changeRewardsWithdrawAddress(ALICE);
     }
 
-    function testCannotChangeDistrWithdrawAddressWithZeroAddress() public prank(DEFAULT_ADMIN) {
+    function testCannotChangeDistrWithdrawAddressWithZeroAddress()
+        public
+        prank(DEFAULT_ADMIN)
+    {
         vm.expectRevert(Errors.ZeroAddress.selector);
         _wibgtVault.changeRewardsWithdrawAddress(address(0));
     }
 
-    function testCannotDistrChangeWithdrawAddressIfPrecompileFails() public prank(DEFAULT_ADMIN) {
+    function testCannotDistrChangeWithdrawAddressIfPrecompileFails()
+        public
+        prank(DEFAULT_ADMIN)
+    {
         // Mock the precompile to fail.
         vm.mockCall(
             address(_distributionPrecompile),
-            abi.encodeWithSelector(_distributionPrecompile.setWithdrawAddress.selector, address(_wibgtVault)),
+            abi.encodeWithSelector(
+                _distributionPrecompile.setWithdrawAddress.selector,
+                address(_wibgtVault)
+            ),
             abi.encode(false)
         );
 
@@ -89,7 +110,10 @@ contract InfraredVaultTest is Helper {
         // Mock the precompile to succeed.
         vm.mockCall(
             address(_distributionPrecompile),
-            abi.encodeWithSelector(_distributionPrecompile.setWithdrawAddress.selector, address(ALICE)),
+            abi.encodeWithSelector(
+                _distributionPrecompile.setWithdrawAddress.selector,
+                address(ALICE)
+            ),
             abi.encode(true)
         );
 
