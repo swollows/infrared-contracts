@@ -38,5 +38,23 @@ INFRARED_ADDRESS=$(cat broadcast/Deploy.s.sol/2061/run-latest.json | jq -r '.tra
 export INFRARED_ADDRESS=$INFRARED_ADDRESS
 
 
-# # Configure the Permissions.
-PERMISSIONS_OUTPUT=$(forge script src/script/local/Deploy.s.sol:ConfigurePermissions  --private-key $PRIVATE_KEY --broadcast --rpc-url=$RPC_URL)
+## Configure the Permissions.
+forge script src/script/local/Deploy.s.sol:ConfigurePermissions  --private-key $PRIVATE_KEY --broadcast --rpc-url=$RPC_URL
+
+
+## Setup the validators.
+forge script src/script/local/Deploy.s.sol:SetupValidators  --private-key $PRIVATE_KEY --broadcast --rpc-url=$RPC_URL
+
+
+## Deploy the WIBGT.
+forge script src/script/local/Deploy.s.sol:DeployWIBGT  --private-key $PRIVATE_KEY --broadcast --rpc-url=$RPC_URL
+WIBGT_ADDRESS=$(cat broadcast/Deploy.s.sol/2061/run-latest.json | jq -r '.transactions[] | select(.contractName=="WrappedIBGT") | .contractAddress')
+export WIBGT_ADDRESS=$WIBGT_ADDRESS
+
+## Deploy the WIBGT Vault.
+WIBGT_VAULT_OUTPUT=$(forge create src/core/InfraredVault.sol:InfraredVault --private-key $PRIVATE_KEY --rpc-url=$RPC_URL --constructor-args $WIBGT_ADDRESS "Wrapped IBGT Vault" "WIBGT-V" "[$IBGT_ADDRESS]" $INFRARED_ADDRESS $INFRARED_ADDRESS 0x55684e2cA2bace0aDc512C1AFF880b15b8eA7214 0x0000000000000000000000000000000000000069 0x20f33CE90A13a4b5E7697E3544c3083B8F8A51D4)
+WIBGT_VAULT_ADDRESS=$(echo "$WIBGT_VAULT_OUTPUT" | grep "Deployed to:" | awk '{print $3}')
+export WIBGT_VAULT_ADDRESS=$WIBGT_VAULT_ADDRESS
+
+## Configure the WIBGT vaults.
+forge script src/script/local/Deploy.s.sol:ConfigureWIBGT  --private-key $PRIVATE_KEY --broadcast --rpc-url=$RPC_URL

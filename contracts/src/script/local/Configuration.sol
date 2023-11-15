@@ -22,3 +22,8 @@ library GenesisPools {
     address public constant USDC_HONEY_POOL_TOKEN = 0xc70c2FD8f8E3DBbb6f73502C70952f115Bb93929;
     address public constant USDC_HONEY_POOL_ADDRESS = 0x101f52c804C1C02c0A1D33442ecA30ecb6fB2434;
 }
+
+library Validators {
+    address public constant VAL_0 = address(0xc70c2FD8f8E3DBbb6f73502C70952f115Bb93929); // TODO: Please update
+    // this address.
+}
