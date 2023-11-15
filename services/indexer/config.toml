@@ -2,9 +2,6 @@
 InfraredContractAddress = "0xd0bade66b5ea3fb7efddaa39cadfec5c279b1735" # This is not the correct address.
 
 
-
-
-
 #### Required for base app ####
 [Eth]
 EthHTTPURL = "http://localhost:8545"
