@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.20;
 
-import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
-import {ERC20} from "@solmate/tokens/ERC20.sol";
-import {Ownable} from "@openzeppelin/access/Ownable.sol";
-import {ReentrancyGuard} from "@solmate/utils/ReentrancyGuard.sol";
+import {SafeTransferLib} from '@solmate/utils/SafeTransferLib.sol';
+import {ERC20} from '@solmate/tokens/ERC20.sol';
+import {Ownable} from '@openzeppelin/access/Ownable.sol';
+import {ReentrancyGuard} from '@solmate/utils/ReentrancyGuard.sol';
 
 contract VLIRED is ReentrancyGuard, Ownable {
     using SafeTransferLib for ERC20;
@@ -46,14 +46,12 @@ contract VLIRED is ReentrancyGuard, Ownable {
 
     bool public isShutdown;
 
-    string public constant name = "Value-Locked IRED";
-    string public constant symbol = "vlIRED";
+    string public constant name = 'Value-Locked IRED';
+    string public constant symbol = 'vlIRED';
     uint8 public constant decimals = 18;
 
     event Shutdown();
-    event Locked(
-        address indexed account, uint256 indexed epoch, uint256 amount
-    );
+    event Locked(address indexed account, uint256 indexed epoch, uint256 amount);
     event Withdrawn(address indexed account, uint256 amount, bool relock);
 
     error ZeroAddress();
@@ -87,11 +85,7 @@ contract VLIRED is ReentrancyGuard, Ownable {
      *       @param  account  address  Account
      *       @return amount   uint256  Amount
      */
-    function lockedBalanceOf(address account)
-        external
-        view
-        returns (uint256 amount)
-    {
+    function lockedBalanceOf(address account) external view returns (uint256 amount) {
         return balances[account].locked;
     }
 
@@ -101,11 +95,7 @@ contract VLIRED is ReentrancyGuard, Ownable {
      *       @param  account  address  Account
      *       @return amount   uint256  Amount
      */
-    function balanceOf(address account)
-        external
-        view
-        returns (uint256 amount)
-    {
+    function balanceOf(address account) external view returns (uint256 amount) {
         // Using storage as it's actually cheaper than allocating a new memory
         // based variable
         Balance storage userBalance = balances[account];
@@ -126,11 +116,7 @@ contract VLIRED is ReentrancyGuard, Ownable {
         }
 
         // Remove amount locked in the next epoch
-        if (
-            locksLength > 0
-                && uint256(locks[locksLength - 1].unlockTime) - LOCK_DURATION
-                    > getCurrentEpoch()
-        ) {
+        if (locksLength > 0 && uint256(locks[locksLength - 1].unlockTime) - LOCK_DURATION > getCurrentEpoch()) {
             amount -= locks[locksLength - 1].amount;
         }
 
@@ -142,20 +128,12 @@ contract VLIRED is ReentrancyGuard, Ownable {
      *       @param  account  address  Account
      *       @return amount   uint256  Amount
      */
-    function pendingLockOf(address account)
-        external
-        view
-        returns (uint256 amount)
-    {
+    function pendingLockOf(address account) external view returns (uint256 amount) {
         LockedBalance[] storage locks = balances[account].lockedBalances;
 
         uint256 locksLength = locks.length;
 
-        if (
-            locksLength > 0
-                && uint256(locks[locksLength - 1].unlockTime) - LOCK_DURATION
-                    > getCurrentEpoch()
-        ) {
+        if (locksLength > 0 && uint256(locks[locksLength - 1].unlockTime) - LOCK_DURATION > getCurrentEpoch()) {
             return locks[locksLength - 1].amount;
         }
 
@@ -170,16 +148,9 @@ contract VLIRED is ReentrancyGuard, Ownable {
      *       @return locked      uint256          Locked amount
      *       @return lockData    LockedBalance[]  List of active locks
      */
-    function lockedBalances(address account)
-        external
-        view
-        returns (
-            uint256 total,
-            uint256 unlockable,
-            uint256 locked,
-            LockedBalance[] memory lockData
-        )
-    {
+    function lockedBalances(
+        address account
+    ) external view returns (uint256 total, uint256 unlockable, uint256 locked, LockedBalance[] memory lockData) {
         Balance storage userBalance = balances[account];
         LockedBalance[] storage locks = userBalance.lockedBalances;
         uint256 nextUnlockIndex = userBalance.nextUnlockIndex;
@@ -249,12 +220,7 @@ contract VLIRED is ReentrancyGuard, Ownable {
         // the end of the list
         // else, append it to the latest user lock
         if (idx == 0 || locks[idx - 1].unlockTime < unlockTime) {
-            locks.push(
-                LockedBalance({
-                    amount: lockAmount,
-                    unlockTime: _toUint32(unlockTime)
-                })
-            );
+            locks.push(LockedBalance({amount: lockAmount, unlockTime: _toUint32(unlockTime)}));
         } else {
             locks[idx - 1].amount += lockAmount;
         }
@@ -269,11 +235,7 @@ contract VLIRED is ReentrancyGuard, Ownable {
      *       @param  relock      bool     Whether should relock
      *       @param  withdrawTo  address  Target receiver
      */
-    function _processExpiredLocks(
-        address account,
-        bool relock,
-        address withdrawTo
-    ) internal {
+    function _processExpiredLocks(address account, bool relock, address withdrawTo) internal {
         // Using storage as it's actually cheaper than allocating a new memory
         // based variable
         Balance storage userBalance = balances[account];

@@ -56,10 +56,10 @@ interface IERC20DexModule {
      * @return asset The token to be received from the pool.
      * @return amount The amount of tokens to be received from the pool.
      */
-    function getPreviewBatchSwap(SwapKind kind, BatchSwapStep[] memory swaps)
-        external
-        view
-        returns (address asset, uint256 amount);
+    function getPreviewBatchSwap(
+        SwapKind kind,
+        BatchSwapStep[] memory swaps
+    ) external view returns (address asset, uint256 amount);
 
     /**
      * @dev previews the balance of tokens currently in the liquidity pool.
@@ -67,10 +67,7 @@ interface IERC20DexModule {
      * @return asset The tokens in the pool.
      * @return amounts The amount of tokens in the pool.
      */
-    function getLiquidity(address pool)
-        external
-        view
-        returns (address[] memory asset, uint256[] memory amounts);
+    function getLiquidity(address pool) external view returns (address[] memory asset, uint256[] memory amounts);
 
     /**
      * @dev previews the total amount of shares of the liquidity pool.
@@ -78,10 +75,7 @@ interface IERC20DexModule {
      * @return assets The share tokens / LP tokens of the pool.
      * @return amounts The amount share tokens / LP tokens of the pool.
      */
-    function getTotalShares(address pool)
-        external
-        view
-        returns (address[] memory assets, uint256[] memory amounts);
+    function getTotalShares(address pool) external view returns (address[] memory assets, uint256[] memory amounts);
 
     /**
      * @dev previews the exchange rate between two assets in a pool.
@@ -92,11 +86,7 @@ interface IERC20DexModule {
      * @param quoteAsset The quote asset to get the exchange rate for.
      * @return rate The exchange rate between the two assets.
      */
-    function getExchangeRate(
-        address pool,
-        address baseAsset,
-        address quoteAsset
-    ) external view returns (uint256);
+    function getExchangeRate(address pool, address baseAsset, address quoteAsset) external view returns (uint256);
 
     /**
      * @dev previews the amount of LP tokens that will be received for adding
@@ -165,10 +155,7 @@ interface IERC20DexModule {
         address pool,
         address asset,
         uint256 amount
-    )
-        external
-        view
-        returns (address[] memory assets, uint256[] memory amounts);
+    ) external view returns (address[] memory assets, uint256[] memory amounts);
 
     /**
      * @dev previews the amount of tokens that will be received from adding
@@ -207,10 +194,11 @@ interface IERC20DexModule {
      * @return amounts The amount of tokens to be received for burning shares/LP
      * tokens.
      */
-    function getPreviewBurnShares(address pool, address asset, uint256 amount)
-        external
-        view
-        returns (address[] memory assets, uint256[] memory amounts);
+    function getPreviewBurnShares(
+        address pool,
+        address asset,
+        uint256 amount
+    ) external view returns (address[] memory assets, uint256[] memory amounts);
 
     /**
      * @dev previews the amount of LP tokens required to be removed to withdraw
@@ -226,10 +214,7 @@ interface IERC20DexModule {
         address pool,
         address assetIn,
         uint256 assetAmount
-    )
-        external
-        view
-        returns (address[] memory assets, uint256[] memory amounts);
+    ) external view returns (address[] memory assets, uint256[] memory amounts);
 
     /**
      * @dev previews the amount of one asset that will be received for burning
@@ -245,10 +230,7 @@ interface IERC20DexModule {
         address pool,
         address assetOut,
         uint256 sharesIn
-    )
-        external
-        view
-        returns (address[] memory assets, uint256[] memory amounts);
+    ) external view returns (address[] memory assets, uint256[] memory amounts);
 
     /**
      * @dev gets the pool name for a given pool address.
@@ -262,10 +244,7 @@ interface IERC20DexModule {
      * @param pool The address of the pool.
      * @return options The options of the pool.
      */
-    function getPoolOptions(address pool)
-        external
-        view
-        returns (PoolOptions memory);
+    function getPoolOptions(address pool) external view returns (PoolOptions memory);
 
     /////////////////////////////////////// WRITE METHODS
     // //////////////////////////////////////////
@@ -293,10 +272,7 @@ interface IERC20DexModule {
         address assetOut,
         uint256 amountOut,
         uint256 deadline
-    )
-        external
-        payable
-        returns (address[] memory assets, uint256[] memory amounts);
+    ) external payable returns (address[] memory assets, uint256[] memory amounts);
 
     /**
      * @dev Performs a swap with a single Pool.
@@ -313,10 +289,7 @@ interface IERC20DexModule {
         SwapKind kind,
         BatchSwapStep[] memory swaps,
         uint256 deadline
-    )
-        external
-        payable
-        returns (address[] memory assets, uint256[] memory amounts);
+    ) external payable returns (address[] memory assets, uint256[] memory amounts);
 
     /**
      * @dev Creates a new pool.
@@ -380,10 +353,7 @@ interface IERC20DexModule {
         address withdrawAddress,
         address assetIn,
         uint256 amountIn
-    )
-        external
-        payable
-        returns (address[] memory liquidity, uint256[] memory liquidityAmounts);
+    ) external payable returns (address[] memory liquidity, uint256[] memory liquidityAmounts);
 
     /**
      * @dev Removes a specific amount of liquidity from the pool, with a maximum

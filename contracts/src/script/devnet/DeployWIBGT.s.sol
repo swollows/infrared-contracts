@@ -2,15 +2,15 @@
 /* solhint-disable */
 pragma solidity 0.8.20;
 
-import {Script, console2} from "forge-std/Script.sol";
-import {Precompiles, AddressesAddress, Actors} from "./Configuration.sol";
-import {Addreses} from "./Addresses.sol";
+import {Script, console2} from 'forge-std/Script.sol';
+import {Precompiles, AddressesAddress, Actors} from './Configuration.sol';
+import {Addreses} from './Addresses.sol';
 
-import {WrappedIBGT} from "@core/WIBGT.sol";
-import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
-import {InfraredVault} from "@core/InfraredVault.sol";
-import {Infrared} from "@core/Infrared.sol";
-import {IInfraredVault} from "@interfaces/IInfraredVault.sol";
+import {WrappedIBGT} from '@core/WIBGT.sol';
+import {IERC20} from '@openzeppelin/token/ERC20/IERC20.sol';
+import {InfraredVault} from '@core/InfraredVault.sol';
+import {Infrared} from '@core/Infrared.sol';
+import {IInfraredVault} from '@interfaces/IInfraredVault.sol';
 
 // Deploy this as the governance private key.
 contract DeployWIBGT is Script {
@@ -61,8 +61,8 @@ contract WIBGTFactory {
         wibgt.grantRole(wibgt.DEFAULT_ADMIN_ROLE(), Actors.DEFAULT_ADMIN);
 
         // Console log the addresses.
-        console2.log("WIBGT", address(wibgt));
-        console2.log("WIBGT Vault", address(wibgtVault));
+        console2.log('WIBGT', address(wibgt));
+        console2.log('WIBGT Vault', address(wibgtVault));
     }
 }
 

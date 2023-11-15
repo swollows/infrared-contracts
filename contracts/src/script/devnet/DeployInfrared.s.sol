@@ -2,14 +2,14 @@
 pragma solidity 0.8.20;
 
 // Scripts etc.
-import {Script, console2} from "forge-std/Script.sol";
-import {Precompiles, AddressesAddress, Actors} from "./Configuration.sol";
-import {Addreses} from "./Addresses.sol";
+import {Script, console2} from 'forge-std/Script.sol';
+import {Precompiles, AddressesAddress, Actors} from './Configuration.sol';
+import {Addreses} from './Addresses.sol';
 
 // Contracts.
-import {IBGT} from "@core/IBGT.sol";
-import {Infrared} from "@core/Infrared.sol";
-import {IERC20Mintable} from "@interfaces/IERC20Mintable.sol";
+import {IBGT} from '@core/IBGT.sol';
+import {Infrared} from '@core/Infrared.sol';
+import {IERC20Mintable} from '@interfaces/IERC20Mintable.sol';
 
 // Deploy the Infrared contract.
 contract DeployInfrared is Script {
@@ -52,8 +52,8 @@ contract DeployInfrared is Script {
         addresses.setIbgt(address(ibgt));
 
         // Log the addresses.
-        console2.log("Infrared: ", address(infrared));
-        console2.log("IBGT: ", address(ibgt));
+        console2.log('Infrared: ', address(infrared));
+        console2.log('IBGT: ', address(ibgt));
 
         vm.stopBroadcast();
     }

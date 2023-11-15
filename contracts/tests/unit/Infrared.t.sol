@@ -1,18 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.20;
 
-import {
-    Helper,
-    ERC20,
-    InfraredVault,
-    IBGT,
-    IInfraredVault,
-    IERC20Mintable
-} from "./Helper.sol";
-import {Errors} from "@utils/Errors.sol";
-import {Cosmos} from "@polaris/CosmosTypes.sol";
-import {IERC20Mintable} from "@interfaces/IERC20Mintable.sol";
-import {SafeERC20} from "@openzeppelin/token/ERC20/utils/SafeERC20.sol";
+import {Helper, ERC20, InfraredVault, IBGT, IInfraredVault, IERC20Mintable} from './Helper.sol';
+import {Errors} from '@utils/Errors.sol';
+import {Cosmos} from '@polaris/CosmosTypes.sol';
+import {IERC20Mintable} from '@interfaces/IERC20Mintable.sol';
+import {SafeERC20} from '@openzeppelin/token/ERC20/utils/SafeERC20.sol';
 
 contract InfraredTest is Helper {
     /*//////////////////////////////////////////////////////////////
@@ -24,17 +17,13 @@ contract InfraredTest is Helper {
         address[] memory _rewardTokens = new address[](1);
         _rewardTokens[0] = address(_dai);
         vm.expectRevert();
-        _infrared.registerVault(
-            address(1), "test", "TST", _rewardTokens, address(2)
-        );
+        _infrared.registerVault(address(1), 'test', 'TST', _rewardTokens, address(2));
     }
 
     function testRegisterVault() public prank(KEEPER) {
         address[] memory _rewardTokens = new address[](1);
         _rewardTokens[0] = address(_dai);
-        IInfraredVault _new = _infrared.registerVault(
-            address(_usdc), "test", "TST", _rewardTokens, address(2)
-        );
+        IInfraredVault _new = _infrared.registerVault(address(_usdc), 'test', 'TST', _rewardTokens, address(2));
 
         // Check that the vault is registered.
         _infrared.isInfraredVault(address(_new));
@@ -48,9 +37,7 @@ contract InfraredTest is Helper {
         address[] memory _rewardTokens = new address[](1);
         _rewardTokens[0] = address(_dai);
         vm.expectRevert();
-        _infrared.updateWIBGTVault(
-            IInfraredVault(address(_wibgtVault)), _rewardTokens
-        );
+        _infrared.updateWIBGTVault(IInfraredVault(address(_wibgtVault)), _rewardTokens);
     }
 
     function testUpdateWrappedIBGTVault12() public prank(GOVERNANCE) {
@@ -68,9 +55,7 @@ contract InfraredTest is Helper {
         // vm.stopPrank();
 
         // vm.startPrank(GOVERNANCE);
-        _infrared.updateWIBGTVault(
-            IInfraredVault(address(_wibgtVault)), _rewardTokens
-        );
+        _infrared.updateWIBGTVault(IInfraredVault(address(_wibgtVault)), _rewardTokens);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -144,11 +129,7 @@ contract InfraredTest is Helper {
     }
 
     function testHarvestValidatorDoesNotExist() public {
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                Errors.ValidatorDoesNotExist.selector, address(ALICE)
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(Errors.ValidatorDoesNotExist.selector, address(ALICE)));
         _infrared.harvestValidator(ALICE);
     }
 
@@ -177,18 +158,15 @@ contract InfraredTest is Helper {
     function testHarvestValidator() public prank(GOVERNANCE) {
         // Rewards From the distribution module.
         Cosmos.Coin[] memory _rewards = new Cosmos.Coin[](2);
-        _rewards[0] = Cosmos.Coin(100, "dai");
+        _rewards[0] = Cosmos.Coin(100, 'dai');
         _rewards[1] = Cosmos.Coin(100, BGT_DENOM);
         _mockDistributionModuleWithdraw(_val0, _rewards);
 
         // Mock the ERC20 module for the cosmos sdk coins to contract address.
-        _mockERC20ModuleMapping("dai", address(_dai));
+        _mockERC20ModuleMapping('dai', address(_dai));
 
         // Assert that the mock is correct.
-        assertEq(
-            address(_erc20Precompile.erc20AddressForCoinDenom("dai")),
-            address(_dai)
-        );
+        assertEq(address(_erc20Precompile.erc20AddressForCoinDenom('dai')), address(_dai));
 
         // Mint the tokens to the infrared contract to mimick a transfer from
         // erc20 module.
@@ -212,11 +190,7 @@ contract InfraredTest is Helper {
     }
 
     function testHarvestVaultVaultNotSupported() public {
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                Errors.VaultNotSupported.selector, address(_usdc)
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(Errors.VaultNotSupported.selector, address(_usdc)));
         _infrared.harvestVault(address(_usdc));
     }
 
@@ -245,18 +219,15 @@ contract InfraredTest is Helper {
     function testHarvestVault() public prank(GOVERNANCE) {
         // Rewards from the rewards module.
         Cosmos.Coin[] memory _rewards = new Cosmos.Coin[](2);
-        _rewards[0] = Cosmos.Coin(100, "usdc");
+        _rewards[0] = Cosmos.Coin(100, 'usdc');
         _rewards[1] = Cosmos.Coin(100, BGT_DENOM);
         _mockRewardsPrecompileWithdraw(_daiVault.poolAddress(), _rewards);
 
         // Mock the ERC20 module for the cosmos sdk coins to contract address.
-        _mockERC20ModuleMapping("usdc", address(_usdc));
+        _mockERC20ModuleMapping('usdc', address(_usdc));
 
         // Assert that the mock is correct.
-        assertEq(
-            address(_erc20Precompile.erc20AddressForCoinDenom("usdc")),
-            address(_usdc)
-        );
+        assertEq(address(_erc20Precompile.erc20AddressForCoinDenom('usdc')), address(_usdc));
 
         // Mint the usdc tokens to the infrared contract to mimick a transfer
         // from erc20 module.
@@ -290,19 +261,13 @@ contract InfraredTest is Helper {
     }
 
     function testDelegateNotInfraredValidator() public prank(KEEPER) {
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                Errors.ValidatorDoesNotExist.selector, address(1)
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(Errors.ValidatorDoesNotExist.selector, address(1)));
         _infrared.delegate(address(1), 100);
     }
 
     function testDelegateDelegateFails() public prank(KEEPER) {
         _mockDelegate(_val0, 100, false);
-        vm.expectRevert(
-            abi.encodeWithSelector(Errors.DelegationFailed.selector)
-        );
+        vm.expectRevert(abi.encodeWithSelector(Errors.DelegationFailed.selector));
         _infrared.delegate(_val0, 100);
     }
 
@@ -331,19 +296,13 @@ contract InfraredTest is Helper {
     }
 
     function testUndelegateNotInfraredValidator() public prank(GOVERNANCE) {
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                Errors.ValidatorDoesNotExist.selector, address(1)
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(Errors.ValidatorDoesNotExist.selector, address(1)));
         _infrared.undelegate(address(1), 100);
     }
 
     function testUndelegateUndelegateFails() public prank(GOVERNANCE) {
         _mockUndelegate(_val0, 100, false);
-        vm.expectRevert(
-            abi.encodeWithSelector(Errors.UndelegateFailed.selector)
-        );
+        vm.expectRevert(abi.encodeWithSelector(Errors.UndelegateFailed.selector));
         _infrared.undelegate(_val0, 100);
     }
 
@@ -376,26 +335,14 @@ contract InfraredTest is Helper {
         _infrared.beginRedelegate(address(1), address(2), 0);
     }
 
-    function testBeginRedelegateNotInfraredValidator()
-        public
-        prank(GOVERNANCE)
-    {
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                Errors.ValidatorDoesNotExist.selector, address(2)
-            )
-        );
+    function testBeginRedelegateNotInfraredValidator() public prank(GOVERNANCE) {
+        vm.expectRevert(abi.encodeWithSelector(Errors.ValidatorDoesNotExist.selector, address(2)));
         _infrared.beginRedelegate(address(1), address(2), 100);
     }
 
-    function testBeginRedelegateBeginRedelegateFails()
-        public
-        prank(GOVERNANCE)
-    {
+    function testBeginRedelegateBeginRedelegateFails() public prank(GOVERNANCE) {
         _mockBeginRedelegations(_val0, _val1, 100, false);
-        vm.expectRevert(
-            abi.encodeWithSelector(Errors.BeginRedelegateFailed.selector)
-        );
+        vm.expectRevert(abi.encodeWithSelector(Errors.BeginRedelegateFailed.selector));
         _infrared.beginRedelegate(_val0, _val1, 100);
     }
 
@@ -408,52 +355,29 @@ contract InfraredTest is Helper {
         _infrared.cancelUnbondingDelegation(_val0, 100, 100);
     }
 
-    function testCancelUnbondingDelegationZeroAddress()
-        public
-        prank(GOVERNANCE)
-    {
+    function testCancelUnbondingDelegationZeroAddress() public prank(GOVERNANCE) {
         vm.expectRevert(Errors.ZeroAddress.selector);
         _infrared.cancelUnbondingDelegation(address(0), 100, 100);
     }
 
-    function testCancelUnbondingDelegationZeroAmount0()
-        public
-        prank(GOVERNANCE)
-    {
+    function testCancelUnbondingDelegationZeroAmount0() public prank(GOVERNANCE) {
         vm.expectRevert(Errors.ZeroAmount.selector);
         _infrared.cancelUnbondingDelegation(_val0, 0, 100);
     }
 
-    function testCancelUnbondingDelegationZeroAmount1()
-        public
-        prank(GOVERNANCE)
-    {
+    function testCancelUnbondingDelegationZeroAmount1() public prank(GOVERNANCE) {
         vm.expectRevert(Errors.ZeroAmount.selector);
         _infrared.cancelUnbondingDelegation(_val0, 100, 0);
     }
 
-    function testCancelUnbondingDelegationNotInfraredValidator()
-        public
-        prank(GOVERNANCE)
-    {
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                Errors.ValidatorDoesNotExist.selector, address(10)
-            )
-        );
+    function testCancelUnbondingDelegationNotInfraredValidator() public prank(GOVERNANCE) {
+        vm.expectRevert(abi.encodeWithSelector(Errors.ValidatorDoesNotExist.selector, address(10)));
         _infrared.cancelUnbondingDelegation(address(10), 100, 100);
     }
 
-    function testCancelUnbondingDelegationCancelUnbondingDelegationFails()
-        public
-        prank(GOVERNANCE)
-    {
+    function testCancelUnbondingDelegationCancelUnbondingDelegationFails() public prank(GOVERNANCE) {
         _mockCancelUnbondingDelegation(_val0, 100, 100, false);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                Errors.CancelUnbondingDelegationFailed.selector
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(Errors.CancelUnbondingDelegationFailed.selector));
         _infrared.cancelUnbondingDelegation(_val0, 100, 100);
     }
 

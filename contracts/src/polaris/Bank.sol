@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.20;
 
-import {Cosmos} from "./CosmosTypes.sol";
+import {Cosmos} from './CosmosTypes.sol';
 
 /**
  * @dev Interface of all supported Cosmos events emitted by the bank module
@@ -58,35 +58,23 @@ interface IBankModule {
      * @dev Returns the `amount` of account balance by address for a given
      * denomination.
      */
-    function getBalance(address accountAddress, string calldata denom)
-        external
-        view
-        returns (uint256);
+    function getBalance(address accountAddress, string calldata denom) external view returns (uint256);
 
     /**
      * @dev Returns account balance by address for all denominations.
      */
-    function getAllBalances(address accountAddress)
-        external
-        view
-        returns (Cosmos.Coin[] memory);
+    function getAllBalances(address accountAddress) external view returns (Cosmos.Coin[] memory);
 
     /**
      * @dev Returns the `amount` of account balance by address for a given
      * denomination.
      */
-    function getSpendableBalance(address accountAddress, string calldata denom)
-        external
-        view
-        returns (uint256);
+    function getSpendableBalance(address accountAddress, string calldata denom) external view returns (uint256);
 
     /**
      * @dev Returns account balance by address for all denominations.
      */
-    function getAllSpendableBalances(address accountAddress)
-        external
-        view
-        returns (Cosmos.Coin[] memory);
+    function getAllSpendableBalances(address accountAddress) external view returns (Cosmos.Coin[] memory);
 
     /**
      * @dev Returns the total supply of a single coin.
@@ -101,18 +89,12 @@ interface IBankModule {
     /**
      * @dev Returns the denomination's metadata.
      */
-    function getDenomMetadata(string calldata denom)
-        external
-        view
-        returns (DenomMetadata memory);
+    function getDenomMetadata(string calldata denom) external view returns (DenomMetadata memory);
 
     /**
      * @dev Returns if the denom is enabled to send
      */
-    function getSendEnabled(string calldata denom)
-        external
-        view
-        returns (bool);
+    function getSendEnabled(string calldata denom) external view returns (bool);
 
     ////////////////////////////////////// WRITE METHODS
     // //////////////////////////////////////////
@@ -120,10 +102,7 @@ interface IBankModule {
     /**
      * @dev Send coins from msg.sender to another.
      */
-    function send(address toAddress, Cosmos.Coin[] calldata amount)
-        external
-        payable
-        returns (bool);
+    function send(address toAddress, Cosmos.Coin[] calldata amount) external payable returns (bool);
 
     //////////////////////////////////////////// UTILS
     // ////////////////////////////////////////////

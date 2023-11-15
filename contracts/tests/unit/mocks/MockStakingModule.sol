@@ -6,15 +6,7 @@ contract MockStakingModule {
 
     function undelegate(address, uint256) external payable returns (bool) {}
 
-    function beginRedelegate(address, address, uint256)
-        external
-        payable
-        returns (bool)
-    {}
+    function beginRedelegate(address, address, uint256) external payable returns (bool) {}
 
-    function cancelUnbondingDelegation(address, uint256, int64)
-        external
-        payable
-        returns (bool)
-    {}
+    function cancelUnbondingDelegation(address, uint256, int64) external payable returns (bool) {}
 }

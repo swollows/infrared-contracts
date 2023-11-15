@@ -2,12 +2,12 @@
 pragma solidity 0.8.20;
 
 // Scripts etc.
-import {Script} from "forge-std/Script.sol";
-import {Validators, AddressesAddress} from "./Configuration.sol";
-import {Addreses} from "./Addresses.sol";
+import {Script} from 'forge-std/Script.sol';
+import {Validators, AddressesAddress} from './Configuration.sol';
+import {Addreses} from './Addresses.sol';
 
 // Contracts.
-import {Infrared} from "@core/Infrared.sol";
+import {Infrared} from '@core/Infrared.sol';
 
 // Script to setup the validators in the infrared contract.
 contract SetupValidators is Script {
