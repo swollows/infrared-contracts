@@ -6,11 +6,9 @@ InfraredContractAddress = "0xd0bade66b5ea3fb7efddaa39cadfec5c279b1735" # This is
 
 
 #### Required for base app ####
-
 [Eth]
-# Devnet
-EthHTTPURL = "https://devnet.beraswillmakeit.com"
-EthWSURL = "ws://devnet.beraswillmakeit.com:8546"
+EthHTTPURL = "http://localhost:8545"
+EthWSURL = "ws://localhost:8546"
 
 [Server.HTTP]
-Port = 8081
+Port = 8080
