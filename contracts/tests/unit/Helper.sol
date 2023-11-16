@@ -2,29 +2,29 @@
 pragma solidity 0.8.20;
 
 // Testing Libraries.
-import {DSTestFull} from '../DSTestFull.sol';
+import {DSTestFull} from "../DSTestFull.sol";
 
 // External Contracts.
-import {ERC20} from '@berachain/EIP5XXX.sol';
-import {IERC20} from '@openzeppelin/token/ERC20/IERC20.sol';
-import {Cosmos} from '@polaris/CosmosTypes.sol';
+import {ERC20} from "@berachain/EIP5XXX.sol";
+import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
+import {Cosmos} from "@polaris/CosmosTypes.sol";
 
 // Infrared Contracts.
-import {Infrared} from '@core/Infrared.sol';
-import {VLIRED} from '@core/VLIRED.sol';
-import {WrappedIBGT} from '@core/WIBGT.sol';
-import {InfraredVault} from '@core/InfraredVault.sol';
-import {IBGT} from '@core/IBGT.sol';
-import {IREDVestingFactory} from '@vesting/IREDVestingFactory.sol';
-import {VestingWalletWithCliff} from '@vesting/VestingWalletWithCliff.sol';
-import {IInfraredVault} from '@interfaces/IInfraredVault.sol';
-import {IERC20Mintable} from '@interfaces/IERC20Mintable.sol';
+import {Infrared} from "@core/Infrared.sol";
+import {VLIRED} from "@core/VLIRED.sol";
+import {WrappedIBGT} from "@core/WIBGT.sol";
+import {InfraredVault} from "@core/InfraredVault.sol";
+import {IBGT} from "@core/IBGT.sol";
+import {IREDVestingFactory} from "@vesting/IREDVestingFactory.sol";
+import {VestingWalletWithCliff} from "@vesting/VestingWalletWithCliff.sol";
+import {IInfraredVault} from "@interfaces/IInfraredVault.sol";
+import {IERC20Mintable} from "@interfaces/IERC20Mintable.sol";
 
 // Mocked Contracts.
-import {MockDistributionModule} from './mocks/MockDistributionModule.sol';
-import {MockStakingModule} from './mocks/MockStakingModule.sol';
-import {MockERC20Module} from './mocks/MockERC20Module.sol';
-import {MockRewardsModule} from './mocks/MockRewardsModule.sol';
+import {MockDistributionModule} from "./mocks/MockDistributionModule.sol";
+import {MockStakingModule} from "./mocks/MockStakingModule.sol";
+import {MockERC20Module} from "./mocks/MockERC20Module.sol";
+import {MockRewardsModule} from "./mocks/MockRewardsModule.sol";
 
 contract Helper is DSTestFull {
     // Test Accounts.
@@ -36,7 +36,7 @@ contract Helper is DSTestFull {
     address public constant POOL_ADDRESS = address(6);
 
     // Some constants.
-    string public constant BGT_DENOM = 'abgt';
+    string public constant BGT_DENOM = "abgt";
 
     // Account Helpers.
     modifier prank(address who) {
@@ -95,16 +95,21 @@ contract Helper is DSTestFull {
     }
 
     function _setUpVesting() internal {
-        _vestingFactory = new IREDVestingFactory(address(1), address(2), address(3));
+        _vestingFactory =
+            new IREDVestingFactory(address(1), address(2), address(3));
 
-        address treasuryWalletAddress = _vestingFactory.vestingWallets(address(1));
-        _treasuryVestingWallet = VestingWalletWithCliff(payable(treasuryWalletAddress));
+        address treasuryWalletAddress =
+            _vestingFactory.vestingWallets(address(1));
+        _treasuryVestingWallet =
+            VestingWalletWithCliff(payable(treasuryWalletAddress));
 
         address teamWalletAddress = _vestingFactory.vestingWallets(address(2));
         _teamVestingWallet = VestingWalletWithCliff(payable(teamWalletAddress));
 
-        address investorWalletAddress = _vestingFactory.vestingWallets(address(3));
-        _investorVestingWallet = VestingWalletWithCliff(payable(investorWalletAddress));
+        address investorWalletAddress =
+            _vestingFactory.vestingWallets(address(3));
+        _investorVestingWallet =
+            VestingWalletWithCliff(payable(investorWalletAddress));
     }
 
     function _deployTokens() internal prank(DEFAULT_ADMIN) {
@@ -149,13 +154,19 @@ contract Helper is DSTestFull {
         _infrared.grantRole(_infrared.GOVERNANCE_ROLE(), GOVERNANCE);
 
         // Grant the governance role to mint dai.
-        IBGT(address(_dai)).grantRole(IBGT(address(_dai)).MINTER_ROLE(), GOVERNANCE);
+        IBGT(address(_dai)).grantRole(
+            IBGT(address(_dai)).MINTER_ROLE(), GOVERNANCE
+        );
 
         // Grant the governance role to mint usdc.
-        IBGT(address(_usdc)).grantRole(IBGT(address(_usdc)).MINTER_ROLE(), GOVERNANCE);
+        IBGT(address(_usdc)).grantRole(
+            IBGT(address(_usdc)).MINTER_ROLE(), GOVERNANCE
+        );
 
         // Grant the admin role to mint ired.
-        IBGT(address(_ired)).grantRole(IBGT(address(_ired)).MINTER_ROLE(), DEFAULT_ADMIN);
+        IBGT(address(_ired)).grantRole(
+            IBGT(address(_ired)).MINTER_ROLE(), DEFAULT_ADMIN
+        );
 
         // Grant the infrared contract the ability to mint ibgt.
         _ibgt.grantRole(_ibgt.MINTER_ROLE(), address(_infrared));
@@ -190,7 +201,9 @@ contract Helper is DSTestFull {
         );
 
         // Update the vault in the infrared contract.
-        _infrared.updateWIBGTVault(IInfraredVault(address(_wibgtVault)), _rewardTokens);
+        _infrared.updateWIBGTVault(
+            IInfraredVault(address(_wibgtVault)), _rewardTokens
+        );
 
         // Set the vault in the wrapped token.
         _wrappedIBGT.setVault(_wibgtVault);
@@ -211,7 +224,15 @@ contract Helper is DSTestFull {
 
         // Register the vault in the infrared contract.
         _daiVault = InfraredVault(
-            address(_infrared.registerVault(address(_dai), 'Dai Vault', 'DAIV', _rewardTokens, POOL_ADDRESS))
+            address(
+                _infrared.registerVault(
+                    address(_dai),
+                    "Dai Vault",
+                    "DAIV",
+                    _rewardTokens,
+                    POOL_ADDRESS
+                )
+            )
         );
     }
 
@@ -234,18 +255,27 @@ contract Helper is DSTestFull {
     function _setupWithdrawAddressMocks() internal {
         vm.mockCall(
             address(_distributionPrecompile),
-            abi.encodeWithSelector(_distributionPrecompile.setWithdrawAddress.selector, address(_infrared)),
+            abi.encodeWithSelector(
+                _distributionPrecompile.setWithdrawAddress.selector,
+                address(_infrared)
+            ),
             abi.encode(true)
         );
 
         vm.mockCall(
             address(_rewardsPrecompile),
-            abi.encodeWithSelector(_rewardsPrecompile.setDepositorWithdrawAddress.selector, address(_infrared)),
+            abi.encodeWithSelector(
+                _rewardsPrecompile.setDepositorWithdrawAddress.selector,
+                address(_infrared)
+            ),
             abi.encode(true)
         );
     }
 
-    function _mockDistributionModuleWithdraw(address _validator, Cosmos.Coin[] memory _rewards) internal {
+    function _mockDistributionModuleWithdraw(
+        address _validator,
+        Cosmos.Coin[] memory _rewards
+    ) internal {
         vm.mockCall(
             address(_distributionPrecompile),
             abi.encodeWithSelector(
@@ -257,34 +287,52 @@ contract Helper is DSTestFull {
         );
     }
 
-    function _mockRewardsPrecompileWithdraw(address _poolAddress, Cosmos.Coin[] memory _coins) internal {
+    function _mockRewardsPrecompileWithdraw(
+        address _poolAddress,
+        Cosmos.Coin[] memory _coins
+    ) internal {
         vm.mockCall(
             address(_rewardsPrecompile),
-            abi.encodeWithSelector(_rewardsPrecompile.withdrawAllDepositorRewards.selector, _poolAddress),
+            abi.encodeWithSelector(
+                _rewardsPrecompile.withdrawAllDepositorRewards.selector,
+                _poolAddress
+            ),
             abi.encode(_coins)
         );
     }
 
-    function _mockERC20ModuleMapping(string memory _denom, address _token) internal {
+    function _mockERC20ModuleMapping(string memory _denom, address _token)
+        internal
+    {
         vm.mockCall(
             address(_erc20Precompile),
-            abi.encodeWithSelector(_erc20Precompile.erc20AddressForCoinDenom.selector, _denom),
+            abi.encodeWithSelector(
+                _erc20Precompile.erc20AddressForCoinDenom.selector, _denom
+            ),
             abi.encode(_token)
         );
     }
 
-    function _mockDelegate(address _validator, uint256 _amount, bool _succeed) internal {
+    function _mockDelegate(address _validator, uint256 _amount, bool _succeed)
+        internal
+    {
         vm.mockCall(
             address(_stakingPrecompile),
-            abi.encodeWithSelector(_stakingPrecompile.delegate.selector, _validator, _amount),
+            abi.encodeWithSelector(
+                _stakingPrecompile.delegate.selector, _validator, _amount
+            ),
             abi.encode(_succeed)
         );
     }
 
-    function _mockUndelegate(address _validator, uint256 _amount, bool _succeed) internal {
+    function _mockUndelegate(address _validator, uint256 _amount, bool _succeed)
+        internal
+    {
         vm.mockCall(
             address(_stakingPrecompile),
-            abi.encodeWithSelector(_stakingPrecompile.undelegate.selector, _validator, _amount),
+            abi.encodeWithSelector(
+                _stakingPrecompile.undelegate.selector, _validator, _amount
+            ),
             abi.encode(_succeed)
         );
     }
@@ -297,7 +345,12 @@ contract Helper is DSTestFull {
     ) internal {
         vm.mockCall(
             address(_stakingPrecompile),
-            abi.encodeWithSelector(_stakingPrecompile.beginRedelegate.selector, _validator, _newValidator, _amount),
+            abi.encodeWithSelector(
+                _stakingPrecompile.beginRedelegate.selector,
+                _validator,
+                _newValidator,
+                _amount
+            ),
             abi.encode(_succeed)
         );
     }

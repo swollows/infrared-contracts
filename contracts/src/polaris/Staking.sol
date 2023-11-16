@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.20;
 
-import {Cosmos} from './CosmosTypes.sol';
+import {Cosmos} from "./CosmosTypes.sol";
 
 /**
  * @dev Interface of the staking module's precompiled contract
@@ -21,7 +21,11 @@ interface IStakingModule {
      * from
      * `sourceValidator` to `destinationValidator`
      */
-    event Redelegate(address indexed sourceValidator, address indexed destinationValidator, Cosmos.Coin[] amount);
+    event Redelegate(
+        address indexed sourceValidator,
+        address indexed destinationValidator,
+        Cosmos.Coin[] amount
+    );
 
     /**
      * @dev Emitted by the staking module when `amount` tokens are used to
@@ -54,33 +58,44 @@ interface IStakingModule {
      * @dev Returns the operator address of the validator for the given
      * consensus address.
      */
-    function valAddressFromConsAddress(bytes calldata consAddress) external pure returns (address);
+    function valAddressFromConsAddress(bytes calldata consAddress)
+        external
+        pure
+        returns (address);
 
     /**
      * @dev Returns a list of all active validators.
      */
-    function getValidators(
-        Cosmos.PageRequest calldata pagination
-    ) external view returns (Validator[] memory, Cosmos.PageResponse memory);
+    function getValidators(Cosmos.PageRequest calldata pagination)
+        external
+        view
+        returns (Validator[] memory, Cosmos.PageResponse memory);
 
     /**
      * @dev Returns a list of bonded validator (operator) addresses.
      */
-    function getBondedValidators(
-        Cosmos.PageRequest calldata pagination
-    ) external view returns (address[] memory, Cosmos.PageResponse memory);
+    function getBondedValidators(Cosmos.PageRequest calldata pagination)
+        external
+        view
+        returns (address[] memory, Cosmos.PageResponse memory);
 
     /**
      * @dev Returns a list of bonded validator (operator) addresses, sorted by
      * power (stake) in
      * descending order.
      */
-    function getBondedValidatorsByPower() external view returns (address[] memory);
+    function getBondedValidatorsByPower()
+        external
+        view
+        returns (address[] memory);
 
     /**
      * @dev Returns the validator at the given address.
      */
-    function getValidator(address validatorAddress) external view returns (Validator memory);
+    function getValidator(address validatorAddress)
+        external
+        view
+        returns (Validator memory);
 
     /**
      * @dev Returns all the validators delegated to by the given delegator.
@@ -105,7 +120,10 @@ interface IStakingModule {
      * `delegatorAddress` to
      * `validatorAddress`
      */
-    function getDelegation(address delegatorAddress, address validatorAddress) external view returns (uint256);
+    function getDelegation(address delegatorAddress, address validatorAddress)
+        external
+        view
+        returns (uint256);
 
     /**
      * @dev Returns a time-ordered list of all UnbondingDelegationEntries
@@ -123,7 +141,10 @@ interface IStakingModule {
     function getDelegatorUnbondingDelegations(
         address delegatorAddress,
         Cosmos.PageRequest calldata pagination
-    ) external view returns (UnbondingDelegation[] memory, Cosmos.PageResponse memory);
+    )
+        external
+        view
+        returns (UnbondingDelegation[] memory, Cosmos.PageResponse memory);
 
     /**
      * @dev Returns a list of `delegatorAddress`'s redelegating bonds from
@@ -135,7 +156,10 @@ interface IStakingModule {
         address srcValidator,
         address dstValidator,
         Cosmos.PageRequest calldata pagination
-    ) external view returns (RedelegationEntry[] memory, Cosmos.PageResponse memory);
+    )
+        external
+        view
+        returns (RedelegationEntry[] memory, Cosmos.PageResponse memory);
 
     ////////////////////////////////////// WRITE METHODS
     // //////////////////////////////////////////
@@ -143,13 +167,19 @@ interface IStakingModule {
     /**
      * @dev msg.sender delegates the `amount` of tokens to `validatorAddress`
      */
-    function delegate(address validatorAddress, uint256 amount) external payable returns (bool);
+    function delegate(address validatorAddress, uint256 amount)
+        external
+        payable
+        returns (bool);
 
     /**
      * @dev msg.sender undelegates the `amount` of tokens from
      * `validatorAddress`
      */
-    function undelegate(address validatorAddress, uint256 amount) external payable returns (bool);
+    function undelegate(address validatorAddress, uint256 amount)
+        external
+        payable
+        returns (bool);
 
     /**
      * @dev msg.sender redelegates the `amount` of tokens from `srcValidator` to

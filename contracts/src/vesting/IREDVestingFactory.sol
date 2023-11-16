@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.20;
 
-import {Ownable} from '@openzeppelin/access/Ownable.sol';
-import {VestingWalletWithCliff} from './VestingWalletWithCliff.sol';
-import {Errors} from '@utils/Errors.sol';
+import {Ownable} from "@openzeppelin/access/Ownable.sol";
+import {VestingWalletWithCliff} from "./VestingWalletWithCliff.sol";
+import {Errors} from "@utils/Errors.sol";
 
 /**
  * @title IREDVestingFactory

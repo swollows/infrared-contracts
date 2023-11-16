@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.20;
 
-import {Helper, InfraredVault, WrappedIBGT} from './Helper.sol';
-import {Errors} from '@utils/Errors.sol';
-import {console2} from 'forge-std/Script.sol';
+import {Helper, InfraredVault, WrappedIBGT} from "./Helper.sol";
+import {Errors} from "@utils/Errors.sol";
+import {console2} from "forge-std/Script.sol";
 
 contract WIBGTTest is Helper {
     /*//////////////////////////////////////////////////////////////
@@ -48,11 +48,13 @@ contract WIBGTTest is Helper {
         _wrappedIBGT.approveVault();
 
         // Check the allowance of the vault share token.
-        uint256 _allowance = _wibgtVault.allowance(address(_wrappedIBGT), address(_wibgtVault));
+        uint256 _allowance =
+            _wibgtVault.allowance(address(_wrappedIBGT), address(_wibgtVault));
         assertEq(_allowance, type(uint256).max);
 
         // Check that the allowance of the WIBGT to the vault is max.
-        _allowance = _wrappedIBGT.allowance(address(_wrappedIBGT), address(_wibgtVault));
+        _allowance =
+            _wrappedIBGT.allowance(address(_wrappedIBGT), address(_wibgtVault));
         assertEq(_allowance, type(uint256).max);
     }
 

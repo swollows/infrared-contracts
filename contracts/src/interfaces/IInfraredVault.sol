@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.20;
 
-import {Cosmos} from '@polaris/CosmosTypes.sol';
+import {Cosmos} from "@polaris/CosmosTypes.sol";
 
 interface IInfraredVault {
-    function rewardTokens() external view returns (address[] memory _rewardTokens);
+    function rewardTokens()
+        external
+        view
+        returns (address[] memory _rewardTokens);
 
     /**
      * @notice The address of the pool.
@@ -28,7 +31,8 @@ interface IInfraredVault {
      * address for the distribution precompile.
      * @param _withdrawAddress address The new withdraw address.
      */
-    function changeDistributionWithdrawAddress(address _withdrawAddress) external;
+    function changeDistributionWithdrawAddress(address _withdrawAddress)
+        external;
 
     /**
      * @dev Allows the admin of this contract to add reward tokens.
@@ -42,27 +46,43 @@ interface IInfraredVault {
      * that address.
      * @return _rewards Cosmos.Coin[] The rewards.
      */
-    function claimRewardsPrecompile() external returns (Cosmos.Coin[] memory _rewards);
+    function claimRewardsPrecompile()
+        external
+        returns (Cosmos.Coin[] memory _rewards);
 
     /*//////////////////////////////////////////////////////////////
                       EIP5XXX functions
     //////////////////////////////////////////////////////////////*/
 
-    function supply(address supplier, address reward, uint256 amount) external;
+    function supply(address supplier, address reward, uint256 amount)
+        external;
 
-    function supply(address supplier, address reward, uint96 partition, uint256 amount) external;
+    function supply(
+        address supplier,
+        address reward,
+        uint96 partition,
+        uint256 amount
+    ) external;
 
     /*//////////////////////////////////////////////////////////////
                       ERC4626 functions
     //////////////////////////////////////////////////////////////*/
 
-    function deposit(uint256 assets, address receiver) external returns (uint256 shares);
+    function deposit(uint256 assets, address receiver)
+        external
+        returns (uint256 shares);
 
-    function mint(uint256 shares, address receiver) external returns (uint256 assets);
+    function mint(uint256 shares, address receiver)
+        external
+        returns (uint256 assets);
 
-    function withdraw(uint256 assets, address receiver, address owner) external returns (uint256 shares);
+    function withdraw(uint256 assets, address receiver, address owner)
+        external
+        returns (uint256 shares);
 
-    function redeem(uint256 shares, address receiver, address owner) external returns (uint256 assets);
+    function redeem(uint256 shares, address receiver, address owner)
+        external
+        returns (uint256 assets);
 
     function asset() external view returns (address asset);
 
@@ -75,7 +95,10 @@ interface IInfraredVault {
      * @return _rk  bytes32[]  The reward token to get the current epoch per
      * week for.
      */
-    function rewardKeysOf(address) external view returns (bytes32[] memory _rk);
+    function rewardKeysOf(address)
+        external
+        view
+        returns (bytes32[] memory _rk);
 
     /**
      * @notice Returns the total amount of assets held by the vault.
@@ -96,5 +119,8 @@ interface IInfraredVault {
      * @param _user address The user to get the weight of.
      * @return _wo  uint256 The eight of the user in the partition.
      */
-    function weightOf(address _user, uint96) external view returns (uint256 _wo);
+    function weightOf(address _user, uint96)
+        external
+        view
+        returns (uint256 _wo);
 }

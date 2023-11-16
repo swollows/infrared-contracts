@@ -20,7 +20,7 @@
 
 pragma solidity ^0.8.4;
 
-import {Cosmos} from './CosmosTypes.sol';
+import {Cosmos} from "./CosmosTypes.sol";
 
 /**
  * @dev Interface of the distribution module's precompiled contract
@@ -31,7 +31,9 @@ interface IDistributionModule {
      * deligation rewards.
      * @param withdrawAddress The address to set as the withdraw address.
      */
-    function setWithdrawAddress(address withdrawAddress) external returns (bool);
+    function setWithdrawAddress(address withdrawAddress)
+        external
+        returns (bool);
 
     /**
      * @dev Gets if the withdraw address can be set.
@@ -44,7 +46,9 @@ interface IDistributionModule {
      * @param validator The validator to withdraw the rewards from.
      * @return rewards rewards.
      */
-    function getCurrentRewards(address delegator, address validator) external returns (Cosmos.Coin[] memory);
+    function getCurrentRewards(address delegator, address validator)
+        external
+        returns (Cosmos.Coin[] memory);
 
     /**
      * @dev Withdraw the rewrads accumilated by the caller(msg.sender). Returns
@@ -52,7 +56,9 @@ interface IDistributionModule {
      * @param delegator The delegator to withdraw the rewards from.
      * @param validator The validator to withdraw the rewards from.
      */
-    function withdrawDelegatorReward(address delegator, address validator) external returns (Cosmos.Coin[] memory);
+    function withdrawDelegatorReward(address delegator, address validator)
+        external
+        returns (Cosmos.Coin[] memory);
 
     /**
      * @dev Emitted by the distribution module when `amount` is withdrawn from a
