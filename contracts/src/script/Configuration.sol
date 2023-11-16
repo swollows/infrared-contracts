@@ -34,6 +34,6 @@ library GenesisPools {
 
 library Validators {
     address public constant VAL_0 =
-        address(0xc70c2FD8f8E3DBbb6f73502C70952f115Bb93929); // TODO: Please update
+        address(0x133A576eA2500BEA75C691564122C9dcd2858F39); // TODO: Please update
         // this address.
 }

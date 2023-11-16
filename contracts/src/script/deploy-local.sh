@@ -25,9 +25,12 @@
 # POOL0's LP denom is: dex/cosmos1w52jfea6m5caqx9yet6wfyj2yxcvz0xs6gtad2
 # POOL3's LP denom is: dex/cosmos1zq049jqyc8qzczsaxdzzaj3sajm0kfp5cm50sy
 
-# ###################################### Validators ######################################
-# ADDRESS OF VALIDATOR0 is: 0x2ffcd35859dff4344b4ae5d5a1f686108b845817
-# CURRENT_EPOCH is: 1
+
+###################################### Validators ######################################
+# ADDRESS OF VALIDATOR0 is: 0x133a576ea2500bea75c691564122c9dcd2858f39
+# ADDRESS OF VALIDATOR1 is: 0x628b4087ff7f112191bb13ea2de272a28f9895f1
+# ADDRESS OF VALIDATOR2 is: 0x631a2d64b4173631263fc1e2d18d879bce87ab66
+# ADDRESS OF VALIDATOR3 is: 0x995531b9db6426c49969f916da7bb202d6733d2b
 
 while [[ $# -gt 0 ]]
 do
