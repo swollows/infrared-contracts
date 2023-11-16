@@ -143,38 +143,10 @@ start-indexer:
 #                        Dev-Net                       #
 ########################################################
 
-deploy-all: |
-	@$(MAKE) deploy-infrared setup-validators
+deploy-local: |
+	@echo "--> Deploying all contracts"
+	cd contracts && ./src/script/local/deploy-local.sh --rpc-url http://localhost:8545 --private-key 0xfffdbb37105441e14b0ee6330d855d8504ff39e705c3afa8f859ac9865f99306
 
-
-deploy-addresses:
-	@echo "--> Deploying addresses"
-	cd contracts && src/script/devnet/deploy-addresses.sh
-
-deploy-infrared:
-	@echo "--> Deploying infrared"
-	cd contracts && src/script/devnet/deploy-infrared.sh
-
-setup-validators:
-	@echo "--> Setting up validators"
-	cd contracts && src/script/devnet/setup-validators.sh
-
-deploy-wibgt:
-	@echo "--> Deploying wibgt vault"
-	cd contracts && src/script/devnet/deploy-wibgt-vault.sh
-
-deploy-usdc-vault:
-	@echo "--> Deploying usdc-honey vault"
-	cd contracts && src/script/devnet/deploy-usdc-pool.sh
-
-deposit:
-	@echo "--> Depositing usdc-honey lp"
-	cd contracts && src/script/devnet/deposit.sh
-
-donate:
-	@echo "--> Donating usdc-honey LP to the vault"
-	cd contracts && src/script/devnet/donate.sh
-	
-log-devnet:
-	@echo "--> Logging devnet"
-	cd contracts && src/script/devnet/get-addresses.sh
+deploy-devnet: 
+	@echo "--> Deploying all contracts"
+	cd contracts && ./src/script/local/deploy-local.sh --rpc-url https://devnet.beraswillmakeit.com --private-key 0xfffdbb37105441e14b0ee6330d855d8504ff39e705c3afa8f859ac9865f99306

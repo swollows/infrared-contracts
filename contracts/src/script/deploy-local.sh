@@ -90,3 +90,10 @@ forge script src/script/local/Deploy.s.sol:ConfigureWIBGT  --private-key $PRIVAT
 
 ## Deploy USDC Vault.
 cast send $INFRARED_ADDRESS "registerVault(address,string,string,address[],address)" 0xc70c2FD8f8E3DBbb6f73502C70952f115Bb93929 "USDC-HONEY-VAULT" "UHV" [$IBGT_ADDRESS] 0x101f52c804C1C02c0A1D33442ecA30ecb6fB2434 --rpc-url=$RPC_URL --private-key $PRIVATE_KEY
+
+## Echo out the main addresses.
+echo "IBGT_ADDRESS=$IBGT_ADDRESS"
+echo "INFRARED_ADDRESS=$INFRARED_ADDRESS"
+echo "WIBGT_ADDRESS=$WIBGT_ADDRESS"
+echo "WIBGT_VAULT_ADDRESS=$WIBGT_VAULT_ADDRESS"
+echo "USDC_VAULT_ADDRESS=0xc70c2FD8f8E3DBbb6f73502C70952f115Bb93929"
