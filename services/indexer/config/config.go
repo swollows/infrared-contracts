@@ -6,6 +6,10 @@ type ContractConfig struct {
 	InfraredContractAddress string
 }
 
+type DBConfig struct {
+	RedisURL string
+}
+
 type GlobalParamsRefresherConfig struct {
 	Interval time.Duration
 }
@@ -21,4 +25,5 @@ type JobsConfig struct {
 type Config struct {
 	Contracts ContractConfig
 	Jobs      JobsConfig
+	DB        DBConfig
 }

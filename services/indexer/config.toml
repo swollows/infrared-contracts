@@ -1,6 +1,8 @@
 [App.Contracts]
 InfraredContractAddress = "0xA51fc80a8Ec5Cd9181F8917D74D11Bd2c95e4F95" # This is not the correct address.
 
+[App.DB]
+RedisURL = "rediss://default:274f2558a6334cbeadb2c2123112564f@eu2-sweeping-tortoise-30656.upstash.io:30656"
 
 #### Required for base app ####
 [Eth]

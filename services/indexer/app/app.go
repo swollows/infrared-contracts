@@ -37,6 +37,7 @@ func (app *IndexerApp) Setup(builder coreapp.Builder, config config.Config, logg
 		jobs.NewBlockHeaderWatcher(
 			indexerjobs.NewVaultsWatcher(
 				infraredAddress,
+				config.DB.RedisURL,
 			),
 		),
 	)

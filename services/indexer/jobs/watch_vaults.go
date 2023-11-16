@@ -7,6 +7,7 @@ import (
 	sdk "github.com/berachain/offchain-sdk/types"
 	coretypes "github.com/ethereum/go-ethereum/core/types"
 	crypto "github.com/ethereum/go-ethereum/crypto"
+	redis "github.com/redis/go-redis/v9"
 
 	"github.com/berachain/offchain-sdk/job"
 	"github.com/ethereum/go-ethereum/common"
@@ -33,12 +34,16 @@ type VaultsWatcherDB struct{}
 type VaultsWatcher struct {
 	infraredAddress  common.Address
 	infraredContract *infrared.Contract
+
+	redisUrl    string
+	redisClient *redis.Client
 }
 
 // NewVaultsWatcher creates a new instance of VaultsWatcher and returns a pointer to it.
-func NewVaultsWatcher(infraredAddress common.Address) *VaultsWatcher {
+func NewVaultsWatcher(infraredAddress common.Address, redisUrl string) *VaultsWatcher {
 	return &VaultsWatcher{
 		infraredAddress: infraredAddress,
+		redisUrl:        redisUrl,
 	}
 }
 
@@ -63,6 +68,15 @@ func (w *VaultsWatcher) Setup(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+
+	// Parse the options from the redis url.
+	options, err := redis.ParseURL(w.redisUrl)
+	if err != nil {
+		panic(err)
+	}
+
+	// Setup the redis client.
+	w.redisClient = redis.NewClient(options)
 
 	return nil
 }
@@ -91,7 +105,7 @@ func (w *VaultsWatcher) Execute(ctx context.Context, args any) (any, error) {
 	}
 
 	for _, receipt := range receipts {
-		if err := w.handleReceipt(receipt, sCtx.Logger()); err != nil {
+		if err := w.handleReceipt(ctx, receipt, sCtx.Logger()); err != nil {
 			return nil, err
 		}
 	}
@@ -131,11 +145,11 @@ func (w *VaultsWatcher) filterReceipts(sCtx *sdk.Context, block *coretypes.Block
 }
 
 // handleReceipt handles the receipts and parses the logs and executes any necessary actions.
-func (w *VaultsWatcher) handleReceipt(receipt *coretypes.Receipt, logger log.Logger) error {
+func (w *VaultsWatcher) handleReceipt(ctx context.Context, receipt *coretypes.Receipt, logger log.Logger) error {
 	for _, log := range receipt.Logs {
 		// Check if the log is a NewVault event.
 		if w.isVaultCreated(log) {
-			if err := w.handleVaultCreated(log, logger); err != nil {
+			if err := w.handleVaultCreated(ctx, log, logger); err != nil {
 				return err
 			}
 		}
@@ -159,7 +173,7 @@ func (w *VaultsWatcher) handleReceipt(receipt *coretypes.Receipt, logger log.Log
 // ==============================================================================
 
 // handleVaultCreated handles the NewVault event.
-func (w *VaultsWatcher) handleVaultCreated(log *coretypes.Log, logger log.Logger) error {
+func (w *VaultsWatcher) handleVaultCreated(ctx context.Context, log *coretypes.Log, logger log.Logger) error {
 	// Parse the log into the NewVault event.
 	newVaultEvent, err := w.infraredContract.ParseNewVault(*log)
 	if err != nil {
@@ -167,7 +181,21 @@ func (w *VaultsWatcher) handleVaultCreated(log *coretypes.Log, logger log.Logger
 		return err
 	}
 
-	// Log the event. (TODO: This will be removed in the future).
+	// Set the mapping of the vault to the pool in redis.
+	status := w.redisClient.HSet(
+		ctx,
+		"vaults",
+		newVaultEvent.Vault.String(),
+		newVaultEvent.Pool.String(),
+	)
+
+	// Check if there was an error setting the mapping.
+	if status.Err() != nil {
+		logger.Error("Failed to set vault mapping", "err", status.Err())
+		return status.Err()
+	}
+
+	// Log the event.
 	logger.Info("NewVault Event", "Vault: ", newVaultEvent.Vault.String(), "Pool: ", newVaultEvent.Pool.String())
 
 	return nil
