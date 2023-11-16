@@ -145,8 +145,8 @@ start-indexer:
 
 deploy-local: |
 	@echo "--> Deploying all contracts"
-	cd contracts && ./src/script/local/deploy-local.sh --rpc-url http://localhost:8545 --private-key 0xfffdbb37105441e14b0ee6330d855d8504ff39e705c3afa8f859ac9865f99306
+	cd contracts && ./src/script/deploy-local.sh --rpc-url http://localhost:8545 --private-key 0xfffdbb37105441e14b0ee6330d855d8504ff39e705c3afa8f859ac9865f99306
 
 deploy-devnet: 
 	@echo "--> Deploying all contracts"
-	cd contracts && ./src/script/local/deploy-local.sh --rpc-url https://devnet.beraswillmakeit.com --private-key 0xfffdbb37105441e14b0ee6330d855d8504ff39e705c3afa8f859ac9865f99306
+	cd contracts && ./src/script/deploy-local.sh --rpc-url https://devnet.beraswillmakeit.com --private-key 0xfffdbb37105441e14b0ee6330d855d8504ff39e705c3afa8f859ac9865f99306
