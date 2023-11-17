@@ -304,7 +304,7 @@ contract InfraredVault is EIP5XXX, AccessControl {
     {
         // Extracting the partition
         _partition = uint96(uint256(_packedData) >> (256 - 96)); // Shift right
-            // by (256-96)=160 bits
+        // by (256-96)=160 bits
 
         // Extracting the reward (address)
         _reward = address(uint160(uint256(_packedData)));

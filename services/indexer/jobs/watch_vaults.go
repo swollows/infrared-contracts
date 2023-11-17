@@ -3,10 +3,14 @@ package jobs
 import (
 	"context"
 
-	"github.com/berachain/offchain-sdk/job"
+	"github.com/berachain/offchain-sdk/log"
 	sdk "github.com/berachain/offchain-sdk/types"
-	"github.com/ethereum/go-ethereum/common"
 	coretypes "github.com/ethereum/go-ethereum/core/types"
+	crypto "github.com/ethereum/go-ethereum/crypto"
+	redis "github.com/redis/go-redis/v9"
+
+	"github.com/berachain/offchain-sdk/job"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/infrared-dao/infrared-mono-repo/pkg/bindings/infrared"
 )
 
@@ -17,6 +21,12 @@ var (
 )
 
 // ==============================================================================
+// VaultsWatcherDB
+// ==============================================================================
+
+type VaultsWatcherDB struct{}
+
+// ==============================================================================
 // VaultsWatcher
 // ==============================================================================
 
@@ -24,12 +34,16 @@ var (
 type VaultsWatcher struct {
 	infraredAddress  common.Address
 	infraredContract *infrared.Contract
+
+	redisUrl    string
+	redisClient *redis.Client
 }
 
 // NewVaultsWatcher creates a new instance of VaultsWatcher and returns a pointer to it.
-func NewVaultsWatcher(infraredAddress common.Address) *VaultsWatcher {
+func NewVaultsWatcher(infraredAddress common.Address, redisUrl string) *VaultsWatcher {
 	return &VaultsWatcher{
 		infraredAddress: infraredAddress,
+		redisUrl:        redisUrl,
 	}
 }
 
@@ -55,6 +69,15 @@ func (w *VaultsWatcher) Setup(ctx context.Context) error {
 		return err
 	}
 
+	// Parse the options from the redis url.
+	options, err := redis.ParseURL(w.redisUrl)
+	if err != nil {
+		panic(err)
+	}
+
+	// Setup the redis client.
+	w.redisClient = redis.NewClient(options)
+
 	return nil
 }
 
@@ -70,70 +93,139 @@ func (w *VaultsWatcher) Execute(ctx context.Context, args any) (any, error) {
 		panic("ethClient is nil")
 	}
 
-	// Log the block header.
-	sCtx.Logger().Info("New block header", "number", newHead.Number.String(), "hash", newHead.Hash().String())
-
-	// Get the current block number.
 	block, err := sCtx.Chain().GetBlockByNumber(ctx, newHead.Number.Uint64())
 	if err != nil || block == nil {
 		sCtx.Logger().Error("Failed to retrieve block", "number", newHead.Number.Uint64(), "err", err)
 		return nil, err
 	}
 
-	// Check if there are transactions in the block.
-	if len(block.Transactions()) == 0 {
-		sCtx.Logger().Info("No transactions in block", "number", newHead.Number.Uint64())
-		return nil, nil
-	}
-
-	// Get the reciepts from the relevant transactions.
-	receipts := make([]*coretypes.Receipt, 0)
-	for _, tx := range block.Transactions() {
-		r, err := sCtx.Chain().TransactionReceipt(ctx, tx.Hash())
-		if err != nil {
-			sCtx.Logger().Error("Failed to retrieve transaction receipt", "hash", tx.Hash().String(), "err", err)
-			continue
-		}
-
-		// Only append to the receipt if the transaction was successful.
-		if r.Status == 1 {
-			receipts = append(receipts, r)
-		}
-	}
-
-	// Check if there are any receipts.
-	if len(receipts) == 0 {
-		sCtx.Logger().Info("No receipts in block", "number", newHead.Number.Uint64())
-		return nil, nil
-	}
-
-	// Handle the receipts.
-	if err = w.handleReceipt(sCtx, receipts, newHead.Time); err != nil {
-		sCtx.Logger().Error("Failed to handle receipts", "err", err)
+	receipts, err := w.filterReceipts(sCtx, block)
+	if err != nil {
 		return nil, err
+	}
+
+	for _, receipt := range receipts {
+		if err := w.handleReceipt(ctx, receipt, sCtx.Logger()); err != nil {
+			return nil, err
+		}
 	}
 
 	return nil, nil
 }
 
-// handleReceipt handles the receipts and parses the logs and executes any necessary actions.
-func (w *VaultsWatcher) handleReceipt(sCtx *sdk.Context, receipts []*coretypes.Receipt, timestamp uint64) error {
-	// Logs to be parsed.
-	infraredContractLogs := make([]*coretypes.Log, 0)
-
-	// Loop through all the receipts and their logs to find relevant logs.
-	for _, r := range receipts {
-		for _, l := range r.Logs {
-			switch l.Address {
-			case w.infraredAddress:
-				infraredContractLogs = append(infraredContractLogs, l)
-			default:
-				continue
-			}
-		}
+// filterReceipts filters unnecessary receipts and returns only the relevant ones.
+func (w *VaultsWatcher) filterReceipts(sCtx *sdk.Context, block *coretypes.Block) ([]*coretypes.Receipt, error) {
+	// Check if there are transactions in the block and return if there are none.
+	if len(block.Transactions()) == 0 {
+		sCtx.Logger().Info("No transactions in block", "number", block.Number().Uint64())
+		return []*coretypes.Receipt{}, nil
 	}
 
-	// Log out the number of logs found.
-	sCtx.Logger().Info("Found logs", "count", len(infraredContractLogs))
+	// Get the relevant receipts from the block.
+	relevantReceipts := make([]*coretypes.Receipt, 0)
+	for _, tx := range block.Transactions() {
+		// Get the receipt for the transaction.
+		receipt, err := sCtx.Chain().TransactionReceipt(sCtx.Context, tx.Hash())
+		if err != nil {
+			sCtx.Logger().Error("Failed to retrieve transaction receipt", "hash", tx.Hash().String(), "err", err)
+			return []*coretypes.Receipt{}, err
+		}
+
+		// If the transaction was not successful, skip it.
+		if receipt.Status != 1 {
+			continue
+		}
+
+		// If the transaction was successful, append it to the relevant receipts.
+		relevantReceipts = append(relevantReceipts, receipt)
+
+	}
+
+	return relevantReceipts, nil
+}
+
+// handleReceipt handles the receipts and parses the logs and executes any necessary actions.
+func (w *VaultsWatcher) handleReceipt(ctx context.Context, receipt *coretypes.Receipt, logger log.Logger) error {
+	for _, log := range receipt.Logs {
+		// Check if the log is a NewVault event.
+		if w.isVaultCreated(log) {
+			if err := w.handleVaultCreated(ctx, log, logger); err != nil {
+				return err
+			}
+		}
+
+		// Check if the log is an IBGTSupplied event.
+		if w.isIBGTSupplied(log) {
+			if err := w.handleIBGTSupplied(log, logger); err != nil {
+				return err
+			}
+		}
+
+		// Continue to the next log if the log is not relevant.
+		continue
+	}
+
 	return nil
+}
+
+// ==============================================================================
+// Event Handlers
+// ==============================================================================
+
+// handleVaultCreated handles the NewVault event.
+func (w *VaultsWatcher) handleVaultCreated(ctx context.Context, log *coretypes.Log, logger log.Logger) error {
+	// Parse the log into the NewVault event.
+	newVaultEvent, err := w.infraredContract.ParseNewVault(*log)
+	if err != nil {
+		logger.Error("Failed to parse NewVault event", "err", err)
+		return err
+	}
+
+	// Set the mapping of the vault to the pool in redis.
+	status := w.redisClient.HSet(
+		ctx,
+		"vaults",
+		newVaultEvent.Vault.String(),
+		newVaultEvent.Pool.String(),
+	)
+
+	// Check if there was an error setting the mapping.
+	if status.Err() != nil {
+		logger.Error("Failed to set vault mapping", "err", status.Err())
+		return status.Err()
+	}
+
+	// Log the event.
+	logger.Info("NewVault Event", "Vault: ", newVaultEvent.Vault.String(), "Pool: ", newVaultEvent.Pool.String())
+
+	return nil
+}
+
+// handleIBGTSupplied handles the IBGTSupplied event.
+func (w *VaultsWatcher) handleIBGTSupplied(log *coretypes.Log, logger log.Logger) error {
+	// Parse the log into the IBGTSupplied event.
+	ibgtSuppliedEvent, err := w.infraredContract.ParseIBGTSupplied(*log)
+	if err != nil {
+		logger.Error("Failed to parse IBGTSupplied event", "err", err)
+		return err
+	}
+
+	// Log the event. (TODO: This will be removed in the future).
+	logger.Info("IBGTSupplied Event", "Vault: ", ibgtSuppliedEvent.Vault.String(), "Amount: ", ibgtSuppliedEvent.Amount.String())
+
+	return nil
+}
+
+// ==============================================================================
+// Event Helpers
+// ==============================================================================
+
+// IsVaultCreated checks the log against the NewVault event signature.
+func (w *VaultsWatcher) isVaultCreated(log *coretypes.Log) bool {
+	return crypto.Keccak256Hash([]byte("NewVault(address,address)")).Cmp(log.Topics[0]) == 0
+}
+
+// IsIBGTSupplied checks the log against the IBGTSupplied event signature.
+func (w *VaultsWatcher) isIBGTSupplied(log *coretypes.Log) bool {
+	return crypto.Keccak256Hash([]byte("IBGTSupplied(address,uint256)")).Cmp(log.Topics[0]) == 0
 }

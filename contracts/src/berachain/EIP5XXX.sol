@@ -205,7 +205,7 @@ abstract contract EIP5XXX is ERC4626 {
         address receiver
     ) internal virtual returns (bool success) {
         uint256 allowed = claimAllowance[reward][owner][msg.sender]; // Saves
-            // gas for limited approvals.
+        // gas for limited approvals.
         if (allowed != type(uint256).max) {
             claimAllowance[reward][owner][msg.sender] = allowed - amount;
         }

@@ -10,7 +10,7 @@
     "prettier:check": "prettier --check **.sol",
     "solhint": "solhint --config ./.solhint.json 'contracts/src/**/*.sol' --fix",
     "solhint:check": "solhint --config ./.solhint.json 'contracts/src/**/*.sol'",
-    "lint": "npm run prettier && npm run solhint",
+    "lint": "npm run solhint",
     "lint:check": "npm run prettier:check && npm run solhint:check"
   },
   "lint-staged": {

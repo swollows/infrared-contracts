@@ -32,18 +32,9 @@ make log-devnet
 ### Deploy Fresh
 
 ```bash
-# Deploy the addresses contract. This will keep track of all the contracts deployed.
-make deploy-addresses # Copy the output of this script and paste it into the Configurations.sol file.
+# Deploy to the Berachain Dev Net.
+make deploy-devnet
 
-# Deploy the Infrared contract.
-make deploy-infrared
-
-# Setup the validators.
-make setup-validators
-
-# Deploy the WIBGT vault.
-make deploy-wibgt
-
-# Deploy the USDC-Honey vault.
-make deploy-usdc-vault
+# Deploy to a local Berachain Network.
+make deploy-local
 ```
