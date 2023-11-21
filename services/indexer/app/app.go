@@ -4,11 +4,7 @@ import (
 	"github.com/berachain/offchain-sdk/baseapp"
 	coreapp "github.com/berachain/offchain-sdk/core/app"
 	"github.com/berachain/offchain-sdk/log"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/infrared-dao/infrared-mono-repo/services/indexer/config"
-
-	jobs "github.com/berachain/offchain-sdk/x/jobs"
-	indexerjobs "github.com/infrared-dao/infrared-mono-repo/services/indexer/jobs"
 )
 
 // We must conform to the `App` interface.
@@ -26,23 +22,7 @@ func (app *IndexerApp) Name() string {
 
 // Setup implements the `App` interface.
 func (app *IndexerApp) Setup(builder coreapp.Builder, config config.Config, logger log.Logger) {
-	logger.Info("Setting up indexer app")
-	logger.Info("Configuring indexer app", "config", config)
-
-	// Parse the address of the Infrared contract.
-	infraredAddress := common.HexToAddress(config.Contracts.InfraredContractAddress)
-
-	// Reigster the Vault Watcher job.
-	builder.RegisterJob(
-		jobs.NewBlockHeaderWatcher(
-			indexerjobs.NewVaultsWatcher(
-				infraredAddress,
-				config.DB.RedisURL,
-			),
-		),
-	)
-
-	// Build the application.
+	logger.Info("Setting up indexer app...")
 	app.BaseApp = builder.BuildApp(logger)
 }
 
