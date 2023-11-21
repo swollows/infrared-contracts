@@ -1,5 +1,7 @@
 package db
 
+import "github.com/ethereum/go-ethereum/common"
+
 // Vault is the struct for the vault.
 type Vault struct {
 	Name                   string   `json:"name"`
@@ -9,6 +11,24 @@ type Vault struct {
 	PoolHexAddress         string   `json:"poolHexAddress"`
 }
 
+// NewVault creates a new vault and returns a pointer to it.
+func NewVault(name string, symbol string, asset common.Address, rewards []*common.Address, pool common.Address) *Vault {
+	// Convert `rewards` to a slice of strings.
+	rewardTokensHexAddress := make([]string, len(rewards))
+	for i, reward := range rewards {
+		rewardTokensHexAddress[i] = reward.Hex()
+	}
+
+	return &Vault{
+		Name:                   name,
+		Symbol:                 symbol,
+		AssetHexAddress:        asset.Hex(),
+		RewardTokensHexAddress: rewardTokensHexAddress,
+		PoolHexAddress:         pool.Hex(),
+	}
+}
+
+// CheckPoint is the struct for the checkpoint.
 type CheckPoint struct {
 	LastBlock          uint64 `json:"lastBlock"`
 	LastBlockTimeStamp uint64 `json:"lastBlockTimeStamp"`

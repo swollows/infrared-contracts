@@ -1,7 +1,9 @@
 package config
 
 // ContractConfig contains the addresses of the contracts that the indexer will be watching.
-type ContractConfig struct{}
+type ContractConfig struct {
+	InfraredContractAddress string
+}
 
 // DBConfig contains the configuration for the database.
 type DBConfig struct {
