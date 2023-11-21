@@ -67,3 +67,45 @@ func (r *Repository) GetCheckpoint(ctx context.Context) (*CheckPoint, error) {
 
 	return &checkpoint, nil
 }
+
+// SetVault sets the vault in the database. It appends the vault to the vaults array.
+func (r *Repository) SetVault(ctx context.Context, vault *Vault) error {
+	// Set the vault in the database.
+	status := r.db.JSONArrAppend(ctx, "vaults", "$..vaults", vault)
+
+	// Check for errors.
+	if status.Err() != nil {
+		r.logger.Error("Could not set vault", "error", status.Err())
+		return status.Err()
+	}
+
+	return nil
+}
+
+// GetVaults gets the vaults array from the database.
+func (r *Repository) GetVaults(ctx context.Context) ([]*Vault, error) {
+	// Get the vaults array from the database.
+	status := r.db.JSONGet(ctx, "vaults", "$..vaults")
+
+	// Check for errors.
+	if status.Err() != nil {
+		r.logger.Error("Could not get vaults", "error", status.Err())
+		return nil, status.Err()
+	}
+
+	// Check for nil.
+	val := status.Val()
+	if val == "" {
+		r.logger.Info("No vaults found in database")
+		return nil, nil
+	}
+
+	// Unmarshal the vaults array.
+	var vaults []*Vault
+	if err := json.Unmarshal([]byte(val), &vaults); err != nil {
+		r.logger.Error("Could not unmarshal vaults", "error", err)
+		return nil, err
+	}
+
+	return vaults, nil
+}
