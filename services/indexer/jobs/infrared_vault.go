@@ -3,11 +3,14 @@ package jobs
 import (
 	"context"
 
+	"github.com/berachain/offchain-sdk/client/eth"
 	"github.com/berachain/offchain-sdk/job"
+	"github.com/berachain/offchain-sdk/log"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/infrared-dao/infrared-mono-repo/pkg/bindings/infrared"
+	"github.com/infrared-dao/infrared-mono-repo/pkg/bindings/vault"
 	"github.com/infrared-dao/infrared-mono-repo/services/indexer/db"
 
 	sdk "github.com/berachain/offchain-sdk/types"
@@ -136,5 +139,66 @@ func (v *VaultsSubscriber) Execute(ctx context.Context, args any) (any, error) {
 	// Log the event.
 	sCtx.Logger().Info("new vault event", "vault", event.Vault.Hex(), "owner", event.Pool.Hex())
 
+	// Get the vault data.
+	vault, err := GetVaultData(sCtx.Chain(), sCtx.Logger(), event.Vault)
+	if err != nil {
+		sCtx.Logger().Error("failed to get vault data", "error", err)
+		return nil, err
+	}
+
+	// Set the vault in the database.
+	if err := v.db.SetVault(ctx, vault); err != nil {
+		sCtx.Logger().Error("failed to set vault in database", "error", err)
+		return nil, err
+	}
+
+	// Log that the vault has been set in the database.
+	sCtx.Logger().Info("✅ Vault set in DB", "vault: ", vault.Name)
+
 	return nil, nil
+}
+
+// ==============================================================================
+// Contract Queries
+// ==============================================================================
+
+// Get vault data from the vault contract.
+func GetVaultData(ethClient eth.Client, logger log.Logger, vaultAddress common.Address) (*db.Vault, error) {
+	vault, err := vault.NewContract(vaultAddress, ethClient)
+	if err != nil {
+		logger.Error("failed to create vault contract", "error", err)
+		return nil, err
+	}
+
+	name, err := vault.Name(nil)
+	if err != nil {
+		logger.Error("failed to get vault name", "error", err)
+		return nil, err
+	}
+
+	symbol, err := vault.Symbol(nil)
+	if err != nil {
+		logger.Error("failed to get vault symbol", "error", err)
+		return nil, err
+	}
+
+	asset, err := vault.Asset(nil)
+	if err != nil {
+		logger.Error("failed to get vault asset", "error", err)
+		return nil, err
+	}
+
+	rewardTokens, err := vault.RewardTokens(nil)
+	if err != nil {
+		logger.Error("failed to get vault reward tokens", "error", err)
+		return nil, err
+	}
+
+	pool, err := vault.PoolAddress(nil)
+	if err != nil {
+		logger.Error("failed to get vault pool address", "error", err)
+		return nil, err
+	}
+
+	return db.NewVault(name, symbol, asset, rewardTokens, pool), nil
 }

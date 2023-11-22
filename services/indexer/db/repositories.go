@@ -70,12 +70,23 @@ func (r *Repository) GetCheckpoint(ctx context.Context) (*CheckPoint, error) {
 
 // SetVault sets the vault in the database. It appends the vault to the vaults array.
 func (r *Repository) SetVault(ctx context.Context, vault *Vault) error {
-	// Set the vault in the database.
-	status := r.db.JSONArrAppend(ctx, "vaults", "$..vaults", vault)
+	// Check if the 'vaults-list' key exists in the database.
+	if r.db.Exists(ctx, "vaults-list").Val() == 0 {
+		// Initialize 'vaults-list' as an empty JSON array at the root
+		status := r.db.JSONSet(ctx, "vaults-list", "$", []Vault{})
+		if status.Err() != nil {
+			r.logger.Error("Could not initialize vaults-list", "error", status.Err())
+			return status.Err()
+		}
+	}
+
+	// Append the vault to the 'vaults-list' array.
+	// Assuming your intention is to append to the root array
+	status := r.db.JSONArrAppend(ctx, "vaults-list", "$", vault)
 
 	// Check for errors.
 	if status.Err() != nil {
-		r.logger.Error("Could not set vault", "error", status.Err())
+		r.logger.Error("Could not set vault in vaults-list", "error", status.Err())
 		return status.Err()
 	}
 
@@ -85,11 +96,11 @@ func (r *Repository) SetVault(ctx context.Context, vault *Vault) error {
 // GetVaults gets the vaults array from the database.
 func (r *Repository) GetVaults(ctx context.Context) ([]*Vault, error) {
 	// Get the vaults array from the database.
-	status := r.db.JSONGet(ctx, "vaults", "$..vaults")
+	status := r.db.JSONGet(ctx, "vaults-list", "$")
 
 	// Check for errors.
 	if status.Err() != nil {
-		r.logger.Error("Could not get vaults", "error", status.Err())
+		r.logger.Error("Could not get vaults-list", "error", status.Err())
 		return nil, status.Err()
 	}
 
@@ -103,7 +114,7 @@ func (r *Repository) GetVaults(ctx context.Context) ([]*Vault, error) {
 	// Unmarshal the vaults array.
 	var vaults []*Vault
 	if err := json.Unmarshal([]byte(val), &vaults); err != nil {
-		r.logger.Error("Could not unmarshal vaults", "error", err)
+		r.logger.Error("Could not unmarshal vaults-list", "error", err)
 		return nil, err
 	}
 

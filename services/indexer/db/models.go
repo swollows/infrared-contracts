@@ -1,6 +1,15 @@
 package db
 
-import "github.com/ethereum/go-ethereum/common"
+import (
+	"encoding"
+	"encoding/json"
+
+	"github.com/ethereum/go-ethereum/common"
+)
+
+var (
+	_ encoding.BinaryMarshaler = (*Vault)(nil)
+)
 
 // Vault is the struct for the vault.
 type Vault struct {
@@ -12,7 +21,7 @@ type Vault struct {
 }
 
 // NewVault creates a new vault and returns a pointer to it.
-func NewVault(name string, symbol string, asset common.Address, rewards []*common.Address, pool common.Address) *Vault {
+func NewVault(name string, symbol string, asset common.Address, rewards []common.Address, pool common.Address) *Vault {
 	// Convert `rewards` to a slice of strings.
 	rewardTokensHexAddress := make([]string, len(rewards))
 	for i, reward := range rewards {
@@ -26,6 +35,10 @@ func NewVault(name string, symbol string, asset common.Address, rewards []*commo
 		RewardTokensHexAddress: rewardTokensHexAddress,
 		PoolHexAddress:         pool.Hex(),
 	}
+}
+
+func (v *Vault) MarshalBinary() ([]byte, error) {
+	return json.Marshal(v)
 }
 
 // CheckPoint is the struct for the checkpoint.
