@@ -3,55 +3,138 @@ package jobs
 import (
 	"context"
 
-	sdk "github.com/berachain/offchain-sdk/types"
+	"github.com/berachain/offchain-sdk/job"
+	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
-	bindings "github.com/infrared-dao/infrared-mono-repo/pkg/bindings/infrared"
+	"github.com/infrared-dao/infrared-mono-repo/pkg/bindings/infrared"
 	"github.com/infrared-dao/infrared-mono-repo/services/indexer/db"
+
+	sdk "github.com/berachain/offchain-sdk/types"
+	coretypes "github.com/ethereum/go-ethereum/core/types"
 )
+
+// ==============================================================================
+//  Dependencies
+// ==============================================================================
 
 // VaultDB is the interface for the vault database.
 type VaultDB interface {
 	SetVault(ctx context.Context, vault *db.Vault) error
 }
 
-// VaultWatcher watches the vaults events and updates the statistics in the database.
-type VaultWatcher struct {
-	db               VaultDB
-	infraredAddress  common.Address
-	infraredContract *bindings.Contract
+// ==============================================================================
+//  VaultsSubscriber
+// ==============================================================================
+
+// Compile time check to ensure that VaultWatcher implements job.Basic and job.HasSetup.
+var (
+	_ job.Basic           = (*VaultsSubscriber)(nil)
+	_ job.HasSetup        = (*VaultsSubscriber)(nil)
+	_ job.EthSubscribable = (*VaultsSubscriber)(nil)
+)
+
+// VaultsSubscriber is the job that subscribes to vault events and updates the database.
+type VaultsSubscriber struct {
+	// db can be any database that implements the VaultDB interface.
+	db VaultDB
+	// infraredAddress is the address of the infrared contract.
+	infraredAddress common.Address
+	// infrared is the infrared contract that is used to subscribe to events.
+	infrared *bind.BoundContract
+	// fromBlock is the block number to start the subscription from.
+	fromBlock uint64
+	// sub is the subscription to the event.
+	sub ethereum.Subscription
 }
 
-// NewVaultWatcher creates a new vault watcher and returns a pointer to it.
-func NewVaultWatcher(db VaultDB, infraredAddress common.Address) *VaultWatcher {
-	return &VaultWatcher{db: db, infraredAddress: infraredAddress}
+// NewVaultsSubscriber returns a pointer to a new VaultsSubscriber.
+func NewVaultsSubscriber(db VaultDB, infraredAddress common.Address, fromBlock uint64) *VaultsSubscriber {
+	return &VaultsSubscriber{
+		db:              db,
+		infraredAddress: infraredAddress,
+		fromBlock:       fromBlock,
+	}
 }
 
-// RegistryKey implements the `Job` interface.
-func (w *VaultWatcher) RegistryKey() string {
-	return "vault_watcher"
+// RegisterKey implements job.Basic.
+func (v *VaultsSubscriber) RegistryKey() string {
+	return "vaults-subscriber"
 }
 
-// Setup implements the `Job` interface.
-func (w *VaultWatcher) Setup(ctx context.Context) error {
-	sCtx := sdk.UnwrapCancelContext(ctx)
-	ethClient := sCtx.Chain()
-	if ethClient == nil {
-		panic("ethClient is nil")
+// Setup implements job.HasSetup.
+func (v *VaultsSubscriber) Setup(ctx context.Context) error {
+	// Get the ethereum client from the context.
+	sCtx := sdk.UnwrapContext(ctx)
+	client := sCtx.Chain()
+	if client == nil {
+		panic("ethereum client not found in context")
 	}
 
-	// Setup the contract bindings.
-	contract, err := bindings.NewContract(w.infraredAddress, ethClient)
+	// Parse the infrared contract abi.
+	infraredAbi, err := infrared.ContractMetaData.GetAbi()
 	if err != nil {
-		return err
+		sCtx.Logger().Error("failed to get infrared abi", "error", err)
 	}
 
-	// Set the contract bindings.
-	w.infraredContract = contract
+	// Bind the infrared contract and set it on the struct.
+	v.infrared = bind.NewBoundContract(v.infraredAddress, *infraredAbi, client, client, client)
 
 	return nil
 }
 
-// Execute implements the `Job` interface.
-func (w *VaultWatcher) Execute(ctx context.Context, args any) (any, error) {
+// Subscribe implements job.EthSubscribable.
+func (v *VaultsSubscriber) Subscribe(ctx context.Context) (ethereum.Subscription, chan coretypes.Log, error) {
+	// Get the ethereum client from the context.
+	sCtx := sdk.UnwrapContext(ctx)
+	client := sCtx.Chain()
+	logger := sCtx.Logger()
+	if client == nil {
+		panic("ethereum client not found in context")
+	}
+
+	// Subscribe to the event.
+	ch, sub, err := v.infrared.WatchLogs(
+		&bind.WatchOpts{
+			Start:   &v.fromBlock,
+			Context: ctx,
+		},
+		"NewVault", // event name
+		nil,        // query
+	)
+
+	if err != nil {
+		logger.Error("failed to subscribe to vault events", "error", err)
+		return nil, nil, err
+	}
+
+	// Set the subscription on the struct.
+	v.sub = sub
+
+	// Log that we have subscribed to the event.
+	logger.Info("subscribed to vault events", "address", v.infraredAddress.Hex(), "fromBlock", v.fromBlock)
+
+	// Return the subscription and the channel.
+	return sub, ch, nil
+}
+
+// Unsubscribe implements job.EthSubscribable.
+func (v *VaultsSubscriber) Unsubscribe(ctx context.Context) {
+	v.sub.Unsubscribe()
+}
+
+// Execute implements job.Basic.
+func (v *VaultsSubscriber) Execute(ctx context.Context, args any) (any, error) {
+	sCtx := sdk.UnwrapContext(ctx)
+
+	// Unwrap the event.
+	event := new(infrared.ContractNewVault)
+	if err := v.infrared.UnpackLog(event, "NewVault", args.(coretypes.Log)); err != nil {
+		sCtx.Logger().Error("failed to unpack event", "error", err)
+	}
+
+	// Log the event.
+	sCtx.Logger().Info("new vault event", "vault", event.Vault.Hex(), "owner", event.Pool.Hex())
+
 	return nil, nil
 }
