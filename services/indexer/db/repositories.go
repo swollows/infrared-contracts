@@ -81,7 +81,6 @@ func (r *Repository) SetVault(ctx context.Context, vault *Vault) error {
 	}
 
 	// Append the vault to the 'vaults-list' array.
-	// Assuming your intention is to append to the root array
 	status := r.db.JSONArrAppend(ctx, "vaults-list", "$", vault)
 
 	// Check for errors.
@@ -98,25 +97,46 @@ func (r *Repository) GetVaults(ctx context.Context) ([]*Vault, error) {
 	// Get the vaults array from the database.
 	status := r.db.JSONGet(ctx, "vaults-list", "$")
 
-	// Check for errors.
+	// Check for errors in fetching the vaults.
 	if status.Err() != nil {
 		r.logger.Error("Could not get vaults-list", "error", status.Err())
-		return nil, status.Err()
+		return []*Vault{}, status.Err()
 	}
 
 	// Check for nil.
 	val := status.Val()
 	if val == "" {
 		r.logger.Info("No vaults found in database")
-		return nil, nil
+		return []*Vault{}, nil
 	}
 
 	// Unmarshal the vaults array.
-	var vaults []*Vault
+	var vaults [][]*Vault
 	if err := json.Unmarshal([]byte(val), &vaults); err != nil {
 		r.logger.Error("Could not unmarshal vaults-list", "error", err)
-		return nil, err
+		return []*Vault{}, err
 	}
 
-	return vaults, nil
+	// Return the vaults array.
+	return vaults[0], nil
+
+}
+
+func (r *Repository) VaultExists(ctx context.Context, vaultHexAddress string) (bool, error) {
+	// Get the vaults array from the database.
+	vaults, err := r.GetVaults(ctx)
+	if err != nil {
+		r.logger.Error("Could not get vaults", "error", err)
+		return false, err
+	}
+
+	// Check if the vault exists.
+	for _, vault := range vaults {
+		if vault.VaultHexAddress == vaultHexAddress {
+			return true, nil
+		}
+	}
+
+	// Return false if the vault does not exist.
+	return false, nil
 }

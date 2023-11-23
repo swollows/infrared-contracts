@@ -24,6 +24,8 @@ import (
 // VaultDB is the interface for the vault database.
 type VaultDB interface {
 	SetVault(ctx context.Context, vault *db.Vault) error
+	VaultExists(ctx context.Context, vaultHexAddress string) (bool, error)
+	SetCheckpoint(ctx context.Context, checkpoint *db.CheckPoint) error
 }
 
 // ==============================================================================
@@ -136,9 +138,6 @@ func (v *VaultsSubscriber) Execute(ctx context.Context, args any) (any, error) {
 		sCtx.Logger().Error("failed to unpack event", "error", err)
 	}
 
-	// Log the event.
-	sCtx.Logger().Info("new vault event", "vault", event.Vault.Hex(), "owner", event.Pool.Hex())
-
 	// Get the vault data.
 	vault, err := GetVaultData(sCtx.Chain(), sCtx.Logger(), event.Vault)
 	if err != nil {
@@ -146,16 +145,56 @@ func (v *VaultsSubscriber) Execute(ctx context.Context, args any) (any, error) {
 		return nil, err
 	}
 
-	// Set the vault in the database.
-	if err := v.db.SetVault(ctx, vault); err != nil {
-		sCtx.Logger().Error("failed to set vault in database", "error", err)
+	// Get the block number from the ethereum client. // TODO: This could be faulty.
+	blockNum, err := sCtx.Chain().BlockNumber(ctx)
+	if err != nil {
+		sCtx.Logger().Error("failed to get block number", "error", err)
 		return nil, err
 	}
 
-	// Log that the vault has been set in the database.
-	sCtx.Logger().Info("✅ Vault set in DB", "vault: ", vault.Name)
+	// Store the vault in the database.
+	if err := v.Store(sCtx, blockNum, vault); err != nil {
+		sCtx.Logger().Error("failed to store vault in database", "error", err)
+		return nil, err
+	}
 
 	return nil, nil
+}
+
+// Store checks if the vault exists in the database and stores it if it doesn't. Also stores the checkpoint.
+func (v *VaultsSubscriber) Store(ctx *sdk.Context, blockNum uint64, vault *db.Vault) error {
+	// Check if the vault exists in the database.
+	exists, err := v.db.VaultExists(ctx, vault.VaultHexAddress)
+	if err != nil {
+		ctx.Logger().Error("failed to check if vault exists in database", "error", err)
+		return err
+	}
+
+	// If the vault exists, return.
+	if exists {
+		ctx.Logger().Info("vault already exists in database", "vault", vault.Name)
+		return nil
+	}
+
+	// Set the vault in the database.
+	if err := v.db.SetVault(ctx, vault); err != nil {
+		ctx.Logger().Error("failed to set vault in database", "error", err)
+		return err
+	}
+
+	// Log that the vault has been set in the database.
+	ctx.Logger().Info("✅ Vault set in DB", "vault: ", vault.Name)
+
+	// Set the checkpoint in the database.
+	if err := v.db.SetCheckpoint(ctx, db.NewCheckPoint(blockNum)); err != nil {
+		ctx.Logger().Error("failed to set checkpoint in database", "error", err)
+		return err
+	}
+
+	// Log that the checkpoint has been set in the database.
+	ctx.Logger().Info("✅ Checkpoint set in DB", "blockNum: ", blockNum)
+
+	return nil
 }
 
 // ==============================================================================
@@ -200,5 +239,5 @@ func GetVaultData(ethClient eth.Client, logger log.Logger, vaultAddress common.A
 		return nil, err
 	}
 
-	return db.NewVault(name, symbol, asset, rewardTokens, pool), nil
+	return db.NewVault(vaultAddress, name, symbol, asset, rewardTokens, pool), nil
 }

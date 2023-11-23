@@ -13,6 +13,7 @@ var (
 
 // Vault is the struct for the vault.
 type Vault struct {
+	VaultHexAddress        string   `json:"vaultHexAddress"`
 	Name                   string   `json:"name"`
 	Symbol                 string   `json:"symbol"`
 	AssetHexAddress        string   `json:"assetHexAddress"`
@@ -21,7 +22,7 @@ type Vault struct {
 }
 
 // NewVault creates a new vault and returns a pointer to it.
-func NewVault(name string, symbol string, asset common.Address, rewards []common.Address, pool common.Address) *Vault {
+func NewVault(vault common.Address, name string, symbol string, asset common.Address, rewards []common.Address, pool common.Address) *Vault {
 	// Convert `rewards` to a slice of strings.
 	rewardTokensHexAddress := make([]string, len(rewards))
 	for i, reward := range rewards {
@@ -29,6 +30,7 @@ func NewVault(name string, symbol string, asset common.Address, rewards []common
 	}
 
 	return &Vault{
+		VaultHexAddress:        vault.Hex(),
 		Name:                   name,
 		Symbol:                 symbol,
 		AssetHexAddress:        asset.Hex(),
@@ -37,12 +39,19 @@ func NewVault(name string, symbol string, asset common.Address, rewards []common
 	}
 }
 
+// MarshalBinary marshals the vault into bytes.
 func (v *Vault) MarshalBinary() ([]byte, error) {
 	return json.Marshal(v)
 }
 
 // CheckPoint is the struct for the checkpoint.
 type CheckPoint struct {
-	LastBlock          uint64 `json:"lastBlock"`
-	LastBlockTimeStamp uint64 `json:"lastBlockTimeStamp"`
+	LastBlock uint64 `json:"lastBlock"`
+}
+
+// NewCheckPoint creates a new checkpoint and returns a pointer to it.
+func NewCheckPoint(lastBlock uint64) *CheckPoint {
+	return &CheckPoint{
+		LastBlock: lastBlock,
+	}
 }
