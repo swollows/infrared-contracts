@@ -1,29 +1,23 @@
 package config
 
-import "time"
-
+// ContractConfig contains the addresses of the contracts that the indexer will be watching.
 type ContractConfig struct {
 	InfraredContractAddress string
 }
 
+// DBConfig contains the configuration for the database.
 type DBConfig struct {
-	RedisURL string
+	ConnectionURL string
 }
 
-type GlobalParamsRefresherConfig struct {
-	Interval time.Duration
+// CheckpointConfig contains the configuration for the checkpointing system. (this will be set at runtime).
+type CheckpointConfig struct {
+	LatestBlock uint64
 }
 
-type BlockIndexerConfig struct {
-	Interval time.Duration
-}
-
-type JobsConfig struct {
-	GlobalParamsRefresher GlobalParamsRefresherConfig
-}
-
+// Config contains the configuration for the indexer.
 type Config struct {
-	Contracts ContractConfig
-	Jobs      JobsConfig
-	DB        DBConfig
+	Contracts  ContractConfig
+	DB         DBConfig
+	Checkpoint CheckpointConfig
 }
