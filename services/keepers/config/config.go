@@ -1,0 +1,35 @@
+package config
+
+import "time"
+
+// DBConfig contains the configuration for the database.
+type DBConfig struct {
+	ConnectionURL string
+}
+
+// IntervalConfig contains the configuration for the interval.
+type IntervalConfig struct {
+	// HarvestInterval is the interval at which the harvester will harvest the rewards.
+	HarvestInterval time.Duration
+}
+
+// SignerConfig contains the configuration for the signer.
+type SignerConfig struct {
+	// PublicKey is the public key of the signer.
+	PublicKey string
+	// PrivateKey is the private key of the signer.
+	PrivateKey string
+}
+
+type HarvestConfig struct {
+	// MinBGT is the minimum amount of BGT that the harvester will harvest.
+	MinBGT uint64
+}
+
+// Config contains the configuration for the keepers.
+type Config struct {
+	DB       DBConfig
+	Interval IntervalConfig
+	Signer   SignerConfig
+	Harvest  HarvestConfig
+}
