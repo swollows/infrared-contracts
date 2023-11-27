@@ -46,7 +46,11 @@ func (app *KeeperApp) Setup(builder coreapp.Builder, config config.Config, logge
 	}
 
 	// Get the public and private keys.
-	pubKey, privKey := util.GetKeys(config.Signer.PrivateKey, config.Signer.PublicKey)
+	pubKey, privKey, err := util.GetKeys(config.Signer.PrivateKey, config.Signer.PublicKey)
+	if err != nil {
+		logger.Error("Could not get keys", "error", err)
+		panic(err)
+	}
 
 	// Create the harvester keeper job.
 	keeperJob := jobs.NewHarvester(

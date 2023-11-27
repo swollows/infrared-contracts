@@ -8,12 +8,12 @@ import (
 )
 
 // GetPrivateKey returns the private key from the private key string.
-func GetPrivateKey(privKey string) *ecdsa.PrivateKey {
+func GetPrivateKey(privKey string) (*ecdsa.PrivateKey, error) {
 	privateKey, err := crypto.ToECDSA(common.FromHex(privKey))
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
-	return privateKey
+	return privateKey, nil
 }
 
 // GetPublicKey returns the public key from the private key string.
@@ -22,6 +22,11 @@ func GetPublicKey(pubKey string) common.Address {
 }
 
 // GetKeys returns the public and private keys from the private key string.
-func GetKeys(privKey string, pubKey string) (*ecdsa.PrivateKey, common.Address) {
-	return GetPrivateKey(privKey), GetPublicKey(pubKey)
+func GetKeys(privKey string, pubKey string) (*ecdsa.PrivateKey, common.Address, error) {
+	privateKey, err := GetPrivateKey(privKey)
+	if err != nil {
+		return nil, common.Address{}, err
+	}
+
+	return privateKey, GetPublicKey(pubKey), nil
 }
