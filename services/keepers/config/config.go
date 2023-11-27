@@ -21,11 +21,14 @@ type SignerConfig struct {
 	PrivateKey string
 }
 
+// HarvestConfig contains the configuration for the harvester.
 type HarvestConfig struct {
 	// MinBGT is the minimum amount of BGT that the harvester will harvest.
 	MinBGT uint64
 	// The rewards precompile address.
 	RewardsPrecompileAddress string
+	// The infrared contract address.
+	InfraredContractAddress string
 }
 
 // Config contains the configuration for the keepers.
