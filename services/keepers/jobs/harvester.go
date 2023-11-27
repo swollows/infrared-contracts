@@ -62,6 +62,8 @@ type Harvester struct {
 	minBGT *big.Int
 	// rewards precompile address.
 	rewardsPrecompileAddress common.Address
+	// rewardsPrecompileContract is the contract that will be used to get the current rewards.
+	rewardsPrecompileContract *rewards.Contract
 	// infraredContractAddress is the address of the infrared contract.
 	infraredContractAddress common.Address
 	// infraredContract is the contract that will be used to harvest the rewards.
@@ -106,6 +108,16 @@ func (h *Harvester) Setup(ctx context.Context) error {
 		ethClient,
 		ethClient,
 	)
+
+	// Load the rewards precompile contract.
+	rewardsPrecompileContract, err := rewards.NewContract(h.rewardsPrecompileAddress, ethClient)
+	if err != nil {
+		sCtx.Logger().Error("failed to parse rewards precompile abi", "error", err)
+		return err
+	}
+
+	// Bind the contract to the struct.
+	h.rewardsPrecompileContract = rewardsPrecompileContract
 
 	return nil
 }
@@ -159,17 +171,10 @@ func (h *Harvester) CheckVaults(ctx *sdk.Context, logger log.Logger) ([]*db.Vaul
 		return nil, err
 	}
 
-	// Load the rewards precompile contract.
-	rewardsPrecompile, err := rewards.NewContract(h.rewardsPrecompileAddress, ctx.Chain())
-	if err != nil {
-		logger.Error("failed to load rewards precompile contract", "error", err)
-		return nil, err
-	}
-
 	// Filter the vaults based on the minimum BGT amount.
 	filteredVaults := make([]*db.Vault, 0)
 	for _, vault := range vaults {
-		cr, err := rewardsPrecompile.GetCurrentRewards(
+		cr, err := h.rewardsPrecompileContract.GetCurrentRewards(
 			nil,
 			common.HexToAddress(vault.VaultHexAddress),
 			common.HexToAddress(vault.PoolHexAddress),

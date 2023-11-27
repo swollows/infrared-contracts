@@ -35,7 +35,7 @@ func (app *KeeperApp) Setup(builder coreapp.Builder, config config.Config, logge
 	options, err := redis.ParseURL(config.DB.ConnectionURL)
 	if err != nil {
 		logger.Error("Could not parse database connection url", "error", err)
-		return err
+		panic(err)
 	}
 
 	// Create the db repository.
