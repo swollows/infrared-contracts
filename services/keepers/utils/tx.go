@@ -3,6 +3,7 @@ package util
 import (
 	"context"
 	"crypto/ecdsa"
+	"errors"
 	"math/big"
 
 	sdk "github.com/berachain/offchain-sdk/types"
@@ -10,7 +11,22 @@ import (
 	common "github.com/ethereum/go-ethereum/common"
 )
 
-func GenerateTransactionOps(sCtx *sdk.Context, pubKey common.Address, privKey *ecdsa.PrivateKey) (*bind.TransactOpts, error) {
+// GenerateTransactionOps generates the transaction options for a transaction.
+func GenerateTransactionOps(
+	sCtx *sdk.Context,
+	pubKey common.Address,
+	privKey *ecdsa.PrivateKey,
+) (*bind.TransactOpts, error) {
+	// Check that the context is not nil.
+	if sCtx == nil {
+		return nil, errors.New("context is nil")
+	}
+
+	// Check that the private key is not nil.
+	if privKey == nil {
+		return nil, errors.New("private key is nil")
+	}
+
 	nonce, err := sCtx.Chain().PendingNonceAt(context.Background(), pubKey)
 	if err != nil {
 		return nil, err
