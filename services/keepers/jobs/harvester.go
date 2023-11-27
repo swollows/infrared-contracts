@@ -79,3 +79,4 @@ func (h *Harvester) Execute(ctx context.Context, _ any) (any, error) {
 }
 
 // filterVaults filters the vaults based on the minimum BGT amount.
+// func (h *Harvester) filterVaults(vaults []*db.Vault) ([]*db.Vault, error) {}
