@@ -15,6 +15,7 @@ PrivateKey = "0xfffdbb37105441e14b0ee6330d855d8504ff39e705c3afa8f859ac9865f99306
 #### Harvest Job Config ####
 [App.Harvest]
 MinBGT = 1000000000000000000
+RewardsPrecompileAddress = "0x55684e2cA2bace0aDc512C1AFF880b15b8eA7214"
 
 #### Required for base app ####
 [Eth]

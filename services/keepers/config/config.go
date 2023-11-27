@@ -24,6 +24,8 @@ type SignerConfig struct {
 type HarvestConfig struct {
 	// MinBGT is the minimum amount of BGT that the harvester will harvest.
 	MinBGT uint64
+	// The rewards precompile address.
+	RewardsPrecompileAddress string
 }
 
 // Config contains the configuration for the keepers.

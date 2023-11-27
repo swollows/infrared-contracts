@@ -6,6 +6,7 @@ import (
 	"github.com/berachain/offchain-sdk/baseapp"
 	coreapp "github.com/berachain/offchain-sdk/core/app"
 	"github.com/berachain/offchain-sdk/log"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/infrared-dao/infrared-mono-repo/pkg/db"
 	"github.com/infrared-dao/infrared-mono-repo/services/keepers/config"
 	"github.com/infrared-dao/infrared-mono-repo/services/keepers/jobs"
@@ -54,6 +55,7 @@ func (app *KeeperApp) Setup(builder coreapp.Builder, config config.Config, logge
 		privKey,
 		pubKey,
 		new(big.Int).SetUint64(config.Harvest.MinBGT),
+		common.HexToAddress(config.Harvest.RewardsPrecompileAddress),
 	)
 
 	// Register the jobs.
