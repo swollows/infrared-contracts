@@ -11,7 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/infrared-dao/infrared-mono-repo/pkg/bindings/infrared"
 	"github.com/infrared-dao/infrared-mono-repo/pkg/bindings/vault"
-	"github.com/infrared-dao/infrared-mono-repo/services/indexer/db"
+	"github.com/infrared-dao/infrared-mono-repo/pkg/db"
 
 	sdk "github.com/berachain/offchain-sdk/types"
 	coretypes "github.com/ethereum/go-ethereum/core/types"

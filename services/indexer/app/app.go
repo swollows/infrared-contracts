@@ -5,8 +5,8 @@ import (
 	coreapp "github.com/berachain/offchain-sdk/core/app"
 	"github.com/berachain/offchain-sdk/log"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/infrared-dao/infrared-mono-repo/pkg/db"
 	"github.com/infrared-dao/infrared-mono-repo/services/indexer/config"
-	"github.com/infrared-dao/infrared-mono-repo/services/indexer/db"
 	"github.com/infrared-dao/infrared-mono-repo/services/indexer/jobs"
 	"github.com/redis/go-redis/v9"
 )

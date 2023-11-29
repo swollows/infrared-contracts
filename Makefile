@@ -28,7 +28,7 @@ endif
 ########################################################
 
 # List of services names
-DIR_NAMES := api indexer
+DIR_NAMES := api indexer keepers
 
 # Build all services
 build-%:
@@ -137,6 +137,10 @@ start-services:
 start-indexer:
 	@echo "--> Starting indexer"
 	go run services/indexer/cmd/main.go start --config-path services/indexer/config.toml
+
+start-keepers:
+	@echo "--> Starting keepers"
+	go run services/keepers/cmd/main.go start --config-path services/keepers/config.toml
 
 
 ########################################################
