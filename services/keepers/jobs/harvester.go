@@ -68,10 +68,21 @@ type Harvester struct {
 	infraredContractAddress common.Address
 	// infraredContract is the contract that will be used to harvest the rewards.
 	infraredContract *bind.BoundContract
+	// gasLimit is the gas limit for the harvest transaction.
+	gasLimit uint64
 }
 
 // NewHarvester returns a pointer to a new Harvester.
-func NewHarvester(db HarvesterDB, interval *time.Duration, pubKey common.Address, privKey *ecdsa.PrivateKey, minBGT *big.Int, rewardsPrecompileAddress, infraredContractAddress common.Address) *Harvester {
+func NewHarvester(
+	db HarvesterDB,
+	interval *time.Duration,
+	pubKey common.Address,
+	privKey *ecdsa.PrivateKey,
+	minBGT *big.Int,
+	rewardsPrecompileAddress,
+	infraredContractAddress common.Address,
+	gasLimit uint64,
+) *Harvester {
 	return &Harvester{
 		db:                       db,
 		interval:                 interval,
@@ -80,6 +91,7 @@ func NewHarvester(db HarvesterDB, interval *time.Duration, pubKey common.Address
 		minBGT:                   minBGT,
 		rewardsPrecompileAddress: rewardsPrecompileAddress,
 		infraredContractAddress:  infraredContractAddress,
+		gasLimit:                 gasLimit,
 	}
 }
 
@@ -215,7 +227,7 @@ func isEnoughBGT(min *big.Int, rewards []rewards.CosmosCoin) bool {
 // HarvestRewards harvests the rewards for the vaults.
 func (h *Harvester) Harvest(sCtx *sdk.Context, vault *db.Vault, logger log.Logger) error {
 	// Generate the transaction options.
-	txOpts, err := util.GenerateTransactionOps(sCtx, h.pubKey, h.privKey)
+	txOpts, err := util.GenerateTransactionOps(sCtx, h.pubKey, h.privKey, h.gasLimit)
 	if err != nil {
 		logger.Error("❌ Failed to generate transaction options", "error", err)
 		return err
@@ -236,7 +248,7 @@ func (h *Harvester) Harvest(sCtx *sdk.Context, vault *db.Vault, logger log.Logge
 
 // handleTxResponse handles the response of a transaction.
 func (h *Harvester) handleTxResponse(ctx *sdk.Context, ethClient eth.Client, tx *coretypes.Transaction, logger log.Logger) {
-	ctxWithTimeOut, cancel := context.WithTimeout(ctx, 5*time.Second) // TODO: Set a proper timeout.
+	ctxWithTimeOut, cancel := context.WithTimeout(ctx, 10*time.Second) // Set a timeout for the transaction to be mined.
 
 	// Wait for the transaction to be mined.
 	receipt, err := bind.WaitMined(ctxWithTimeOut, ethClient, tx)

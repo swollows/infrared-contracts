@@ -16,6 +16,7 @@ func GenerateTransactionOps(
 	sCtx *sdk.Context,
 	pubKey common.Address,
 	privKey *ecdsa.PrivateKey,
+	gasLimit uint64,
 ) (*bind.TransactOpts, error) {
 	// Check that the context is not nil.
 	if sCtx == nil {
@@ -44,7 +45,7 @@ func GenerateTransactionOps(
 
 	// Configure the transaction options.
 	txOpts.Nonce = big.NewInt(int64(nonce))
-	txOpts.GasLimit = 1e6 // TODO: make this configurable // dynamic gas limit?
+	txOpts.GasLimit = gasLimit
 
 	return txOpts, nil
 }

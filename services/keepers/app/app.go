@@ -61,6 +61,7 @@ func (app *KeeperApp) Setup(builder coreapp.Builder, config config.Config, logge
 		new(big.Int).SetUint64(config.Harvest.MinBGT),
 		common.HexToAddress(config.Harvest.RewardsPrecompileAddress),
 		common.HexToAddress(config.Harvest.InfraredContractAddress),
+		config.Harvest.GasLimit,
 	)
 
 	// Register the jobs.

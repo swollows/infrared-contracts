@@ -29,6 +29,8 @@ type HarvestConfig struct {
 	RewardsPrecompileAddress string
 	// The infrared contract address.
 	InfraredContractAddress string
+	// The GasLimit for the harvest transaction.
+	GasLimit uint64
 }
 
 // Config contains the configuration for the keepers.
