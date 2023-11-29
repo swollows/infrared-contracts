@@ -27,6 +27,8 @@ type HarvestConfig struct {
 	MinBGT uint64
 	// The rewards precompile address.
 	RewardsPrecompileAddress string
+	// The distribution precompile address.
+	DistributionPrecompileAddress string
 	// The infrared contract address.
 	InfraredContractAddress string
 	// The GasLimit for the harvest transaction.

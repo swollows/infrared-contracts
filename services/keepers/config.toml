@@ -17,6 +17,7 @@ PrivateKey = "0xfffdbb37105441e14b0ee6330d855d8504ff39e705c3afa8f859ac9865f99306
 MinBGT = 1000000000000000000
 RewardsPrecompileAddress = "0x55684e2cA2bace0aDc512C1AFF880b15b8eA7214"
 InfraredContractAddress = "0xA51fc80a8Ec5Cd9181F8917D74D11Bd2c95e4F95"
+DistributionPrecompileAddress = "0x0000000000000000000000000000000000000069"
 GasLimit = 10e6
 
 #### Required for base app ####
