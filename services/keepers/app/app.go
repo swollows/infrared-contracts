@@ -60,6 +60,7 @@ func (app *KeeperApp) Setup(builder coreapp.Builder, config config.Config, logge
 		pubKey,
 		new(big.Int).SetUint64(config.Harvest.MinBGT),
 		common.HexToAddress(config.Harvest.RewardsPrecompileAddress),
+		common.HexToAddress(config.Harvest.DistributionPrecompileAddress),
 		common.HexToAddress(config.Harvest.InfraredContractAddress),
 		config.Harvest.GasLimit,
 	)

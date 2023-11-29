@@ -16,6 +16,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	coretypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/infrared-dao/infrared-mono-repo/pkg/bindings/distribution"
 	"github.com/infrared-dao/infrared-mono-repo/pkg/bindings/infrared"
 	"github.com/infrared-dao/infrared-mono-repo/pkg/bindings/rewards"
 	"github.com/infrared-dao/infrared-mono-repo/pkg/db"
@@ -35,6 +36,8 @@ type HarvesterDB interface {
 const (
 	// The harvest vault contract call.
 	harvestVaultCallName = "harvestVault"
+	// The harvest validator contract call.
+	harvestValidatorCallName = "harvestValidator"
 )
 
 // ==============================================================================
@@ -64,10 +67,16 @@ type Harvester struct {
 	rewardsPrecompileAddress common.Address
 	// rewardsPrecompileContract is the contract that will be used to get the current rewards.
 	rewardsPrecompileContract *rewards.Contract
+	// distribution precompile address.
+	distributionPrecompileAddress common.Address
+	// distributionPrecompileContract is the contract that will be used to get the current execution layer rewards.
+	distributionPrecompileContract *distribution.Contract
 	// infraredContractAddress is the address of the infrared contract.
 	infraredContractAddress common.Address
 	// infraredContract is the contract that will be used to harvest the rewards.
-	infraredContract *bind.BoundContract
+	infraredBoundContract *bind.BoundContract
+	// infraredContract is the contract instance that will be used to query state.
+	infraredContract *infrared.Contract
 	// gasLimit is the gas limit for the harvest transaction.
 	gasLimit uint64
 }
@@ -80,18 +89,20 @@ func NewHarvester(
 	privKey *ecdsa.PrivateKey,
 	minBGT *big.Int,
 	rewardsPrecompileAddress,
+	distributionPrecompileAddress,
 	infraredContractAddress common.Address,
 	gasLimit uint64,
 ) *Harvester {
 	return &Harvester{
-		db:                       db,
-		interval:                 interval,
-		pubKey:                   pubKey,
-		privKey:                  privKey,
-		minBGT:                   minBGT,
-		rewardsPrecompileAddress: rewardsPrecompileAddress,
-		infraredContractAddress:  infraredContractAddress,
-		gasLimit:                 gasLimit,
+		db:                            db,
+		interval:                      interval,
+		pubKey:                        pubKey,
+		privKey:                       privKey,
+		minBGT:                        minBGT,
+		rewardsPrecompileAddress:      rewardsPrecompileAddress,
+		infraredContractAddress:       infraredContractAddress,
+		distributionPrecompileAddress: distributionPrecompileAddress,
+		gasLimit:                      gasLimit,
 	}
 }
 
@@ -112,8 +123,8 @@ func (h *Harvester) Setup(ctx context.Context) error {
 		return err
 	}
 
-	// Bind the contract to the struct.
-	h.infraredContract = bind.NewBoundContract(
+	// Bind the bound contract to the struct.
+	h.infraredBoundContract = bind.NewBoundContract(
 		h.infraredContractAddress,
 		*infraredAbi,
 		ethClient,
@@ -121,15 +132,35 @@ func (h *Harvester) Setup(ctx context.Context) error {
 		ethClient,
 	)
 
+	// Load the infrared contract.
+	infraredContract, err := infrared.NewContract(h.infraredContractAddress, ethClient)
+	if err != nil {
+		sCtx.Logger().Error("failed to create new infrared contract", "error", err)
+		return err
+	}
+
+	// Bind the contract to the struct.
+	h.infraredContract = infraredContract
+
 	// Load the rewards precompile contract.
 	rewardsPrecompileContract, err := rewards.NewContract(h.rewardsPrecompileAddress, ethClient)
 	if err != nil {
-		sCtx.Logger().Error("failed to parse rewards precompile abi", "error", err)
+		sCtx.Logger().Error("failed to create new rewards precompile contract", "error", err)
 		return err
 	}
 
 	// Bind the contract to the struct.
 	h.rewardsPrecompileContract = rewardsPrecompileContract
+
+	// Load the distribution precompile contract.
+	distributionPrecompileContract, err := distribution.NewContract(h.distributionPrecompileAddress, ethClient)
+	if err != nil {
+		sCtx.Logger().Error("failed to create new distribution precompile contract", "error", err)
+		return err
+	}
+
+	// Bind the contract to the struct.
+	h.distributionPrecompileContract = distributionPrecompileContract
 
 	return nil
 }
@@ -152,17 +183,27 @@ func (h *Harvester) Execute(ctx context.Context, _ any) (any, error) {
 		return nil, err
 	}
 
-	// If there are no vaults to harvest, return.
-	if len(filteredVaults) == 0 {
-		logger.Info("no vaults to harvest")
-		return nil, nil
-	}
-
 	// Harvest the rewards for the vaults.
 	for _, vault := range filteredVaults {
-		err := h.Harvest(sCtx, vault, logger)
+		err := h.HarvestVault(sCtx, vault, logger)
 		if err != nil {
 			logger.Error("failed to harvest vault", "error", err)
+			return nil, err
+		}
+	}
+
+	// Check the validators that are eligible for harvesting.
+	filteredValidators, err := h.CheckValidators(sCtx, logger)
+	if err != nil {
+		logger.Error("failed to check validators", "error", err)
+		return nil, err
+	}
+
+	// Harvest the rewards for the validators.
+	for _, validator := range filteredValidators {
+		err := h.HarvestValidator(sCtx, validator, logger)
+		if err != nil {
+			logger.Error("failed to harvest validator", "error", err)
 			return nil, err
 		}
 	}
@@ -205,6 +246,34 @@ func (h *Harvester) CheckVaults(ctx *sdk.Context, logger log.Logger) ([]*db.Vaul
 	return filteredVaults, nil
 }
 
+// CheckValidators checks if the validators have enough BGT to be harvested and returns the ones that do.
+func (h *Harvester) CheckValidators(sCtx *sdk.Context, logger log.Logger) ([]common.Address, error) {
+	// Get all the infrared validators from the contract.
+	validators, err := h.infraredContract.InfraredValidators(nil)
+	if err != nil {
+		logger.Error("failed to get infrared validators", "error", err)
+		return nil, err
+	}
+
+	// Filter the validators based on the minimum BGT amount.
+	filteredValidators := make([]common.Address, 0)
+	for _, validator := range validators {
+		// Get the current rewards for the validator that is accured to the infrared contract.
+		cr, err := h.distributionPrecompileContract.GetCurrentRewards(nil, h.infraredContractAddress, validator)
+		if err != nil {
+			logger.Error("failed to get current rewards", "error", err)
+			return nil, err
+		}
+
+		// Check if the BGT reward is greater than the minimum.
+		if isEnoughBGTDistr(h.minBGT, cr) {
+			filteredValidators = append(filteredValidators, validator)
+		}
+	}
+
+	return filteredValidators, nil
+}
+
 // isEnoughBGT checks if the BGT reward is greater than the minimum.
 func isEnoughBGT(min *big.Int, rewards []rewards.CosmosCoin) bool {
 	// Check if the rewards are empty.
@@ -224,8 +293,27 @@ func isEnoughBGT(min *big.Int, rewards []rewards.CosmosCoin) bool {
 	return bgt.Cmp(min) == 1
 }
 
+// isEnoughBGT checks if the BGT reward is greater than the minimum.
+func isEnoughBGTDistr(min *big.Int, rewards []distribution.CosmosCoin) bool {
+	// Check if the rewards are empty.
+	if len(rewards) == 0 {
+		return false
+	}
+
+	// Get the BGT reward.
+	bgt := new(big.Int)
+	for _, reward := range rewards {
+		if reward.Denom == "abgt" {
+			bgt = reward.Amount
+		}
+	}
+
+	// Check if the BGT reward is greater than the minimum.
+	return bgt.Cmp(min) == 1
+}
+
 // HarvestRewards harvests the rewards for the vaults.
-func (h *Harvester) Harvest(sCtx *sdk.Context, vault *db.Vault, logger log.Logger) error {
+func (h *Harvester) HarvestVault(sCtx *sdk.Context, vault *db.Vault, logger log.Logger) error {
 	// Generate the transaction options.
 	txOpts, err := util.GenerateTransactionOps(sCtx, h.pubKey, h.privKey, h.gasLimit)
 	if err != nil {
@@ -234,9 +322,31 @@ func (h *Harvester) Harvest(sCtx *sdk.Context, vault *db.Vault, logger log.Logge
 	}
 
 	// Generate the transaction.
-	tx, err := h.infraredContract.Transact(txOpts, harvestVaultCallName, common.HexToAddress(vault.VaultHexAddress))
+	tx, err := h.infraredBoundContract.Transact(txOpts, harvestVaultCallName, common.HexToAddress(vault.VaultHexAddress))
 	if err != nil {
 		logger.Error("❌ Failed to generate harvest vault transaction", "error", err)
+		return err
+	}
+
+	// Handle the transaction response in a goroutine.
+	go h.handleTxResponse(sCtx, sCtx.Chain(), tx, logger)
+
+	return nil
+}
+
+// HarvestValidator harvests the rewards for the validators.
+func (h *Harvester) HarvestValidator(sCtx *sdk.Context, validator common.Address, logger log.Logger) error {
+	// Generate the transaction options.
+	txOpts, err := util.GenerateTransactionOps(sCtx, h.pubKey, h.privKey, h.gasLimit)
+	if err != nil {
+		logger.Error("❌ Failed to generate transaction options to harvest vault", "error", err)
+		return err
+	}
+
+	// Generate the transaction.
+	tx, err := h.infraredBoundContract.Transact(txOpts, harvestValidatorCallName, validator)
+	if err != nil {
+		logger.Error("❌ Failed to generate harvest validator transaction", "error", err)
 		return err
 	}
 

@@ -48,6 +48,7 @@ interface IDistributionModule {
      */
     function getCurrentRewards(address delegator, address validator)
         external
+        view
         returns (Cosmos.Coin[] memory);
 
     /**
