@@ -59,8 +59,7 @@ abstract contract BerachainHandler {
     /**
      * @notice Withdraws the rewards for the given validator from the
      * distribution module.
-     * @param _validator  address              The validator to withdraw rewards
-     * for.
+     * @param _validator  address              The validator to withdraw rewards for.
      * @return _coins     Cosmos.Coin[] memory The coins that were withdrawn.
      */
     function _withdrawDistrRewards(address _validator)
@@ -72,10 +71,8 @@ abstract contract BerachainHandler {
     }
 
     /**
-     * @notice WithdrawRewards Calls into the vault, to withdraw rewards to this
-     * address.
-     * @param _vault        address              The address of the vault to
-     * call into.
+     * @notice WithdrawRewards Calls into the vault, to withdraw rewards to this address.
+     * @param _vault        address              The address of the vault to call into.
      * @return _coins       Cosmos.Coin[] memory The coins that were withdrawn.
      */
     function _withdrawPOLRewards(address _vault)
@@ -164,12 +161,9 @@ abstract contract BerachainHandler {
 
     /**
      * @notice Removes the BGT from the given array of coins.
-     * @param _coins          Cosmos.Coin[] memory The coins to remove the BGT
-     * from.
-     * @return _newCoins      Cosmos.Coin[] memory The coins with the BGT
-     * removed.
-     * @return _amt           uint256              The amount of BGT that was
-     * removed.
+     * @param _coins          Cosmos.Coin[] memory The coins to remove the BGT from.
+     * @return _newCoins      Cosmos.Coin[] memory The coins with the BGT removed.
+     * @return _amt           uint256              The amount of BGT that was removed.
      */
     function _removeBGTFromCoins(Cosmos.Coin[] memory _coins)
         internal
@@ -211,10 +205,8 @@ abstract contract BerachainHandler {
 
     /**
      * @dev Returns the index of the BGT in the given array of coins.
-     * @param   _coins  Cosmos.Coin[] memory The coins to check for the presence
-     * of BGT.
-     * @return _index   uint256              The index of BGT in the array or
-     * type(uint256).max if not found.
+     * @param   _coins  Cosmos.Coin[] memory The coins to check for the presence of BGT.
+     * @return _index   uint256              The index of BGT in the array or type(uint256).max if not found.
      */
     function _indexOfBGT(Cosmos.Coin[] memory _coins)
         private

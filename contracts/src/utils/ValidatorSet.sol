@@ -16,11 +16,9 @@ library ValidatorSet {
 
     /**
      * @notice Replace a validator in the validators set.
-     *       @param  _set      EnumerableSet.AddressSet  Storage Validators set.
-     *       @param  _current  address                   Current validator to be
-     * replaced.
-     *       @param  _new      address                   New validator to
-     * replace the current one.
+     * @param  _set      EnumerableSet.AddressSet  Storage Validators set.
+     * @param  _current  address                   Current validator to be replaced.
+     * @param  _new      address                   New validator to replace the current one.
      */
     function replaceValidator(
         EnumerableSet.AddressSet storage _set,
@@ -53,8 +51,8 @@ library ValidatorSet {
 
     /**
      * @notice Add a validator to the validators set.
-     *       @param  _set  EnumerableSet.AddressSet  Storage Validators set.
-     *       @param  _new  address                   New validator to be added.
+     * @param  _set  EnumerableSet.AddressSet  Storage Validators set.
+     * @param  _new  address                   New validator to be added.
      */
     function addValidator(EnumerableSet.AddressSet storage _set, address _new)
         internal
@@ -76,9 +74,8 @@ library ValidatorSet {
 
     /**
      * @notice Remove a validator from the validators set.
-     *       @param  _set      EnumerableSet.AddressSet  Storage Validators set.
-     *       @param  _current  address                   Validator to be
-     * removed.
+     * @param  _set      EnumerableSet.AddressSet  Storage Validators set.
+     * @param  _current  address                   Validator to be removed.
      */
     function removeValidator(
         EnumerableSet.AddressSet storage _set,
@@ -102,8 +99,7 @@ library ValidatorSet {
     /**
      * @notice Returns the addresses of all the validators in the set.
      * @param  _set         EnumerableSet.AddressSet  Storage Validators set.
-     * @return _validators  address[] memory          Returns all the validators
-     * in the set.
+     * @return _validators  address[] memory          Returns all the validators in the set.
      */
     function validators(EnumerableSet.AddressSet storage _set)
         external
@@ -117,8 +113,7 @@ library ValidatorSet {
      * @notice Returns the number of validators in the set.
      * @param  _set        EnumerableSet.AddressSet Storage Validators set.
      * @param  _validator  address                  The validator to check.
-     * @return _is         bool                     Returns true if the
-     * validator is in the set.
+     * @return _is         bool                     Returns true if the validator is in the set.
      */
     function isElementOfSet(
         EnumerableSet.AddressSet storage _set,

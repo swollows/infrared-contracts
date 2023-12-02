@@ -10,10 +10,8 @@ import {Cosmos} from "@polaris/CosmosTypes.sol";
 
 /**
  * @title Infrared Vault - Reward Distribution Vault
- *     @author inhereted from DevBear (https://twitter.com/itsdevbear) & Quant
- * Bear (https://github.com/quant-bear)
- *     @notice EIP5XXX represents a vault in which depositors can also be
- * distributed  ERC20 tokens rewards.
+ * @author inhereted from DevBear (https://twitter.com/itsdevbear) & Quant Bear (https://github.com/quant-bear)
+ * @notice EIP5XXX represents a vault in which depositors can also be distributed ERC20 tokens rewards.
  */
 contract InfraredVault is EIP5XXX, AccessControl {
     // This role is reserved for the infrared main contract.
@@ -40,14 +38,10 @@ contract InfraredVault is EIP5XXX, AccessControl {
      * @param _name                   The name of the vault token.
      * @param _symbol                 The symbol of the vault token.
      * @param _rewardTokens           The reward tokens.
-     * @param _infrared               The main contract that deployed this
-     * contract.
-     * @param _poolAddress            The address of the pool (dex/lending..etc)
-     * that this contract is representing.
-     * @param _rewardsPrecompileAddress      The Berachain Reward Precompile
-     * contract that will be allocating rewards to this vault.
-     * @param _distributionPrecompileAddress The Berachain Distribution
-     * Precompile contract that will be allocating rewards to this vault.
+     * @param _infrared               The main contract that deployed this contract.
+     * @param _poolAddress            The address of the pool (dex/lending..etc) that this contract is representing.
+     * @param _rewardsPrecompileAddress      The Berachain Reward Precompile contract that will be allocating rewards to this vault.
+     * @param _distributionPrecompileAddress The Berachain Distribution Precompile contract that will be allocating rewards to this vault.
      */
     constructor(
         address _asset,

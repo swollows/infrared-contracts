@@ -18,16 +18,16 @@ library InfraredVaultDeployer {
     ) public returns (address) {
         return address(
             new InfraredVault(
-                    _asset,
-                    _name,
-                    _symbol,
-                    _rewardTokens,
-                    _infrared,
-                    _poolAddress,
-                    _rewardsPrecompile,
-                    _distributionPrecompile,
-                    _admin
-                )
+                _asset,
+                _name,
+                _symbol,
+                _rewardTokens,
+                _infrared,
+                _poolAddress,
+                _rewardsPrecompile,
+                _distributionPrecompile,
+                _admin
+            )
         );
     }
 }

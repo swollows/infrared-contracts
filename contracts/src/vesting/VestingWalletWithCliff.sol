@@ -32,12 +32,9 @@ contract VestingWalletWithCliff is VestingWallet {
 
     /**
      * @notice Calculates the vesting schedule for the given total allocation.
-     * @param  _totalAllocation uint256 The total allocation to calculate the
-     * vesting schedule for.
-     * @param  _timestamp       uint64  The timestamp to calculate the vesting
-     * schedule for.
-     * @return _tokens          uint256 The amount of tokens that should be
-     * vested at the given timestamp.
+     * @param  _totalAllocation uint256 The total allocation to calculate the vesting schedule for.
+     * @param  _timestamp       uint64  The timestamp to calculate the vesting schedule for.
+     * @return _tokens          uint256 The amount of tokens that should be vested at the given timestamp.
      */
     function _vestingSchedule(uint256 _totalAllocation, uint64 _timestamp)
         internal
