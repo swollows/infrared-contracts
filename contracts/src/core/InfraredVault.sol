@@ -17,10 +17,10 @@ import {Cosmos} from "@polaris/CosmosTypes.sol";
  */
 contract InfraredVault is EIP5XXX, AccessControl {
     // This role is reserved for the infrared main contract.
-    bytes32 internal constant INFRARED_ROLE = keccak256("INFRARED_ROLE");
+    bytes32 internal constant _INFRARED_ROLE = keccak256("_INFRARED_ROLE");
 
     // This is the address of the main contract that deployed this contract.
-    address private immutable INFRARED;
+    address private immutable _INFRARED;
 
     // This is the address of the pool (dex/lending..etc) that this contract is
     // representing.
@@ -116,7 +116,7 @@ contract InfraredVault is EIP5XXX, AccessControl {
         }
 
         // Set the constants.
-        INFRARED = _infrared;
+        _INFRARED = _infrared;
         POOL_ADDRESS = _poolAddress;
         DISTRIBUTION_PRECOMPILE =
             IDistributionModule(_distributionPrecompileAddress);
@@ -125,7 +125,7 @@ contract InfraredVault is EIP5XXX, AccessControl {
         // Set the admin.
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
         // Set the infrared role.
-        _grantRole(INFRARED_ROLE, INFRARED);
+        _grantRole(_INFRARED_ROLE, _INFRARED);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -237,7 +237,7 @@ contract InfraredVault is EIP5XXX, AccessControl {
      */
     function claimRewardsPrecompile()
         external
-        onlyRole(INFRARED_ROLE)
+        onlyRole(_INFRARED_ROLE)
         returns (Cosmos.Coin[] memory _rewards)
     {
         return REWARDS_PRECOMPILE.withdrawAllDepositorRewards(POOL_ADDRESS);

@@ -1,4 +1,4 @@
-# infrared-mono-repo
+<img src=".github/banner.png" alt="Infrared" width="100%"/>
 
 ## Getting Started
 

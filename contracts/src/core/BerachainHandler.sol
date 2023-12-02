@@ -2,7 +2,6 @@
 pragma solidity 0.8.20;
 
 import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
-import {IRewardsModule} from "@berachain/Rewards.sol";
 import {IDistributionModule} from "@polaris/Distribution.sol";
 import {IERC20Module} from "@polaris/ERC20Module.sol";
 import {Cosmos} from "@polaris/CosmosTypes.sol";

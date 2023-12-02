@@ -20,14 +20,12 @@
 node_modules
 bin
 
-
 ### Forge ###
 contracts/cache
 contracts/out
 contracts/broadcast
 
-
-### Sensative info ###
+### Sensitive info ###
 contracts/src/script/devnet/loadEnv.sh
 
 ## IDE
