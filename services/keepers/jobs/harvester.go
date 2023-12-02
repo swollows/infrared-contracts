@@ -259,14 +259,14 @@ func (h *Harvester) CheckValidators(sCtx *sdk.Context, logger log.Logger) ([]com
 	filteredValidators := make([]common.Address, 0)
 	for _, validator := range validators {
 		// Get the current rewards for the validator that is accured to the infrared contract.
-		cr, err := h.distributionPrecompileContract.GetCurrentRewards(nil, h.infraredContractAddress, validator)
+		_, err := h.distributionPrecompileContract.GetCurrentRewards(nil, h.infraredContractAddress, validator)
 		if err != nil {
 			logger.Error("failed to get current rewards", "error", err)
 			return nil, err
 		}
 
 		// Check if the BGT reward is greater than the minimum.
-		if isEnoughBGTDistr(h.minBGT, cr) {
+		if isEnoughBGTDistr(h.minBGT, nil) { // TODO: REFACTOR THIS WHOLE FILE
 			filteredValidators = append(filteredValidators, validator)
 		}
 	}
