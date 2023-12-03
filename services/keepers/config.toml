@@ -5,7 +5,7 @@ ConnectionURL = "rediss://default:274f2558a6334cbeadb2c2123112564f@eu2-sweeping-
 
 #### For keeping polling time of jobs ####
 [App.Interval]
-HarvestInterval="3s"
+HarvestInterval="1s"
 
 #### Signer of the keeper ####
 [App.Signer]

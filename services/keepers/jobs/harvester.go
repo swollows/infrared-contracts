@@ -176,6 +176,9 @@ func (h *Harvester) Execute(ctx context.Context, _ any) (any, error) {
 	sCtx := sdk.UnwrapContext(ctx)
 	logger := sCtx.Logger().With("job", h.RegistryKey())
 
+	// Log the start of the job.
+	logger.Info("⏳ Polling Harvester Job...")
+
 	// Check the vaults that are eligible for harvesting.
 	filteredVaults, err := h.CheckVaults(sCtx, logger)
 	if err != nil {
@@ -192,19 +195,22 @@ func (h *Harvester) Execute(ctx context.Context, _ any) (any, error) {
 		}
 	}
 
-	// Check the validators that are eligible for harvesting.
-	filteredValidators, err := h.CheckValidators(sCtx, logger)
-	if err != nil {
-		logger.Error("failed to check validators", "error", err)
-		return nil, err
-	}
-
-	// Harvest the rewards for the validators.
-	for _, validator := range filteredValidators {
-		err := h.HarvestValidator(sCtx, validator, logger)
+	// Harvest the rewards for the validators together with the vaults.
+	if len(filteredVaults) > 0 {
+		// Get the validators from the infrared contract.
+		validators, err := h.infraredContract.InfraredValidators(nil)
 		if err != nil {
-			logger.Error("failed to harvest validator", "error", err)
+			logger.Error("failed to get validators", "error", err)
 			return nil, err
+		}
+
+		// Harvest the rewards from the validators.
+		for _, validator := range validators {
+			err := h.HarvestValidator(sCtx, validator, logger)
+			if err != nil {
+				logger.Error("failed to harvest validator", "error", err)
+				return nil, err
+			}
 		}
 	}
 
@@ -246,55 +252,8 @@ func (h *Harvester) CheckVaults(ctx *sdk.Context, logger log.Logger) ([]*db.Vaul
 	return filteredVaults, nil
 }
 
-// CheckValidators checks if the validators have enough BGT to be harvested and returns the ones that do.
-func (h *Harvester) CheckValidators(sCtx *sdk.Context, logger log.Logger) ([]common.Address, error) {
-	// Get all the infrared validators from the contract.
-	validators, err := h.infraredContract.InfraredValidators(nil)
-	if err != nil {
-		logger.Error("failed to get infrared validators", "error", err)
-		return nil, err
-	}
-
-	// Filter the validators based on the minimum BGT amount.
-	filteredValidators := make([]common.Address, 0)
-	for _, validator := range validators {
-		// Get the current rewards for the validator that is accured to the infrared contract.
-		_, err := h.distributionPrecompileContract.GetCurrentRewards(nil, h.infraredContractAddress, validator)
-		if err != nil {
-			logger.Error("failed to get current rewards", "error", err)
-			return nil, err
-		}
-
-		// Check if the BGT reward is greater than the minimum.
-		if isEnoughBGTDistr(h.minBGT, nil) { // TODO: REFACTOR THIS WHOLE FILE
-			filteredValidators = append(filteredValidators, validator)
-		}
-	}
-
-	return filteredValidators, nil
-}
-
 // isEnoughBGT checks if the BGT reward is greater than the minimum.
 func isEnoughBGT(min *big.Int, rewards []rewards.CosmosCoin) bool {
-	// Check if the rewards are empty.
-	if len(rewards) == 0 {
-		return false
-	}
-
-	// Get the BGT reward.
-	bgt := new(big.Int)
-	for _, reward := range rewards {
-		if reward.Denom == "abgt" {
-			bgt = reward.Amount
-		}
-	}
-
-	// Check if the BGT reward is greater than the minimum.
-	return bgt.Cmp(min) == 1
-}
-
-// isEnoughBGT checks if the BGT reward is greater than the minimum.
-func isEnoughBGTDistr(min *big.Int, rewards []distribution.CosmosCoin) bool {
 	// Check if the rewards are empty.
 	if len(rewards) == 0 {
 		return false
@@ -336,6 +295,8 @@ func (h *Harvester) HarvestVault(sCtx *sdk.Context, vault *db.Vault, logger log.
 
 // HarvestValidator harvests the rewards for the validators.
 func (h *Harvester) HarvestValidator(sCtx *sdk.Context, validator common.Address, logger log.Logger) error {
+	logger.Info("🚀 Harvesting validator...", "validator", validator.Hex())
+
 	// Generate the transaction options.
 	txOpts, err := util.GenerateTransactionOps(sCtx, h.pubKey, h.privKey, h.gasLimit)
 	if err != nil {
@@ -358,7 +319,10 @@ func (h *Harvester) HarvestValidator(sCtx *sdk.Context, validator common.Address
 
 // handleTxResponse handles the response of a transaction.
 func (h *Harvester) handleTxResponse(ctx *sdk.Context, ethClient eth.Client, tx *coretypes.Transaction, logger log.Logger) {
-	ctxWithTimeOut, cancel := context.WithTimeout(ctx, 10*time.Second) // Set a timeout for the transaction to be mined.
+	// Log the transaction hash.
+	logger.Info("📝 Transaction sent", "txHash", tx.Hash().Hex())
+
+	ctxWithTimeOut, cancel := context.WithTimeout(ctx, 20*time.Second) // 20 seconds should be enough for the transaction to be mined. (1s block time)
 
 	// Wait for the transaction to be mined.
 	receipt, err := bind.WaitMined(ctxWithTimeOut, ethClient, tx)
