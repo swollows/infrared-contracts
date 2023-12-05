@@ -239,5 +239,12 @@ func GetVaultData(ethClient eth.Client, logger log.Logger, vaultAddress common.A
 		return nil, err
 	}
 
-	return db.NewVault(vaultAddress, name, symbol, asset, rewardTokens, pool), nil
+	// Create the vault and check if it is valid.
+	v, err := db.SafeNewVault(vaultAddress, name, symbol, asset, rewardTokens, pool)
+	if err != nil {
+		logger.Error("failed to create vault", "error", err)
+		return nil, err
+	}
+
+	return v, nil
 }
