@@ -17,12 +17,12 @@ library Precompiles {
 }
 
 library Actors {
-    // Private-Key=0xfffdbb37105441e14b0ee6330d855d8504ff39e705c3afa8f859ac9865f99306
+    // Private-Key=dfc999fdf61a265eb65603288e6a3f68daf972f6fc6f3afd15738aaa5d340b28
     address public constant DEFAULT_ADMIN =
-        0x20f33CE90A13a4b5E7697E3544c3083B8F8A51D4;
-    address public constant KEEPER = 0x20f33CE90A13a4b5E7697E3544c3083B8F8A51D4;
+        0x08D9255C2922528da6e8853319bcc85A1f6e283c;
+    address public constant KEEPER = 0x08D9255C2922528da6e8853319bcc85A1f6e283c;
     address public constant GOVERNANCE =
-        0x20f33CE90A13a4b5E7697E3544c3083B8F8A51D4;
+        0x08D9255C2922528da6e8853319bcc85A1f6e283c;
 }
 
 library GenesisPools {

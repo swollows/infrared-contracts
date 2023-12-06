@@ -1,6 +1,6 @@
 #### Contracts that the indexer will be following ####
 [App.Contracts]
-InfraredContractAddress = "0xA51fc80a8Ec5Cd9181F8917D74D11Bd2c95e4F95"
+InfraredContractAddress = "0x4eB5010b25801EbB639eF9713fFa7667A571A989"
 
 
 #### Database configuration ####
@@ -14,8 +14,8 @@ LatestBlock=0
 
 #### Required for base app ####
 [Eth]
-EthHTTPURL = "https://devnet.beraswillmakeit.com"
-EthWSURL = "wss://devnet.beraswillmakeit.com:8547"
+EthHTTPURL = "https://rpc.berachain-internal.com"
+EthWSURL = "wss://ws.berachain-internal.com:8547"
 
 
 #### Required for base app ####
