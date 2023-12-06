@@ -9,8 +9,10 @@ type DBConfig struct {
 
 // IntervalConfig contains the configuration for the interval.
 type IntervalConfig struct {
-	// HarvestInterval is the interval at which the harvester will harvest the rewards.
-	HarvestInterval time.Duration
+	// VaultHarvestInterval is the interval at which the vault harvester will harvest the rewards.
+	VaultHarvesterInterval time.Duration
+	// ValidatorHarvesterInterval is the interval at which the validator harvester will harvest the rewards.
+	ValidatorHarvesterInterval time.Duration
 }
 
 // SignerConfig contains the configuration for the signer.
@@ -21,24 +23,37 @@ type SignerConfig struct {
 	PrivateKey string
 }
 
-// HarvestConfig contains the configuration for the harvester.
-type HarvestConfig struct {
+// ValidatorHarvesterConfig contains the configuration for the validator harvester.
+type ValidatorHarvesterConfig struct {
+	// MinBera is the minimum amount of Bera that the harvester will harvest.
+	MinBera uint64
+	// GasLimit is the gas limit for the transaction.
+	GasLimit uint64
+}
+
+type VaultHarvesterConfig struct {
 	// MinBGT is the minimum amount of BGT that the harvester will harvest.
 	MinBGT uint64
+	// GasLimit is the gas limit for the transaction.
+	GasLimit uint64
+}
+
+// ContractsConfig contains the configuration for the contracts.
+type ContractsConfig struct {
+	// The infrared contract address.
+	InfraredContractAddress string
 	// The rewards precompile address.
 	RewardsPrecompileAddress string
 	// The distribution precompile address.
 	DistributionPrecompileAddress string
-	// The infrared contract address.
-	InfraredContractAddress string
-	// The GasLimit for the harvest transaction.
-	GasLimit uint64
 }
 
 // Config contains the configuration for the keepers.
 type Config struct {
-	DB       DBConfig
-	Interval IntervalConfig
-	Signer   SignerConfig
-	Harvest  HarvestConfig
+	DB                 DBConfig
+	Interval           IntervalConfig
+	Signer             SignerConfig
+	ContractsConfig    ContractsConfig
+	VaultHarvester     VaultHarvesterConfig
+	ValidatorHarvester ValidatorHarvesterConfig
 }

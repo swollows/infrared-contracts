@@ -5,25 +5,34 @@ ConnectionURL = "rediss://default:274f2558a6334cbeadb2c2123112564f@eu2-sweeping-
 
 #### For keeping polling time of jobs ####
 [App.Interval]
-HarvestInterval="1s"
+VaultHarvesterInterval="1s"
+ValidatorHarvesterInterval="1s"
 
 #### Signer of the keeper ####
 [App.Signer]
 PublicKey = "0x20f33CE90A13a4b5E7697E3544c3083B8F8A51D4"
 PrivateKey = "0xfffdbb37105441e14b0ee6330d855d8504ff39e705c3afa8f859ac9865f99306"
 
-#### Harvest Job Config ####
-[App.Harvest]
+#### VaultHarvester Job Config ####
+[App.VaultHarvester]
 MinBGT = 1000000000000000000
-RewardsPrecompileAddress = "0x55684e2cA2bace0aDc512C1AFF880b15b8eA7214"
-InfraredContractAddress = "0xA51fc80a8Ec5Cd9181F8917D74D11Bd2c95e4F95"
-DistributionPrecompileAddress = "0x0000000000000000000000000000000000000069"
 GasLimit = 10e6
+
+#### VaultHarvester Job Config ####
+[App.ValidatorHarvester]
+MinBera = 1000000000000000000
+GasLimit = 10e6
+
+#### Contracts Config ####
+[App.ContractsConfig]
+InfraredContractAddress = "0x4eB5010b25801EbB639eF9713fFa7667A571A989"
+RewardsPrecompileAddress = "0x55684e2cA2bace0aDc512C1AFF880b15b8eA7214"
+DistributionPrecompileAddress = "0x0000000000000000000000000000000000000069"
 
 #### Required for base app ####
 [Eth]
-EthHTTPURL = "https://devnet.beraswillmakeit.com"
-EthWSURL = "wss://devnet.beraswillmakeit.com:8547"
+EthHTTPURL = "https://rpc.berachain-internal.com"
+EthWSURL = "wss://ws.berachain-internal.com:8547"
 
 
 #### Required for base app ####

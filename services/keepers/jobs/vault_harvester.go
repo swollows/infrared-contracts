@@ -24,7 +24,7 @@ import (
 
 // VaultHarvesterDB is the interface for the vault harvester database.
 type VaultHarvesterDB interface {
-	GetVault(ctx context.Context) ([]*db.Vault, error)
+	GetVaults(ctx context.Context) ([]*db.Vault, error)
 }
 
 // The method names for this job.
@@ -65,7 +65,7 @@ type VaultHarvester struct {
 	// infraredBoundContract is the contract of the infrared contract.
 	infraredBoundContract *bind.BoundContract
 	// infraredContract is the contract of the infrared contract used to query state.
-	infraredContract *rewards.Contract
+	infraredContract *infrared.Contract
 	// gasLimit is the gas limit for the transaction.
 	gasLimit uint64
 }
@@ -113,7 +113,7 @@ func (vh *VaultHarvester) Setup(ctx context.Context) error {
 	vh.rewardsPrecompileContract = rp
 
 	// Setup the infrared contract.
-	ic, err := rewards.NewContract(vh.infraredContractAddress, ethClient)
+	ic, err := infrared.NewContract(vh.infraredContractAddress, ethClient)
 	if err != nil {
 		logger.Error("❌ Failed create infrared contract object", "Error", err)
 		return err
@@ -138,7 +138,7 @@ func (vh *VaultHarvester) Setup(ctx context.Context) error {
 }
 
 // IntervalTime implements the job.Polling interface.
-func (vh *VaultHarvester) IntervalTime(ctx context.Context) time.Duration {
+func (vh *VaultHarvester) IntervalTime(_ context.Context) time.Duration {
 	return *vh.interval
 }
 
@@ -146,7 +146,7 @@ func (vh *VaultHarvester) IntervalTime(ctx context.Context) time.Duration {
 func (vh *VaultHarvester) Execute(ctx context.Context, _ any) (any, error) {
 	sCtx := sdk.UnwrapContext(ctx)
 	logger := sCtx.Logger().With("job", vh.RegistryKey())
-	logger.Info("⏳ Polling Harvester Job...")
+	logger.Info("⏳ Polling Vault Harvester Job...")
 
 	// Get the ripe vaults.
 	vaults, err := vh.getRipe(sCtx, logger)
@@ -201,7 +201,7 @@ func (vh *VaultHarvester) harvestVault(sCtx *sdk.Context, vault *db.Vault, logge
 // getRipe is a helper method to get the ripe vaults.
 func (vh *VaultHarvester) getRipe(ctx *sdk.Context, logger log.Logger) ([]*db.Vault, error) {
 	// Get all the vaults from the database.
-	vaults, err := vh.db.GetVault(ctx)
+	vaults, err := vh.db.GetVaults(ctx)
 	if err != nil {
 		logger.Error("⚠️ Failed to get vaults", "Error", err)
 		return nil, err
