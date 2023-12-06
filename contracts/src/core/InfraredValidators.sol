@@ -69,8 +69,7 @@ abstract contract InfraredValidators {
      * @notice Delegates bond tokens to a validator.
      * @param _validator  address  The validator to delegate to.
      * @param _amount     uint256  The amount of tokens to delegate.
-     * @return _success   bool     Returns true if the delegation was
-     * successful.
+     * @return _success   bool     Returns true if the delegation was successful.
      */
     function _delegate(address _validator, uint256 _amount)
         internal
@@ -92,8 +91,7 @@ abstract contract InfraredValidators {
      * @notice Undelegates unbond tokens from a validator.
      * @param _validator  address  The validator to undelegate from.
      * @param _amount     uint256  The amount of tokens to undelegate.
-     * @return _success   bool     Returns true if the undelegation was
-     * successful.
+     * @return _success   bool     Returns true if the undelegation was successful.
      */
     function _undelegate(address _validator, uint256 _amount)
         internal
@@ -116,8 +114,7 @@ abstract contract InfraredValidators {
      * @param _from   address  The validator to undelegate from.
      * @param _to     address  The validator to delegate to.
      * @param _amount uint256  The amount of tokens to undelegate.
-     * @return _success   bool     Returns true if the redelegation was
-     * successful.
+     * @return _success   bool     Returns true if the redelegation was successful.
      */
     function _beginRedelegate(address _from, address _to, uint256 _amount)
         internal
@@ -136,14 +133,11 @@ abstract contract InfraredValidators {
     }
 
     /**
-     * @notice Cancels an unbonding delegation and delegates the tokens back to
-     * the validator.
+     * @notice Cancels an unbonding delegation and delegates the tokens back to the validator.
      * @param _validator       address  The validator to delegate to.
      * @param _amount          uint256  The amount of tokens to delegate.
-     * @param _creationHeight  int64    The height at which the unbonding
-     * delegation was created.
-     * @return _success        bool     Returns true if the delegation was
-     * successful.
+     * @param _creationHeight  int64    The height at which the unbonding delegation was created.
+     * @return _success        bool     Returns true if the delegation was successful.
      */
     function _cancelUnbondingDelegation(
         address _validator,

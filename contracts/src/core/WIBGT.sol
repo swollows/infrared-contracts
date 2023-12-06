@@ -10,10 +10,8 @@ import {InfraredVault} from "./InfraredVault.sol";
 
 /**
  * @title Wrapped IBGT (WIBGT)
- * @notice This contracts wrappper to the IBGT tokens since the IBGT vault might
- * get more IBGT, breaking 4626.
- * @notice The user will only deal with ibgt and the vault share token and never
- * the wrapped token.
+ * @notice This contracts wrappper to the IBGT tokens since the IBGT vault might get more IBGT, breaking 4626.
+ * @notice The user will only deal with ibgt and the vault share token and never the wrapped token.
  */
 contract WrappedIBGT is ERC20PresetMinterPauser, ReentrancyGuard {
     using SafeERC20 for IERC20;
@@ -62,8 +60,7 @@ contract WrappedIBGT is ERC20PresetMinterPauser, ReentrancyGuard {
     }
 
     /**
-     * @notice Approves the WIBGT Vault to transfer the WIBGT and vault share
-     * tokens.
+     * @notice Approves the WIBGT Vault to transfer the WIBGT and vault share tokens.
      */
     function approveVault() external onlyRole(DEFAULT_ADMIN_ROLE) {
         // Cache the Vault.
@@ -115,8 +112,7 @@ contract WrappedIBGT is ERC20PresetMinterPauser, ReentrancyGuard {
     }
 
     /**
-     * @notice Wraps IBGT tokens to WIBGT tokens and then mints the vault tokens
-     * to the receiver.
+     * @notice Wraps IBGT tokens to WIBGT tokens and then mints the vault tokens to the receiver.
      * @param _shares   uint256 The amount of vault tokens to mint.
      * @param _receiver address The address to receive the vault tokens.
      */
@@ -136,8 +132,7 @@ contract WrappedIBGT is ERC20PresetMinterPauser, ReentrancyGuard {
         // Cache the Vault.
         InfraredVault _vault = wibgtVault;
 
-        // Preview the amount of WIBGT tokens that will be needed to mint
-        // _shares.
+        // Preview the amount of WIBGT tokens that will be needed to mint _shares.
         _assets = _vault.previewMint(_shares);
 
         // Wrap the IBGT tokens form the sender to this contract.
@@ -150,10 +145,8 @@ contract WrappedIBGT is ERC20PresetMinterPauser, ReentrancyGuard {
     }
 
     /**
-     * @notice Withdraw vault tokens from the WIBGT Vault and then unwrap the
-     * IBGT tokens to the receiver.
-     * @notice User needs to have approved this contract the vault share tokens
-     * that amount to `_assets`.
+     * @notice Withdraw vault tokens from the WIBGT Vault and then unwrap the IBGT tokens to the receiver.
+     * @notice User needs to have approved this contract the vault share tokens that amount to `_assets`.
      * @param _assets   uint256 The amount of vault tokens to burn.
      * @param _receiver address The address to receive the IBGT tokens.
      * @param _owner    address The owner of the vault tokens.
@@ -198,10 +191,8 @@ contract WrappedIBGT is ERC20PresetMinterPauser, ReentrancyGuard {
     }
 
     /**
-     * @notice Redeem vault tokens from the WIBGT Vault and then unwrap the IBGT
-     * tokens to the receiver.
-     * @notice User needs to have approved this contract the vault share tokens
-     * that amount to `_shares`.
+     * @notice Redeem vault tokens from the WIBGT Vault and then unwrap the IBGT tokens to the receiver.
+     * @notice User needs to have approved this contract the vault share tokens that amount to `_shares`.
      * @param _shares   uint256 The amount of vault tokens to burn.
      * @param _receiver address The address to receive the IBGT tokens.
      * @param _owner    address The owner of the vault tokens.
@@ -247,8 +238,7 @@ contract WrappedIBGT is ERC20PresetMinterPauser, ReentrancyGuard {
     //////////////////////////////////////////////////////////////*/
 
     /**
-     * @notice Takes IBGT tokens from the user and mints WIBGT tokens to this
-     * contract.
+     * @notice Takes IBGT tokens from the user and mints WIBGT tokens to this contract.
      * @param _from   address The address to deposit the IBGT tokens from.
      * @param _amount uint256 The amount of IBGT tokens to deposit.
      */

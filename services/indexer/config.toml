@@ -1,11 +1,11 @@
 #### Contracts that the indexer will be following ####
 [App.Contracts]
-InfraredContractAddress = "0xA51fc80a8Ec5Cd9181F8917D74D11Bd2c95e4F95"
+InfraredContractAddress = ""
 
 
 #### Database configuration ####
 [App.DB]
-ConnectionURL = "rediss://default:274f2558a6334cbeadb2c2123112564f@eu2-sweeping-tortoise-30656.upstash.io:30656"
+ConnectionURL = ""
 
 
 #### For cold restarting the service ####
@@ -14,8 +14,8 @@ LatestBlock=0
 
 #### Required for base app ####
 [Eth]
-EthHTTPURL = "https://devnet.beraswillmakeit.com"
-EthWSURL = "wss://devnet.beraswillmakeit.com:8547"
+EthHTTPURL = "https://rpc.berachain-internal.com"
+EthWSURL = "wss://ws.berachain-internal.com:8547"
 
 
 #### Required for base app ####

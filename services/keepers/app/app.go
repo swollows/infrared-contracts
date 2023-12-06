@@ -31,6 +31,9 @@ func (app *KeeperApp) Name() string {
 func (app *KeeperApp) Setup(builder coreapp.Builder, config config.Config, logger log.Logger) {
 	logger.Info("Setting up keeper app...")
 
+	// Populate the config with secrets.
+	PopulateKeeperAppConfig(&config, logger)
+
 	// Parse the database connection url.
 	options, err := redis.ParseURL(config.DB.ConnectionURL)
 	if err != nil {
@@ -46,26 +49,44 @@ func (app *KeeperApp) Setup(builder coreapp.Builder, config config.Config, logge
 	}
 
 	// Get the public and private keys.
-	pubKey, privKey, err := util.GetKeys(config.Signer.PrivateKey, config.Signer.PublicKey)
+	privKey, pubKey, err := util.GetKeys(config.Signer.PrivateKey, config.Signer.PublicKey)
 	if err != nil {
 		logger.Error("Could not get keys", "error", err)
 		panic(err)
 	}
 
-	// Create the harvester keeper job.
-	keeperJob := jobs.NewHarvester(
+	// Get the addresses of the contracts.
+	infraredContractAddress := common.HexToAddress(config.ContractsConfig.InfraredContractAddress)
+	rewardsPrecompileAddress := common.HexToAddress(config.ContractsConfig.RewardsPrecompileAddress)
+	distributionPrecompileAddress := common.HexToAddress(config.ContractsConfig.DistributionPrecompileAddress)
+
+	// Create the vault harvester job.
+	vaultHarvesterJob := jobs.NewVaultHarvester(
 		db,
-		&config.Interval.HarvestInterval,
-		privKey,
+		&config.Interval.VaultHarvesterInterval,
 		pubKey,
-		new(big.Int).SetUint64(config.Harvest.MinBGT),
-		common.HexToAddress(config.Harvest.RewardsPrecompileAddress),
-		common.HexToAddress(config.Harvest.InfraredContractAddress),
-		config.Harvest.GasLimit,
+		privKey,
+		new(big.Int).SetUint64(config.VaultHarvester.MinBGT),
+		rewardsPrecompileAddress,
+		infraredContractAddress,
+		config.VaultHarvester.GasLimit,
+	)
+
+	// Create the validator harvester job.
+	validatorHarvesterJob := jobs.NewValidatorHarvester(
+		db,
+		&config.Interval.ValidatorHarvesterInterval,
+		pubKey,
+		privKey,
+		new(big.Int).SetUint64(config.ValidatorHarvester.MinBera),
+		distributionPrecompileAddress,
+		infraredContractAddress,
+		config.ValidatorHarvester.GasLimit,
 	)
 
 	// Register the jobs.
-	builder.RegisterJob(keeperJob)
+	builder.RegisterJob(vaultHarvesterJob)
+	builder.RegisterJob(validatorHarvesterJob)
 
 	app.BaseApp = builder.BuildApp(logger)
 }

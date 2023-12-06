@@ -149,8 +149,14 @@ start-keepers:
 
 deploy-local: |
 	@echo "--> Deploying all contracts"
-	cd contracts && ./src/script/deploy-local.sh --rpc-url http://localhost:8545 --private-key 0xfffdbb37105441e14b0ee6330d855d8504ff39e705c3afa8f859ac9865f99306
+	cd contracts && ./src/script/deploy-contracts.sh --rpc-url http://localhost:8545 --private-key $(LOCAL_PRIVATE_KEY)
 
 deploy-devnet: 
 	@echo "--> Deploying all contracts"
-	cd contracts && ./src/script/deploy-local.sh --rpc-url https://devnet.beraswillmakeit.com --private-key 0xfffdbb37105441e14b0ee6330d855d8504ff39e705c3afa8f859ac9865f99306
+	cd contracts && ./src/script/deploy-contracts.sh --rpc-url https://devnet.beraswillmakeit.com --private-key $(DEVNET_PRIVATE_KEY)
+
+deploy-testnet:
+	@echo "--> Deploying all contracts"
+	deploy-local: 
+		@echo "--> Deploying all contracts"
+		cd contracts && ./src/script/deploy-contracts.sh --rpc-url https://rpc.berachain-internal.com --private-key $(TESTNET_PRIVATE_KEY)

@@ -28,6 +28,9 @@ func (app *IndexerApp) Name() string {
 func (app *IndexerApp) Setup(builder coreapp.Builder, config config.Config, logger log.Logger) {
 	logger.Info("Setting up indexer app...")
 
+	// Populate the config.
+	PopulateConfig(&config)
+
 	// Parse the database connection url.
 	options, err := redis.ParseURL(config.DB.ConnectionURL)
 	if err != nil {

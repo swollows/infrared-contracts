@@ -190,8 +190,8 @@ contract Helper is DSTestFull {
         // Deploy the vault.
         _wibgtVault = new InfraredVault(
             address(_wrappedIBGT),
-            'Wrapped IBGT Vault',
-            'WIBGTV',
+            "Wrapped IBGT Vault",
+            "WIBGTV",
             _rewardTokens,
             address(_infrared),
             POOL_ADDRESS,

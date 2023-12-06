@@ -64,8 +64,7 @@ contract IREDVestingFactory is Ownable {
     /**
      * @notice Deploys a vesting wallet for the given beneficiary.
      * @param _beneficiary     address The beneficiary of the vesting wallet.
-     * @param _startTimestamp  uint64  The start timestamp of the vesting
-     * wallet.
+     * @param _startTimestamp  uint64  The start timestamp of the vesting wallet.
      * @param _durationSeconds uint64  The duration of the vesting wallet.
      * @param _cliffSeconds    uint64  The cliff of the vesting wallet.
      */
@@ -81,10 +80,7 @@ contract IREDVestingFactory is Ownable {
 
         // Deploy the vesting wallet.
         VestingWalletWithCliff vestingWallet = new VestingWalletWithCliff(
-            _beneficiary,
-            _startTimestamp,
-            _durationSeconds,
-            _cliffSeconds
+            _beneficiary, _startTimestamp, _durationSeconds, _cliffSeconds
         );
 
         vestingWallets[_beneficiary] = address(vestingWallet);

@@ -95,13 +95,12 @@ contract Infrared is BerachainHandler, InfraredValidators, AccessControl {
 
     /**
      * @notice Registers a new vault.
-     * @param _asset         ERC20               The underlying asset.
-     * @param _name          string              The name of the vault token.
-     * @param _symbol        string              The symbol of the vault token.
-     * @param _rewardTokens  address[]           The reward tokens.
-     * @param _poolAddress   address             The address of the pool
-     * (dex/lending..etc) that this contract is representing.
-     * @return _newVault     IInfraredVault       The newly created vault.
+     * @param _asset        ERC20           The underlying asset.
+     * @param _name         string          The name of the vault token.
+     * @param _symbol       string          The symbol of the vault token.
+     * @param _rewardTokens address[]       The reward tokens.
+     * @param _poolAddress  address         The address of the pool (dex/lending..etc) that this contract is representing.
+     * @return _newVault    IInfraredVault  The newly created vault.
      */
     function registerVault(
         address _asset,
@@ -135,8 +134,8 @@ contract Infrared is BerachainHandler, InfraredValidators, AccessControl {
 
     /**
      * @notice Registers a new wrapped IBGT vault.
-     * @param _new IInfraredVault The new vault.
-     * @param _rewardTokens address[] The reward tokens.
+     * @param _new           IInfraredVault  The new vault.
+     * @param _rewardTokens  address[]       The reward tokens.
      */
     function updateWIBGTVault(
         IInfraredVault _new,
@@ -157,8 +156,7 @@ contract Infrared is BerachainHandler, InfraredValidators, AccessControl {
     /**
      * @notice Checks if the given address is a registered vault.
      * @param  _vault   address The vault to check.
-     * @return _isVault bool    Whether or not the given address is a registered
-     * vault.
+     * @return _isVault bool    Whether or not the given address is a registered vault.
      */
     function isInfraredVault(address _vault)
         public
@@ -238,8 +236,7 @@ contract Infrared is BerachainHandler, InfraredValidators, AccessControl {
 
     /**
      * @notice Delegates tokens to a validator.
-     * @notice The validator must be in the set of validators chosen by
-     * governance.
+     * @notice The validator must be in the set of validators chosen by governance.
      * @param _validator  address  The validator to delegate to.
      * @param _amount     uint256  The amount of tokens to delegate.
      */
@@ -264,8 +261,7 @@ contract Infrared is BerachainHandler, InfraredValidators, AccessControl {
 
     /**
      * @notice Undelegates tokens from a validator.
-     * @notice The validator must be in the set of validators chosen by
-     * governance.
+     * @notice The validator must be in the set of validators chosen by governance.
      * @param _validator  address  The validator to undelegate from.
      * @param _amount     uint256  The amount of tokens to undelegate.
      */
@@ -290,8 +286,7 @@ contract Infrared is BerachainHandler, InfraredValidators, AccessControl {
 
     /**
      * @notice Begins a redelegation from one validator to another.
-     * @notice Both validator must be in the set of validators chosen by
-     * governance.
+     * @notice Both validator must be in the set of validators chosen by governance.
      * @param _from     address  The validator to redelegate from.
      * @param _to       address  The validator to redelegate to.
      * @param _amount   uint256  The amount of tokens to redelegate.
@@ -321,14 +316,10 @@ contract Infrared is BerachainHandler, InfraredValidators, AccessControl {
 
     /**
      * @notice Cancels an unbonding delegation.
-     * @notice The validator must be in the set of validators chosen by
-     * governance.
-     * @param _validator      address  The validator to cancel the unbonding
-     * delegation for.
-     * @param _amount         uint256  The amount of tokens to cancel the
-     * unbonding delegation for.
-     * @param _creationHeigh  int64    The creation height of the unbonding
-     * delegation.
+     * @notice The validator must be in the set of validators chosen by governance.
+     * @param _validator      address  The validator to cancel the unbonding delegation for.
+     * @param _amount         uint256  The amount of tokens to cancel the unbonding delegation for.
+     * @param _creationHeigh  int64    The creation height of the unbonding delegation.
      */
     function cancelUnbondingDelegation(
         address _validator,
@@ -360,8 +351,7 @@ contract Infrared is BerachainHandler, InfraredValidators, AccessControl {
     //////////////////////////////////////////////////////////////*/
 
     /**
-     * @notice Distributes the rewards for the given validator, the rewards are
-     * then supplied to the wrapped ibgt vault.
+     * @notice Distributes the rewards for the given validator, the rewards are then supplied to the wrapped ibgt vault.
      * @param _validator address  The validator to distribute rewards for.
      */
     function harvestValidator(address _validator) external {
@@ -382,8 +372,7 @@ contract Infrared is BerachainHandler, InfraredValidators, AccessControl {
     }
 
     /**
-     * @notice Distributes the rewards for the given vault, the rewards are then
-     * supplied to the vault.
+     * @notice Distributes the rewards for the given vault, the rewards are then supplied to the vault.
      * @param _vaultAddress address  The vault to distribute rewards for.
      */
     function harvestVault(address _vaultAddress) external {
@@ -411,12 +400,10 @@ contract Infrared is BerachainHandler, InfraredValidators, AccessControl {
 
     /**
      * @notice Max approves the reward tokens to be used by the vault.
-     * @notice This shoud be safe as this contract will hold no funds other than
-     * the BGT that is non-transferable.
+     * @notice This shoud be safe as this contract will hold no funds other than the BGT that is non-transferable.
      * @notice Zero address checked by safeApprove.
-     * @param _vault         address        The vault to approve the reward
-     * tokens for.
-     * @param _rewardTokens  address[]            The reward tokens to approve.
+     * @param _vault         address    The vault to approve the reward tokens for.
+     * @param _rewardTokens  address[]  The reward tokens to approve.
      */
     function _approveRewardTokens(
         address _vault,
@@ -441,8 +428,8 @@ contract Infrared is BerachainHandler, InfraredValidators, AccessControl {
 
     /**
      * @notice Handles the rewards for the given vault.
-     * @param _rewards   Cosmos.Coin[] memory The rewards to handle.
-     * @param _bgtAmount uint256              The amount of BGT to handle.
+     * @param _rewards   Cosmos.Coin[] memory  The rewards to handle.
+     * @param _bgtAmount uint256               The amount of BGT to handle.
      * @param _vault     IInfraredVault        The vault to handle the rewards
      * for.
      */
@@ -485,12 +472,9 @@ contract Infrared is BerachainHandler, InfraredValidators, AccessControl {
     /**
      * @notice Withdraws the rewards for the given vault from the rewards
      * module.
-     * @param _vault                 address              The vault to withdraw
-     * rewards for.
-     * @return _filteredRewards      Cosmos.Coin[] memory The coins that were
-     * withdrawn excluding BGT.
-     * @return _bgtAmount            uint256              The amount of BGT that
-     * was withdrawn.
+     * @param _vault            address              The vault to withdraw rewards for.
+     * @return _filteredRewards Cosmos.Coin[] memory The coins that were withdrawn excluding BGT.
+     * @return _bgtAmount       uint256              The amount of BGT that was withdrawn.
      */
     function _withdrawRewards(address _vault)
         internal
@@ -506,12 +490,9 @@ contract Infrared is BerachainHandler, InfraredValidators, AccessControl {
     /**
      * @notice Withdraws the rewards for the given validator from the
      * distribution module.
-     * @param  _validator            address              The validator to
-     * withdraw rewards for.
-     * @return _filteredRewards      Cosmos.Coin[] memory The coins that were
-     * withdrawn excluding BGT.
-     * @return _bgtAmount            uint256              The amount of BGT that
-     * was withdrawn.
+     * @param  _validator        address              The validator to withdraw rewards for.
+     * @return _filteredRewards  Cosmos.Coin[] memory The coins that were withdrawn excluding BGT.
+     * @return _bgtAmount        uint256              The amount of BGT that was withdrawn.
      */
     function _withdrawDistributionRewards(address _validator)
         internal
@@ -526,9 +507,8 @@ contract Infrared is BerachainHandler, InfraredValidators, AccessControl {
 
     /**
      * @notice Supplies Tokens to the given vault.
-     * @param _vault     IInfraredVault            The vault to supply the
-     * tokens to.
-     * @param _rewards   DataTypes.Token[] memory The tokens to supply.
+     * @param _vault     IInfraredVault            The vault to supply the tokens to.
+     * @param _rewards   DataTypes.Token[] memory  The tokens to supply.
      */
     function _supply(IInfraredVault _vault, DataTypes.Token[] memory _rewards)
         internal

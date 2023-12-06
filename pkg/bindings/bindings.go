@@ -8,3 +8,6 @@ package bindings
 
 // Rewards Precompile Contract
 //go:generate abigen --pkg rewards --abi ../../contracts/out/Rewards.sol/IRewardsModule.abi.json --out rewards/contract.abigen.go --type Contract
+
+// Distribution Precompile Contract
+//go:generate abigen --pkg distribution --abi ../../contracts/out/Distribution.sol/IDistributionModule.abi.json --out distribution/contract.abigen.go --type Contract

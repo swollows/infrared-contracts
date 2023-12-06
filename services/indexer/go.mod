@@ -6,6 +6,7 @@ require (
 	github.com/berachain/offchain-sdk v0.0.0-20231123014610-aeff8a4896fd
 	github.com/ethereum/go-ethereum v1.13.4
 	github.com/redis/go-redis/v9 v9.3.0
+	github.com/subosito/gotenv v1.6.0
 )
 
 require (
@@ -55,7 +56,6 @@ require (
 	github.com/spf13/cobra v1.7.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/spf13/viper v1.17.0 // indirect
-	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/supranational/blst v0.3.11 // indirect
 	github.com/tklauser/go-sysconf v0.3.12 // indirect
 	github.com/tklauser/numcpus v0.6.1 // indirect
