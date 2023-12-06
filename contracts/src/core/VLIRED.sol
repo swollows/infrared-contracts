@@ -11,8 +11,8 @@ contract VLIRED is ReentrancyGuard, Ownable {
 
     /**
      * @notice Lock balance details
-     *       @param  amount      uint224  Locked amount in the lock
-     *       @param  unlockTime  uint32   Unlock time of the lock
+     * @param  amount      uint224  Locked amount in the lock
+     * @param  unlockTime  uint32   Unlock time of the lock
      */
     struct LockedBalance {
         uint224 amount;
@@ -21,11 +21,9 @@ contract VLIRED is ReentrancyGuard, Ownable {
 
     /**
      * @notice Balance details
-     *       @param  locked           uint224          Overall locked amount
-     *       @param  nextUnlockIndex  uint32           Index of earliest next
-     * unlock
-     *       @param  lockedBalances   LockedBalance[]  List of locked balances
-     * data
+     * @param  locked           uint224          Overall locked amount
+     * @param  nextUnlockIndex  uint32           Index of earliest next unlock
+     * @param  lockedBalances   LockedBalance[]  List of locked balances data
      */
     struct Balance {
         uint224 locked;
@@ -70,8 +68,7 @@ contract VLIRED is ReentrancyGuard, Ownable {
     }
 
     /**
-     * @notice Emergency method to shutdown the current locker contract which
-     * also force-unlock all locked tokens
+     * @notice Emergency method to shutdown the current locker contract which also force-unlock all locked tokens
      */
     function shutdown() external onlyOwner {
         if (isShutdown) revert IsShutdown();
@@ -82,10 +79,9 @@ contract VLIRED is ReentrancyGuard, Ownable {
     }
 
     /**
-     * @notice Locked balance of the specified account including those with
-     * expired locks
-     *       @param  account  address  Account
-     *       @return amount   uint256  Amount
+     * @notice Locked balance of the specified account including those with expired locks
+     * @param  account  address  Account
+     * @return amount   uint256  Amount
      */
     function lockedBalanceOf(address account)
         external
@@ -96,10 +92,9 @@ contract VLIRED is ReentrancyGuard, Ownable {
     }
 
     /**
-     * @notice Balance of the specified account by only including tokens in
-     * active locks
-     *       @param  account  address  Account
-     *       @return amount   uint256  Amount
+     * @notice Balance of the specified account by only including tokens in active locks
+     * @param  account  address  Account
+     * @return amount   uint256  Amount
      */
     function balanceOf(address account)
         external
@@ -139,8 +134,8 @@ contract VLIRED is ReentrancyGuard, Ownable {
 
     /**
      * @notice Pending locked amount at the specified account
-     *       @param  account  address  Account
-     *       @return amount   uint256  Amount
+     * @param  account  address  Account
+     * @return amount   uint256  Amount
      */
     function pendingLockOf(address account)
         external
@@ -164,11 +159,11 @@ contract VLIRED is ReentrancyGuard, Ownable {
 
     /**
      * @notice Locked balances details for the specifed account
-     *       @param  account     address          Account
-     *       @return total       uint256          Total amount
-     *       @return unlockable  uint256          Unlockable amount
-     *       @return locked      uint256          Locked amount
-     *       @return lockData    LockedBalance[]  List of active locks
+     * @param  account     address          Account
+     * @return total       uint256          Total amount
+     * @return unlockable  uint256          Unlockable amount
+     * @return locked      uint256          Locked amount
+     * @return lockData    LockedBalance[]  List of active locks
      */
     function lockedBalances(address account)
         external
@@ -204,17 +199,16 @@ contract VLIRED is ReentrancyGuard, Ownable {
 
     /**
      * @notice Get current epoch
-     *       @return uint256  Current epoch
+     * @return uint256  Current epoch
      */
     function getCurrentEpoch() public view returns (uint256) {
         return (block.timestamp / EPOCH_DURATION) * EPOCH_DURATION;
     }
 
     /**
-     * @notice Locked tokens cannot be withdrawn for the entire lock duration
-     * and are eligible to receive rewards
-     *       @param  account  address  Account
-     *       @param  amount   uint256  Amount
+     * @notice Locked tokens cannot be withdrawn for the entire lock duration and are eligible to receive rewards
+     * @param  account  address  Account
+     * @param  amount   uint256  Amount
      */
     function lock(address account, uint256 amount) external nonReentrant {
         if (account == address(0)) revert ZeroAddress();
@@ -227,8 +221,8 @@ contract VLIRED is ReentrancyGuard, Ownable {
 
     /**
      * @notice Perform the actual lock
-     *       @param  account  address  Account
-     *       @param  amount   uint256  Amount
+     * @param  account  address  Account
+     * @param  amount   uint256  Amount
      */
     function _lock(address account, uint256 amount) internal {
         if (isShutdown) revert IsShutdown();
@@ -246,8 +240,7 @@ contract VLIRED is ReentrancyGuard, Ownable {
         uint256 idx = locks.length;
 
         // If the latest user lock is smaller than this lock, add a new entry to
-        // the end of the list
-        // else, append it to the latest user lock
+        // the end of the list. else, append it to the latest user lock
         if (idx == 0 || locks[idx - 1].unlockTime < unlockTime) {
             locks.push(
                 LockedBalance({
@@ -263,11 +256,10 @@ contract VLIRED is ReentrancyGuard, Ownable {
     }
 
     /**
-     * @notice Withdraw all currently locked tokens where the unlock time has
-     * passed
-     *       @param  account     address  Account
-     *       @param  relock      bool     Whether should relock
-     *       @param  withdrawTo  address  Target receiver
+     * @notice Withdraw all currently locked tokens where the unlock time has passed
+     * @param  account     address  Account
+     * @param  relock      bool     Whether should relock
+     * @param  withdrawTo  address  Target receiver
      */
     function _processExpiredLocks(
         address account,
@@ -319,7 +311,7 @@ contract VLIRED is ReentrancyGuard, Ownable {
 
     /**
      * @notice Withdraw expired locks to a different address
-     *       @param  to  address  Target receiver
+     * @param  to  address  Target receiver
      */
     function withdrawExpiredLocksTo(address to) external nonReentrant {
         if (to == address(0)) revert ZeroAddress();
@@ -328,9 +320,8 @@ contract VLIRED is ReentrancyGuard, Ownable {
     }
 
     /**
-     * @notice Withdraw/relock all currently locked tokens where the unlock time
-     * has passed
-     *       @param  relock  bool  Whether should relock
+     * @notice Withdraw/relock all currently locked tokens where the unlock time has passed
+     * @param  relock  bool  Whether should relock
      */
     function processExpiredLocks(bool relock) external nonReentrant {
         _processExpiredLocks(msg.sender, relock, msg.sender);
@@ -338,8 +329,8 @@ contract VLIRED is ReentrancyGuard, Ownable {
 
     /**
      * @notice Validate and cast a uint256 integer to uint224
-     *       @param  value  uint256  Value
-     *       @return        uint224  Casted value
+     * @param  value  uint256  Value
+     * @return uint224  Casted value
      */
     function _toUint224(uint256 value) internal pure returns (uint224) {
         if (value > type(uint224).max) revert InvalidNumber(value);
@@ -349,8 +340,8 @@ contract VLIRED is ReentrancyGuard, Ownable {
 
     /**
      * @notice Validate and cast a uint256 integer to uint32
-     *       @param  value  uint256  Value
-     *       @return        uint32   Casted value
+     * @param  value  uint256  Value
+     * @return uint32   Casted value
      */
     function _toUint32(uint256 value) internal pure returns (uint32) {
         if (value > type(uint32).max) revert InvalidNumber(value);

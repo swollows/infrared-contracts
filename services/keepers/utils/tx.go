@@ -3,7 +3,6 @@ package util
 import (
 	"context"
 	"crypto/ecdsa"
-	"errors"
 	"math/big"
 
 	sdk "github.com/berachain/offchain-sdk/types"
@@ -20,12 +19,17 @@ func GenerateTransactionOps(
 ) (*bind.TransactOpts, error) {
 	// Check that the context is not nil.
 	if sCtx == nil {
-		return nil, errors.New("context is nil")
+		return nil, ErrEmptyContext
 	}
 
 	// Check that the private key is not nil.
 	if privKey == nil {
-		return nil, errors.New("private key is nil")
+		return nil, ErrEmptyPrivKey
+	}
+
+	// Check that the public key is not empty.
+	if pubKey.Cmp(common.Address{}) == 0 {
+		return nil, ErrEmptyPubKey
 	}
 
 	nonce, err := sCtx.Chain().PendingNonceAt(context.Background(), pubKey)

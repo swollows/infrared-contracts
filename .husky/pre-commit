@@ -1,9 +1,11 @@
 #!/bin/sh
 . "$(dirname "$0")/_/husky.sh"
 
-forge fmt --root ./contracts
+# Format the contracts
+npm run format:contracts
 
-# 1. Build the contracts
-# 2. Stage build output 
-# 2. Lint and stage style improvements 
-make lint && git add .
+# Format the services
+npm run format:services
+
+# Stage the changes
+git add .
