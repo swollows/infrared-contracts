@@ -189,7 +189,7 @@ func (vh *VaultHarvester) Execute(ctx context.Context, _ any) (any, error) {
 // harvestVault is a helper method to publish the harvest vault transaction and handle the response.
 func (vh *VaultHarvester) harvestVault(sCtx *sdk.Context, vault *db.Vault, logger log.Logger) error {
 	// Generate the transaction options.
-	txOpts, err := util.GenerateTransactionOps(sCtx, vh.pubKey, vh.privKey, vh.gasLimit)
+	txOpts, err := util.GenerateTransactionOps(sCtx, vh.privKey, vh.pubKey, vh.gasLimit)
 	if err != nil {
 		logger.Error("❌ Failed to generate transaction options", "Error", err)
 		return err

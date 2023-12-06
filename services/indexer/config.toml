@@ -1,11 +1,11 @@
 #### Contracts that the indexer will be following ####
 [App.Contracts]
-InfraredContractAddress = "0x4eB5010b25801EbB639eF9713fFa7667A571A989"
+InfraredContractAddress = ""
 
 
 #### Database configuration ####
 [App.DB]
-ConnectionURL = "rediss://default:274f2558a6334cbeadb2c2123112564f@eu2-sweeping-tortoise-30656.upstash.io:30656"
+ConnectionURL = ""
 
 
 #### For cold restarting the service ####

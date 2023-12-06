@@ -6,6 +6,7 @@ require (
 	github.com/berachain/offchain-sdk v0.0.0-20231123014610-aeff8a4896fd
 	github.com/ethereum/go-ethereum v1.13.4
 	github.com/redis/go-redis/v9 v9.3.0
+	github.com/subosito/gotenv v1.6.0
 )
 
 require (
@@ -44,6 +45,7 @@ require (
 	golang.org/x/net v0.17.0 // indirect
 	golang.org/x/sync v0.5.0 // indirect
 	golang.org/x/sys v0.14.0 // indirect
+	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/tools v0.13.0 // indirect
 	rsc.io/tmplfunc v0.0.3 // indirect
 )

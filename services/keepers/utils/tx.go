@@ -13,8 +13,8 @@ import (
 // GenerateTransactionOps generates the transaction options for a transaction.
 func GenerateTransactionOps(
 	sCtx *sdk.Context,
-	pubKey common.Address,
 	privKey *ecdsa.PrivateKey,
+	pubKey common.Address,
 	gasLimit uint64,
 ) (*bind.TransactOpts, error) {
 	// Check that the context is not nil.

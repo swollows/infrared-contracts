@@ -95,7 +95,7 @@ func NewValidatorHarvester(
 
 // RegistryKey implements the job.Basic interface.
 func (vh *ValidatorHarvester) RegistryKey() string {
-	return "valiator_harvester"
+	return "validator_harvester"
 }
 
 // Setup implements the job.HasSetup interface.
@@ -188,7 +188,7 @@ func (vh *ValidatorHarvester) Execute(ctx context.Context, _ any) (any, error) {
 // harvestValidators is a helper method that harvests the ripe the validators.
 func (vh *ValidatorHarvester) harvestValidator(sCtx *sdk.Context, validator common.Address, logger log.Logger) error {
 	// Generate the transaction opts.
-	txOpts, err := util.GenerateTransactionOps(sCtx, vh.pubKey, vh.privKey, vh.gasLimit)
+	txOpts, err := util.GenerateTransactionOps(sCtx, vh.privKey, vh.pubKey, vh.gasLimit)
 	if err != nil {
 		logger.Error("❌ Failed to generate transaction options", "Error", err)
 		return err

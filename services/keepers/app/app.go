@@ -31,6 +31,9 @@ func (app *KeeperApp) Name() string {
 func (app *KeeperApp) Setup(builder coreapp.Builder, config config.Config, logger log.Logger) {
 	logger.Info("Setting up keeper app...")
 
+	// Populate the config with secrets.
+	PopulateKeeperAppConfig(&config, logger)
+
 	// Parse the database connection url.
 	options, err := redis.ParseURL(config.DB.ConnectionURL)
 	if err != nil {

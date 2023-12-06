@@ -31,3 +31,6 @@ contracts/src/script/devnet/loadEnv.sh
 ## IDE
 services/.idea/
 .idea/
+
+## Secrets.
+.env

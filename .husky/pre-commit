@@ -8,4 +8,4 @@ npm run format:contracts
 npm run format:services
 
 # Stage the changes
-git add .
+git add -u
