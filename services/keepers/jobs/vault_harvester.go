@@ -25,6 +25,7 @@ import (
 // VaultHarvesterDB is the interface for the vault harvester database.
 type VaultHarvesterDB interface {
 	GetVaults(ctx context.Context) ([]*db.Vault, error)
+	SetCheckpoint(ctx context.Context, checkpoint *db.CheckPoint) error
 }
 
 // The method names for this job.
@@ -163,6 +164,19 @@ func (vh *VaultHarvester) Execute(ctx context.Context, _ any) (any, error) {
 
 		// Sleep for 1 second to avoid any nonce issues.
 		time.Sleep(1 * time.Second)
+	}
+
+	// Get the block number after the harvest.
+	blockNumber, err := sCtx.Chain().BlockNumber(sCtx)
+	if err != nil {
+		logger.Error("⚠️  Failed to get block number", "Error", err)
+		return nil, err
+	}
+
+	// Set the checkpoint in the database.
+	if err := vh.db.SetCheckpoint(sCtx, db.NewCheckPoint(blockNumber)); err != nil {
+		logger.Error("⚠️  Failed to set checkpoint", "Error", err)
+		return nil, err
 	}
 
 	return nil, nil

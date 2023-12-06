@@ -13,6 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/infrared-dao/infrared-mono-repo/pkg/bindings/distribution"
 	"github.com/infrared-dao/infrared-mono-repo/pkg/bindings/infrared"
+	"github.com/infrared-dao/infrared-mono-repo/pkg/db"
 	"github.com/infrared-dao/infrared-mono-repo/pkg/tools"
 	util "github.com/infrared-dao/infrared-mono-repo/services/keepers/utils"
 )
@@ -20,6 +21,11 @@ import (
 // ==============================================================================
 //  Dependencies & constants
 // ==============================================================================
+
+// VaValidatorHarvestDB is the interface for the validator harvester database.
+type ValidatorHarvestDB interface {
+	SetCheckpoint(ctx context.Context, checkpoint *db.CheckPoint) error
+}
 
 // The method names for this job.
 const (
@@ -40,6 +46,8 @@ var (
 
 // ValidatorHarvester is the job that harvests the validator.
 type ValidatorHarvester struct {
+	// db is the database for the validator harvester job.
+	db ValidatorHarvestDB
 	// interval is the interval at which the job runs.
 	interval *time.Duration
 	// pubKey is the public key of the validator harvester.
@@ -64,6 +72,7 @@ type ValidatorHarvester struct {
 
 // NewValidatorHarvester returns a new validator harvester job.
 func NewValidatorHarvester(
+	db ValidatorHarvestDB,
 	interval *time.Duration,
 	pubKey common.Address,
 	privKey *ecdsa.PrivateKey,
@@ -73,6 +82,7 @@ func NewValidatorHarvester(
 	gasLimit uint64,
 ) *ValidatorHarvester {
 	return &ValidatorHarvester{
+		db:                            db,
 		interval:                      interval,
 		pubKey:                        pubKey,
 		privKey:                       privKey,
@@ -153,6 +163,19 @@ func (vh *ValidatorHarvester) Execute(ctx context.Context, _ any) (any, error) {
 
 		// Sleep for 1 second to avoid spamming the node.
 		time.Sleep(1 * time.Second)
+	}
+
+	// Get the block number after the harvest.
+	blockNumber, err := sCtx.Chain().BlockNumber(sCtx)
+	if err != nil {
+		logger.Error("⚠️  Failed to get block number", "Error", err)
+		return nil, err
+	}
+
+	// Set the checkpoint in the database.
+	if err := vh.db.SetCheckpoint(sCtx, db.NewCheckPoint(blockNumber)); err != nil {
+		logger.Error("⚠️  Failed to set checkpoint", "Error", err)
+		return nil, err
 	}
 
 	return nil, nil

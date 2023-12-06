@@ -71,6 +71,7 @@ func (app *KeeperApp) Setup(builder coreapp.Builder, config config.Config, logge
 
 	// Create the validator harvester job.
 	validatorHarvesterJob := jobs.NewValidatorHarvester(
+		db,
 		&config.Interval.ValidatorHarvesterInterval,
 		pubKey,
 		privKey,
