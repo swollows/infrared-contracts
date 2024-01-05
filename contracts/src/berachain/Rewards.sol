@@ -18,13 +18,12 @@
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, NON-INFRINGEMENT, AND
 // TITLE.
 
-pragma solidity 0.8.20;
+pragma solidity 0.8.22;
 
 import {Cosmos} from "@polaris/CosmosTypes.sol";
 
 interface IRewardsModule {
-    /////////////////////////////////////// READ METHODS
-    // //////////////////////////////////////////
+    /////////////////////////////////////// READ METHODS //////////////////////////////////////////
 
     /**
      * @dev Returns the address of the withdraw address.
@@ -55,8 +54,7 @@ interface IRewardsModule {
         view
         returns (Cosmos.Coin[] memory);
 
-    /////////////////////////////////////// WRITE METHODS
-    // //////////////////////////////////////////
+    /////////////////////////////////////// WRITE METHODS //////////////////////////////////////////
 
     /**
      * @dev Sets the caller's withdraw address.
@@ -86,8 +84,7 @@ interface IRewardsModule {
         returns (Cosmos.Coin[] memory);
 
     /**
-     * @dev Withdraws the rewards for the given delegator and receiver, to a
-     * given address.
+     * @dev Withdraws the rewards for the given delegator and receiver, to a given address.
      * @param receiver The receiver address.
      * @param recipient The recipient address.
      * @param amount The amount of rewards to withdraw.
@@ -99,8 +96,7 @@ interface IRewardsModule {
         uint256 amount
     ) external returns (Cosmos.Coin[] memory);
 
-    //////////////////////////////////////////// Events
-    // ////////////////////////////////////////////
+    //////////////////////////////////////////// Events ////////////////////////////////////////////
 
     /**
      * @dev Emitted when a deposit is initialized.

@@ -35,9 +35,15 @@ type CosmosCoin struct {
 	Denom  string
 }
 
+// IDistributionModuleValidatorReward is an auto generated low-level Go binding around an user-defined struct.
+type IDistributionModuleValidatorReward struct {
+	Validator common.Address
+	Rewards   []CosmosCoin
+}
+
 // ContractMetaData contains all meta data concerning the Contract contract.
 var ContractMetaData = &bind.MetaData{
-	ABI: "[{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"withdrawAddress\",\"type\":\"address\"}],\"name\":\"SetWithdrawAddress\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"validator\",\"type\":\"address\"},{\"components\":[{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"string\",\"name\":\"denom\",\"type\":\"string\"}],\"indexed\":false,\"internalType\":\"structCosmos.Coin[]\",\"name\":\"amount\",\"type\":\"tuple[]\"}],\"name\":\"WithdrawRewards\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"delegator\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"validator\",\"type\":\"address\"}],\"name\":\"getCurrentRewards\",\"outputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"string\",\"name\":\"denom\",\"type\":\"string\"}],\"internalType\":\"structCosmos.Coin[]\",\"name\":\"\",\"type\":\"tuple[]\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getWithdrawEnabled\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"withdrawAddress\",\"type\":\"address\"}],\"name\":\"setWithdrawAddress\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"delegator\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"validator\",\"type\":\"address\"}],\"name\":\"withdrawDelegatorReward\",\"outputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"string\",\"name\":\"denom\",\"type\":\"string\"}],\"internalType\":\"structCosmos.Coin[]\",\"name\":\"\",\"type\":\"tuple[]\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
+	ABI: "[{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"withdrawAddress\",\"type\":\"address\"}],\"name\":\"SetWithdrawAddress\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"validator\",\"type\":\"address\"},{\"components\":[{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"string\",\"name\":\"denom\",\"type\":\"string\"}],\"indexed\":false,\"internalType\":\"structCosmos.Coin[]\",\"name\":\"amount\",\"type\":\"tuple[]\"}],\"name\":\"WithdrawRewards\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"delegator\",\"type\":\"address\"}],\"name\":\"getAllDelegatorRewards\",\"outputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"validator\",\"type\":\"address\"},{\"components\":[{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"string\",\"name\":\"denom\",\"type\":\"string\"}],\"internalType\":\"structCosmos.Coin[]\",\"name\":\"rewards\",\"type\":\"tuple[]\"}],\"internalType\":\"structIDistributionModule.ValidatorReward[]\",\"name\":\"\",\"type\":\"tuple[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"delegator\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"validator\",\"type\":\"address\"}],\"name\":\"getDelegatorValidatorReward\",\"outputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"string\",\"name\":\"denom\",\"type\":\"string\"}],\"internalType\":\"structCosmos.Coin[]\",\"name\":\"\",\"type\":\"tuple[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"delegator\",\"type\":\"address\"}],\"name\":\"getTotalDelegatorReward\",\"outputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"string\",\"name\":\"denom\",\"type\":\"string\"}],\"internalType\":\"structCosmos.Coin[]\",\"name\":\"\",\"type\":\"tuple[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"delegator\",\"type\":\"address\"}],\"name\":\"getWithdrawAddress\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getWithdrawEnabled\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"withdrawAddress\",\"type\":\"address\"}],\"name\":\"setWithdrawAddress\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"delegator\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"validator\",\"type\":\"address\"}],\"name\":\"withdrawDelegatorReward\",\"outputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"string\",\"name\":\"denom\",\"type\":\"string\"}],\"internalType\":\"structCosmos.Coin[]\",\"name\":\"\",\"type\":\"tuple[]\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
 }
 
 // ContractABI is the input ABI used to generate the binding from.
@@ -186,6 +192,130 @@ func (_Contract *ContractTransactorRaw) Transact(opts *bind.TransactOpts, method
 	return _Contract.Contract.contract.Transact(opts, method, params...)
 }
 
+// GetAllDelegatorRewards is a free data retrieval call binding the contract method 0x36e22c98.
+//
+// Solidity: function getAllDelegatorRewards(address delegator) view returns((address,(uint256,string)[])[])
+func (_Contract *ContractCaller) GetAllDelegatorRewards(opts *bind.CallOpts, delegator common.Address) ([]IDistributionModuleValidatorReward, error) {
+	var out []interface{}
+	err := _Contract.contract.Call(opts, &out, "getAllDelegatorRewards", delegator)
+
+	if err != nil {
+		return *new([]IDistributionModuleValidatorReward), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new([]IDistributionModuleValidatorReward)).(*[]IDistributionModuleValidatorReward)
+
+	return out0, err
+
+}
+
+// GetAllDelegatorRewards is a free data retrieval call binding the contract method 0x36e22c98.
+//
+// Solidity: function getAllDelegatorRewards(address delegator) view returns((address,(uint256,string)[])[])
+func (_Contract *ContractSession) GetAllDelegatorRewards(delegator common.Address) ([]IDistributionModuleValidatorReward, error) {
+	return _Contract.Contract.GetAllDelegatorRewards(&_Contract.CallOpts, delegator)
+}
+
+// GetAllDelegatorRewards is a free data retrieval call binding the contract method 0x36e22c98.
+//
+// Solidity: function getAllDelegatorRewards(address delegator) view returns((address,(uint256,string)[])[])
+func (_Contract *ContractCallerSession) GetAllDelegatorRewards(delegator common.Address) ([]IDistributionModuleValidatorReward, error) {
+	return _Contract.Contract.GetAllDelegatorRewards(&_Contract.CallOpts, delegator)
+}
+
+// GetDelegatorValidatorReward is a free data retrieval call binding the contract method 0x4d33a513.
+//
+// Solidity: function getDelegatorValidatorReward(address delegator, address validator) view returns((uint256,string)[])
+func (_Contract *ContractCaller) GetDelegatorValidatorReward(opts *bind.CallOpts, delegator common.Address, validator common.Address) ([]CosmosCoin, error) {
+	var out []interface{}
+	err := _Contract.contract.Call(opts, &out, "getDelegatorValidatorReward", delegator, validator)
+
+	if err != nil {
+		return *new([]CosmosCoin), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new([]CosmosCoin)).(*[]CosmosCoin)
+
+	return out0, err
+
+}
+
+// GetDelegatorValidatorReward is a free data retrieval call binding the contract method 0x4d33a513.
+//
+// Solidity: function getDelegatorValidatorReward(address delegator, address validator) view returns((uint256,string)[])
+func (_Contract *ContractSession) GetDelegatorValidatorReward(delegator common.Address, validator common.Address) ([]CosmosCoin, error) {
+	return _Contract.Contract.GetDelegatorValidatorReward(&_Contract.CallOpts, delegator, validator)
+}
+
+// GetDelegatorValidatorReward is a free data retrieval call binding the contract method 0x4d33a513.
+//
+// Solidity: function getDelegatorValidatorReward(address delegator, address validator) view returns((uint256,string)[])
+func (_Contract *ContractCallerSession) GetDelegatorValidatorReward(delegator common.Address, validator common.Address) ([]CosmosCoin, error) {
+	return _Contract.Contract.GetDelegatorValidatorReward(&_Contract.CallOpts, delegator, validator)
+}
+
+// GetTotalDelegatorReward is a free data retrieval call binding the contract method 0xce3341b4.
+//
+// Solidity: function getTotalDelegatorReward(address delegator) view returns((uint256,string)[])
+func (_Contract *ContractCaller) GetTotalDelegatorReward(opts *bind.CallOpts, delegator common.Address) ([]CosmosCoin, error) {
+	var out []interface{}
+	err := _Contract.contract.Call(opts, &out, "getTotalDelegatorReward", delegator)
+
+	if err != nil {
+		return *new([]CosmosCoin), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new([]CosmosCoin)).(*[]CosmosCoin)
+
+	return out0, err
+
+}
+
+// GetTotalDelegatorReward is a free data retrieval call binding the contract method 0xce3341b4.
+//
+// Solidity: function getTotalDelegatorReward(address delegator) view returns((uint256,string)[])
+func (_Contract *ContractSession) GetTotalDelegatorReward(delegator common.Address) ([]CosmosCoin, error) {
+	return _Contract.Contract.GetTotalDelegatorReward(&_Contract.CallOpts, delegator)
+}
+
+// GetTotalDelegatorReward is a free data retrieval call binding the contract method 0xce3341b4.
+//
+// Solidity: function getTotalDelegatorReward(address delegator) view returns((uint256,string)[])
+func (_Contract *ContractCallerSession) GetTotalDelegatorReward(delegator common.Address) ([]CosmosCoin, error) {
+	return _Contract.Contract.GetTotalDelegatorReward(&_Contract.CallOpts, delegator)
+}
+
+// GetWithdrawAddress is a free data retrieval call binding the contract method 0xafe46ea2.
+//
+// Solidity: function getWithdrawAddress(address delegator) view returns(address)
+func (_Contract *ContractCaller) GetWithdrawAddress(opts *bind.CallOpts, delegator common.Address) (common.Address, error) {
+	var out []interface{}
+	err := _Contract.contract.Call(opts, &out, "getWithdrawAddress", delegator)
+
+	if err != nil {
+		return *new(common.Address), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+
+	return out0, err
+
+}
+
+// GetWithdrawAddress is a free data retrieval call binding the contract method 0xafe46ea2.
+//
+// Solidity: function getWithdrawAddress(address delegator) view returns(address)
+func (_Contract *ContractSession) GetWithdrawAddress(delegator common.Address) (common.Address, error) {
+	return _Contract.Contract.GetWithdrawAddress(&_Contract.CallOpts, delegator)
+}
+
+// GetWithdrawAddress is a free data retrieval call binding the contract method 0xafe46ea2.
+//
+// Solidity: function getWithdrawAddress(address delegator) view returns(address)
+func (_Contract *ContractCallerSession) GetWithdrawAddress(delegator common.Address) (common.Address, error) {
+	return _Contract.Contract.GetWithdrawAddress(&_Contract.CallOpts, delegator)
+}
+
 // GetWithdrawEnabled is a free data retrieval call binding the contract method 0x39cc4c86.
 //
 // Solidity: function getWithdrawEnabled() view returns(bool)
@@ -215,27 +345,6 @@ func (_Contract *ContractSession) GetWithdrawEnabled() (bool, error) {
 // Solidity: function getWithdrawEnabled() view returns(bool)
 func (_Contract *ContractCallerSession) GetWithdrawEnabled() (bool, error) {
 	return _Contract.Contract.GetWithdrawEnabled(&_Contract.CallOpts)
-}
-
-// GetCurrentRewards is a paid mutator transaction binding the contract method 0x8cb3ca0b.
-//
-// Solidity: function getCurrentRewards(address delegator, address validator) returns((uint256,string)[])
-func (_Contract *ContractTransactor) GetCurrentRewards(opts *bind.TransactOpts, delegator common.Address, validator common.Address) (*types.Transaction, error) {
-	return _Contract.contract.Transact(opts, "getCurrentRewards", delegator, validator)
-}
-
-// GetCurrentRewards is a paid mutator transaction binding the contract method 0x8cb3ca0b.
-//
-// Solidity: function getCurrentRewards(address delegator, address validator) returns((uint256,string)[])
-func (_Contract *ContractSession) GetCurrentRewards(delegator common.Address, validator common.Address) (*types.Transaction, error) {
-	return _Contract.Contract.GetCurrentRewards(&_Contract.TransactOpts, delegator, validator)
-}
-
-// GetCurrentRewards is a paid mutator transaction binding the contract method 0x8cb3ca0b.
-//
-// Solidity: function getCurrentRewards(address delegator, address validator) returns((uint256,string)[])
-func (_Contract *ContractTransactorSession) GetCurrentRewards(delegator common.Address, validator common.Address) (*types.Transaction, error) {
-	return _Contract.Contract.GetCurrentRewards(&_Contract.TransactOpts, delegator, validator)
 }
 
 // SetWithdrawAddress is a paid mutator transaction binding the contract method 0x3ab1a494.

@@ -58,6 +58,11 @@ forge-lint-check: |
 forge-lint: |
 	npm run lint
 
+forge-clean-deps: |
+	cd contracts  
+	git submodule deinit --force .
+	git submodule update --init --recursive
+
 ########################################################
 #                       Linting                        #
 ########################################################

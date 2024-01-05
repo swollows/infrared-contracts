@@ -5,7 +5,7 @@
     "constructor-syntax": "warn",
     "quotes": ["error", "double"],
     "func-visibility": ["warn", { "ignoreConstructors": true }],
-    "not-rely-on-time": "off",
+    "not-rely-on-time": "warn",
     "func-name-mixedcase": "off",
     "var-name-mixedcase": "off",
     "const-name-snakecase": "off",

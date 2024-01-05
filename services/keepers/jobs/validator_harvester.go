@@ -211,42 +211,39 @@ func (vh *ValidatorHarvester) harvestValidator(sCtx *sdk.Context, validator comm
 	return nil
 }
 
+// getRipe returns the ripe validators.
 func (vh *ValidatorHarvester) getRipe(ctx *sdk.Context, logger log.Logger) ([]common.Address, error) {
 	// Get all the infrared validators on-chain.
-	_, err := vh.infraredContract.InfraredValidators(nil)
+	validators, err := vh.infraredContract.InfraredValidators(nil)
 	if err != nil {
 		logger.Error("⚠️ Failed to get validators", "Error", err)
 		return nil, err
 	}
 
-	// TODO: Chain needs to update (told Berachain core devs about the issue).
-	// Issue: CurrentRewards sends tx rn, but should be a view method.
-	// // Filter the ripe validators.
-	// ripeValidators := make([]common.Address, 0)
-	// for _, validator := range validators {
-	// 	// Get the validators current rewards.
-	// 	cr, err := vh.distributionPrecompileContract.GetCurrentRewards(
-	// 		nil,
-	// 		vh.infraredContractAddress,
-	// 		validator,
-	// 	)
-	// 	if err != nil {
-	// 		logger.Error("⚠️ Failed to get current rewards", "Error", err)
-	// 		return nil, err
-	// 	}
+	// Filter out the ripe validators from the infrared validators.
+	ripeValidators := make([]common.Address, 0)
+	for _, validator := range validators {
+		// Get the validators current rewards.
+		cr, err := vh.distributionPrecompileContract.GetDelegatorValidatorReward(
+			nil,
+			vh.infraredContractAddress,
+			validator,
+		)
+		if err != nil {
+			logger.Error("⚠️ Failed to get current rewards", "Error", err)
+			return nil, err
+		}
 
-	// 	// Check if the validartor is ripe and add it to the list if it is.
-	// 	if vh.isRipe(cr) {
+		// Check if the validator is ripe and add it to the list if it is.
+		if vh.isRipe(cr) {
+			ripeValidators = append(ripeValidators, validator)
+		}
+	}
 
-	// 	}
-	// }
-
-	return []common.Address{}, nil // FOR NOW RETURNING EMPTY LIST.
+	return ripeValidators, nil
 }
 
-// isRipe is a helper method that checks if the validator is ripe for harvesting.
-//
-//nolint:unused // TODO: Use method once chain is updated.
+// isRipe returns true if the validator is ready to be harvested, false otherwise.
 func (vh *ValidatorHarvester) isRipe(coins []distribution.CosmosCoin) bool {
 	// If the rewards are empty, then the validator is not ripe.
 	if len(coins) == 0 {

@@ -1,20 +1,52 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.20;
+pragma solidity 0.8.22;
 
 contract MockStakingModule {
-    function delegate(address, uint256) external returns (bool) {}
+    // Mock state variables to track calls
+    mapping(address => uint256) public delegatedAmounts;
+    mapping(address => uint256) public undelegatedAmounts;
+    mapping(address => uint256) public redelegatedAmounts;
+    mapping(address => uint256) public canceledUnbondingAmounts;
 
-    function undelegate(address, uint256) external payable returns (bool) {}
+    uint256 public test = 123;
 
-    function beginRedelegate(address, address, uint256)
+    // Mock delegate function
+    function delegate(address _validator, uint256 _amt)
         external
         payable
         returns (bool)
-    {}
+    {
+        delegatedAmounts[_validator] += _amt;
+        return true;
+    }
 
-    function cancelUnbondingDelegation(address, uint256, int64)
+    // Mock undelegate function
+    function undelegate(address _validator, uint256 _amt)
         external
         payable
         returns (bool)
-    {}
+    {
+        undelegatedAmounts[_validator] += _amt;
+        return true;
+    }
+
+    // Mock beginRedelegate function
+    function beginRedelegate(address _from, address _to, uint256 _amt)
+        external
+        payable
+        returns (bool)
+    {
+        redelegatedAmounts[_to] += _amt;
+        return true;
+    }
+
+    // Mock cancelUnbondingDelegation function
+    function cancelUnbondingDelegation(
+        address _validator,
+        uint256 _amt,
+        int64 _creationHeight
+    ) external payable returns (bool) {
+        canceledUnbondingAmounts[_validator] += _amt;
+        return true;
+    }
 }

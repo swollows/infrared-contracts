@@ -1,25 +1,32 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.20;
+pragma solidity 0.8.22;
 
 library Errors {
-    error ValidatorDoesNotExist(address _validator);
-    error ValidatorAlreadyExists(address _validator);
+    // General errors.
     error ZeroAddress();
-    error ZeroString();
-    error ERC20ModuleTransferFailed();
-    error VaultNotSupported(address _vault);
     error ZeroAmount();
-    error SetWithdrawAddressFailed();
-    error VaultAlreadyRegistered();
-    error DelegationFailed();
-    error UndelegateFailed();
-    error BeginRedelegateFailed();
-    error CancelUnbondingDelegationFailed();
-    error ApprovalFailed();
-    error ElementAlreadyExists();
-    error FaliedToRemoveValidator();
+
+    // ValidatorSet errors.
+    error ValidatorAlreadyExists();
     error FailedToAddValidator();
-    error IncorrectArrayLength();
-    error EmptyArray();
-    error IncorrectInfraredVaultArray();
+    error ValidatorDoesNotExist();
+    error FailedToRemoveValidator();
+
+    // Berachain interaction errors.
+    error DenomNotFound(string denom);
+    error FailedToConvertCoin(string denom, uint256 amount);
+    error WrongDataResponse();
+    error DelegateCallFailed();
+
+    // InfraredVault errors.
+    error WithdrawAddressNotSet();
+
+    // InfraredValidators errors.
+    error InvalidValidator();
+
+    // Infrared errors.
+    error VaultNotSupported();
+    error ClaimDistrRewardsFailed();
+    error DuplicatePoolAddress();
+    error VaultDeploymentFailed();
 }

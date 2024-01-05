@@ -1,7 +1,7 @@
 [profile.default]
 ignored_error_codes = [1878, 5574]
 evm_version = 'shanghai'
-solcs = ['0.8.19','0.8.14', '0.8.20']
+solcs = ['0.8.19','0.8.14', '0.8.20', '0.8.22']
 cache = true
 force = false
 optimizer = true
@@ -13,7 +13,9 @@ via_ir = true
 fuzz = { runs = 1_000 }
 test = 'tests'
 remappings = [
+    '@forge-std/=lib/forge-std/src/',
     '@openzeppelin/=lib/openzeppelin-contracts/contracts/',
+    '@openzeppelin-upgradeable/=lib/openzeppelin-contracts-upgradeable/contracts/',
     '@solmate/=lib/solmate/src/',
     '@polaris/=src/polaris',
     '@berachain/=src/berachain/',
@@ -29,7 +31,9 @@ remappings = [
 fuzz = { runs = 100_000 }
 verbosity = 4
 remappings = [
+    '@forge-std/=lib/forge-std/src/',
     '@openzeppelin/=lib/openzeppelin-contracts/contracts/',
+    '@openzeppelin-upgradeable/=lib/openzeppelin-contracts-upgradeable/contracts/',
     '@solmate/=lib/solmate/src/',
     '@polaris/=src/polaris',
     '@berachain/=src/berachain/',
