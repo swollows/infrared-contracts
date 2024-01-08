@@ -114,11 +114,16 @@ interface IRewardsModule {
 
     /**
      * @dev Emitted when a withdraw is made.
+     * @param rewardReceiver the address that the withdraw is made from.
      * @param withdrawer the address that withdrawed the rewards.
+     * @param rewardRecipient the address that the rewards were sent to.
      * @param rewardAmount the rewards that were withdrawen.
      */
     event WithdrawDepositRewards(
-        address indexed withdrawer, Cosmos.Coin[] rewardAmount
+        address indexed rewardReceiver,
+        address indexed withdrawer,
+        address indexed rewardRecipient,
+        Cosmos.Coin[] rewardAmount
     );
 
     /**

@@ -35,33 +35,33 @@ interface IERC20BankModule {
     ////////////////////////////////////////// EVENTS /////////////////////////////////////////////
 
     /**
-     * @dev Emitted by the erc20 bank module when `amount` tokens are transferred from SDK coin (of
-     * denomination `denom`) to an ERC20 token from `owner` to `recipient`.
-     * @param denom the denomination of the SDK coin being transferred from
+     * @dev Emitted by the erc20 bank module when coins (`coinSent`) are transferred from SDK coin
+     * to an ERC20 `token` from `owner` to `recipient`.
+     * @param token the ERC20 token being transferred to
      * @param owner the address of the owner of the coins
      * @param recipient the address of the recipient of the tokens
-     * @param amount the amount of coins sent
+     * @param coinSent the amount of coins sent (in the sent SDK Coin denomination)
      */
     event TransferCoinToErc20(
-        string indexed denom,
+        address indexed token,
         address indexed owner,
         address indexed recipient,
-        Cosmos.Coin[] amount
+        Cosmos.Coin coinSent
     );
 
     /**
-     * @dev Emitted by the erc20 bank module when `amount` tokens are transferred from ERC20 (of address
-     * `token`) to an SDK coin from `owner` to `recipient`.
+     * @dev Emitted by the erc20 bank module when ERC20 `token` is transferred to an SDK coin
+     * (`coinReceived`) from `owner` to `recipient`.
      * @param token the ERC20 token being transferred from
      * @param owner the address of the owner of the tokens
      * @param recipient the address of the recipient of the coins
-     * @param amount the amount of coins received
+     * @param coinReceived the amount of coins received (in the received SDK Coin denomination)
      */
     event TransferErc20ToCoin(
         address indexed token,
         address indexed owner,
         address indexed recipient,
-        Cosmos.Coin[] amount
+        Cosmos.Coin coinReceived
     );
 
     /**
@@ -70,7 +70,7 @@ interface IERC20BankModule {
      * @param token the address of the newly deployed ERC20 token
      * @param denom the denomination of the SDK coin being transferred from
      */
-    event Erc20CreatedFromCoin(address indexed token, string indexed denom);
+    event Erc20CreatedFromCoin(address indexed token, string denom);
 
     /**
      * @dev Emitted by the erc20 bank module when an ERC20 token is first transferred to coin, and the
@@ -78,7 +78,7 @@ interface IERC20BankModule {
      * @param token the address of the ERC20 token being transferred from
      * @param denom the denomination of the newly created SDK coin
      */
-    event CoinCreatedFromErc20(address indexed token, string indexed denom);
+    event CoinCreatedFromErc20(address indexed token, string denom);
 
     /////////////////////////////////////// READ METHODS //////////////////////////////////////////
 

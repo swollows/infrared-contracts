@@ -26,23 +26,13 @@ import {Cosmos} from "@polaris/CosmosTypes.sol";
  * @dev Interface of the distribution module's precompiled contract
  */
 interface IDistributionModule {
-    ////////////////////////////////////////// EVENTS /////////////////////////////////////////////
     /**
-     * @dev Emitted by the distribution module when `amount` is withdrawn from a delegation with
-     * `validator` as rewards.
-     * @param validator The validator address to withdraw the rewards from.
-     * @param amount The amount of rewards withdrawn.
-     */
-    event WithdrawRewards(address indexed validator, Cosmos.Coin[] amount);
-
-    /**
-     * @dev Emitted by the distribution module when `withdrawAddress` is set to receive rewards
-     * upon withdrawal.
+     * @dev The caller (msg.sender) can set the address that will receive the deligation rewards.
      * @param withdrawAddress The address to set as the withdraw address.
      */
-    event SetWithdrawAddress(address indexed withdrawAddress);
-
-    /////////////////////////////////////// READ METHODS //////////////////////////////////////////
+    function setWithdrawAddress(address withdrawAddress)
+        external
+        returns (bool);
 
     /**
      * @dev Returns whether withdrawing delegation rewards is enabled.
@@ -59,13 +49,12 @@ interface IDistributionModule {
         returns (address);
 
     /**
-     * @dev Returns the rewards accumulated by the delegator for the validator.
-     * @param delegator The delegator to retrieve the rewards for.
-     * @param validator The validator (operator address) to retrieve the rewards for.
+     * @dev Withdraw the rewrads accumulated by the caller(msg.sender). Returns the rewards claimed.
+     * @param delegator The delegator to withdraw the rewards from.
+     * @param validator The validator to withdraw the rewards from.
      */
-    function getDelegatorValidatorReward(address delegator, address validator)
+    function withdrawDelegatorReward(address delegator, address validator)
         external
-        view
         returns (Cosmos.Coin[] memory);
 
     /**
@@ -86,30 +75,21 @@ interface IDistributionModule {
         view
         returns (Cosmos.Coin[] memory);
 
-    ////////////////////////////////////// WRITE METHODS //////////////////////////////////////////
+    /**
+     * @dev Emitted by the distribution module when `amount` is withdrawn from a delegation with
+     * `validator` as rewards.
+     * @param validator The validator address to withdraw the rewards from.
+     * @param amount The amount of rewards withdrawn.
+     */
+    event WithdrawRewards(address indexed validator, Cosmos.Coin[] amount);
 
     /**
-     * @dev The caller (msg.sender) can set the address that will receive the deligation rewards.
+     * @dev Emitted by the distribution module when `withdrawAddress` is set to receive rewards
+     * upon withdrawal.
      * @param withdrawAddress The address to set as the withdraw address.
      */
-    function setWithdrawAddress(address withdrawAddress)
-        external
-        returns (bool);
+    event SetWithdrawAddress(address indexed withdrawAddress);
 
-    /**
-     * @dev Withdraw the rewrads accumulated by the caller(msg.sender). Returns the rewards claimed.
-     * @param delegator The delegator to withdraw the rewards from.
-     * @param validator The validator (operator address) to withdraw the rewards from.
-     */
-    function withdrawDelegatorReward(address delegator, address validator)
-        external
-        returns (Cosmos.Coin[] memory);
-
-    //////////////////////////////////////////// UTILS ////////////////////////////////////////////
-
-    /**
-     * @dev Represents a delegator's rewards for one particular validator.
-     */
     struct ValidatorReward {
         address validator;
         Cosmos.Coin[] rewards;
