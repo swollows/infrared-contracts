@@ -3,12 +3,9 @@ pragma solidity 0.8.22;
 
 interface IInfraredVault {
     /**
-     * @notice Changes the withdraw address for the rewards module.
-     * @dev    This function can only be called by the admin.
-     * @dev    We only care about the rewards module since there is no BGT in this vault.
-     * @param _withdrawAddress  address  The address to set as the withdraw address.
+     * @notice Returns the withdraw address for the rewards and distribution modules.
      */
-    function changeWithdrawAddress(address _withdrawAddress) external;
+    function getWithdrawAddress() external view returns (address);
 
     /**
      * @notice Claims all the rewards for this vault.
@@ -18,11 +15,37 @@ interface IInfraredVault {
     function claimRewardsPrecompile() external returns (uint256 _amt);
 
     /**
-     * @notice Supply rewards to distributor to depositors
-     *     @param supplier The address where the incoming tokens are coming from
-     *     @param reward The asset being supplied
-     *     @param amount The amount of said asset
+     * @notice Add a reward to the vault and the period that it will be distributed over.
+     * @param _rewardsToken    address The address of the rewards token.
+     * @param _rewardsDuration address The duration of the rewards to be distributed over.
      */
-    function supply(address supplier, address reward, uint256 amount)
+    function addReward(address _rewardsToken, uint256 _rewardsDuration)
         external;
+
+    /**
+     * @notice Notify the vault that a reward has been added.
+     * @param _rewardToken address The address of the reward token.
+     * @param _reward      uint256 The amount of the reward.
+     */
+    function notifyRewardAmount(address _rewardToken, uint256 _reward)
+        external;
+
+    // Reward data for a particular reward token.
+    struct Reward {
+        address rewardsDistributor;
+        uint256 rewardsDuration;
+        uint256 periodFinish;
+        uint256 rewardRate;
+        uint256 lastUpdateTime;
+        uint256 rewardPerTokenStored;
+    }
+
+    /**
+     * @notice Gets the reward data for a given rewards token.
+     * @param _rewardsToken address The address of the rewards token.
+     * @return reward Reward The reward data.
+     */
+    function rewardData(address _rewardsToken)
+        external
+        returns (Reward memory reward);
 }

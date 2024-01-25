@@ -5,11 +5,13 @@ import {Cosmos} from "@polaris/CosmosTypes.sol";
 import {StdCheats, Test} from "forge-std/Test.sol";
 import "./MockERC20BankModule.sol";
 import {PureUtils} from "@utils/PureUtils.sol";
+import {MockERC20} from "./MockERC20.sol";
 
 contract MockRewardsPrecompile is Test {
     Cosmos.Coin[] private mockRewards;
     mapping(address => address) public withdrawAddresses;
     MockERC20BankModule bank;
+    bool withdrawAddressesShouldFail = false;
 
     constructor(address _bank) {
         bank = MockERC20BankModule(_bank);
@@ -29,23 +31,30 @@ contract MockRewardsPrecompile is Test {
 
     /**
      * @dev Simulate withdrawing all depositor rewards.
-     * @param depositor The depositor address.
+     * @param pool The consensus asset eligible for rewards.
      * @return Cosmos.Coin[] memory The mock rewards.
      */
-    function withdrawAllDepositorRewards(address depositor)
+    function withdrawAllDepositorRewards(address pool)
         external
         returns (Cosmos.Coin[] memory)
     {
+        address withdrawAddress = withdrawAddresses[msg.sender];
         // deal rewards to depositor
         for (uint256 i = 0; i < mockRewards.length; i++) {
             Cosmos.Coin memory reward = mockRewards[i];
             if (PureUtils.isStringSame(reward.denom, "abera")) {
-                StdCheats.deal(depositor, reward.amount);
-            } else {
                 StdCheats.deal(
-                    bank.erc20AddressForCoinDenom(reward.denom),
-                    depositor,
-                    reward.amount,
+                    withdrawAddress,
+                    address(withdrawAddress).balance + reward.amount
+                );
+            } else {
+                address erc20Address =
+                    bank.erc20AddressForCoinDenom(reward.denom);
+                StdCheats.deal(
+                    erc20Address,
+                    withdrawAddress,
+                    MockERC20(erc20Address).balanceOf(withdrawAddress)
+                        + reward.amount,
                     false
                 );
             }
@@ -61,6 +70,9 @@ contract MockRewardsPrecompile is Test {
         external
         returns (bool)
     {
+        if (withdrawAddressesShouldFail) {
+            return false;
+        }
         withdrawAddresses[msg.sender] = withdrawTO;
         emit LogSetWithdrawAddress(msg.sender, withdrawTO);
         return true;
@@ -76,5 +88,9 @@ contract MockRewardsPrecompile is Test {
         returns (address)
     {
         return withdrawAddresses[depositor];
+    }
+
+    function setShouldRevert(bool shouldRevert) external {
+        withdrawAddressesShouldFail = shouldRevert;
     }
 }

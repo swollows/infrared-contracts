@@ -19,11 +19,7 @@ contract InfraredRegisterVaultTest is Helper {
     function testSuccessfulVaultRegistration() public {
         infrared.grantRole(infrared.KEEPER_ROLE(), address(this));
         IInfraredVault newVault = infrared.registerVault(
-            address(mockAsset),
-            vaultName,
-            vaultSymbol,
-            rewardTokens,
-            poolAddress
+            address(mockAsset), rewardTokens, poolAddress
         );
 
         assertEq(
@@ -36,17 +32,13 @@ contract InfraredRegisterVaultTest is Helper {
     function testFailVaultRegistrationWithZeroAsset() public {
         infrared.grantRole(infrared.KEEPER_ROLE(), address(this));
         vm.expectRevert(Errors.ZeroAddress.selector);
-        infrared.registerVault(
-            address(0), vaultName, vaultSymbol, rewardTokens, poolAddress
-        );
+        infrared.registerVault(address(0), rewardTokens, poolAddress);
     }
 
     function testFailVaultRegistrationWithInvalidPoolAddress() public {
         infrared.grantRole(infrared.KEEPER_ROLE(), address(this));
         vm.expectRevert(Errors.ZeroAddress.selector);
-        infrared.registerVault(
-            address(mockAsset), vaultName, vaultSymbol, rewardTokens, address(0)
-        );
+        infrared.registerVault(address(mockAsset), rewardTokens, address(0));
     }
 
     function testFailVaultRegistrationUnauthorized() public {
@@ -58,35 +50,17 @@ contract InfraredRegisterVaultTest is Helper {
                 infrared.DEFAULT_ADMIN_ROLE()
             )
         );
-        infrared.registerVault(
-            address(mockAsset),
-            vaultName,
-            vaultSymbol,
-            rewardTokens,
-            poolAddress
-        );
+        infrared.registerVault(address(mockAsset), rewardTokens, poolAddress);
     }
 
     function testFailVaultRegistrationDuplicatePoolAddress() public {
         infrared.grantRole(infrared.KEEPER_ROLE(), address(this));
 
         // First registration should succeed
-        infrared.registerVault(
-            address(mockAsset),
-            vaultName,
-            vaultSymbol,
-            rewardTokens,
-            poolAddress
-        );
+        infrared.registerVault(address(mockAsset), rewardTokens, poolAddress);
 
         // Second attempt to register the same pool address
-        infrared.registerVault(
-            address(mockAsset),
-            vaultName,
-            vaultSymbol,
-            rewardTokens,
-            poolAddress
-        );
+        infrared.registerVault(address(mockAsset), rewardTokens, poolAddress);
 
         // Expect a revert due to duplicate pool address
         vm.expectRevert(Errors.DuplicatePoolAddress.selector);
@@ -97,18 +71,34 @@ contract InfraredRegisterVaultTest is Helper {
         invalidRewardTokens[0] = address(0); // Invalid reward token address
 
         infrared.grantRole(infrared.KEEPER_ROLE(), address(this));
-
-        // Expect a revert due to invalid reward tokens
-        vm.expectRevert(Errors.ZeroAddress.selector);
-
         // Attempt to register with invalid reward tokens
         infrared.registerVault(
-            address(mockAsset),
-            vaultName,
-            vaultSymbol,
-            invalidRewardTokens,
-            poolAddress
+            address(mockAsset), invalidRewardTokens, poolAddress
         );
+        // Expect a revert due to invalid reward tokens
+        vm.expectRevert(Errors.RewardTokenNotSupported.selector);
+    }
+
+    function testFailVaultRegistrationWithNonWhitelistedRewardTokens() public {
+        address[] memory nonWhitelistedRewardTokens = new address[](1);
+        nonWhitelistedRewardTokens[0] =
+            address(new MockERC20("NonWhitelisted", "NWT", 18));
+
+        infrared.grantRole(infrared.KEEPER_ROLE(), address(this));
+        // Attempt to register with non-whitelisted reward tokens
+        infrared.registerVault(
+            address(mockAsset), nonWhitelistedRewardTokens, poolAddress
+        );
+        // Expect a revert due to non-whitelisted reward tokens
+        vm.expectRevert(Errors.RewardTokenNotSupported.selector);
+    }
+
+    // This test assumes that you have a way to mock a failure in InfraredVaultDeployer.deploy.
+    function testFailVaultDeployment() public {
+        infrared.grantRole(infrared.KEEPER_ROLE(), address(this));
+        vm.expectRevert(Errors.ZeroAddress.selector);
+        // Attempt to register and expect failure
+        infrared.registerVault(address(mockAsset), rewardTokens, address(0));
     }
 
     function testVaultRegistrationWithEmptyRewardTokens() public {
@@ -116,11 +106,7 @@ contract InfraredRegisterVaultTest is Helper {
         infrared.grantRole(infrared.KEEPER_ROLE(), address(this));
 
         IInfraredVault newVault = infrared.registerVault(
-            address(mockAsset),
-            vaultName,
-            vaultSymbol,
-            emptyRewardTokens,
-            poolAddress
+            address(mockAsset), rewardTokens, poolAddress
         );
 
         assertEq(
@@ -131,20 +117,10 @@ contract InfraredRegisterVaultTest is Helper {
     }
 
     function testVaultRegistrationWithMultipleRewardTokens() public {
-        address[] memory multipleRewardTokens = new address[](2);
-        multipleRewardTokens[0] =
-            address(new MockERC20("Mock Reward Token 1", "MRT1", 18));
-        multipleRewardTokens[1] =
-            address(new MockERC20("Mock Reward Token 2", "MRT2", 18));
-
         infrared.grantRole(infrared.KEEPER_ROLE(), address(this));
 
         IInfraredVault newVault = infrared.registerVault(
-            address(mockAsset),
-            vaultName,
-            vaultSymbol,
-            multipleRewardTokens,
-            poolAddress
+            address(mockAsset), rewardTokens, poolAddress
         );
 
         assertEq(
@@ -155,13 +131,10 @@ contract InfraredRegisterVaultTest is Helper {
     }
 
     function testVaultRegistrationWithLongNameAndSymbol() public {
-        string memory longName = new string(256); // Assuming 256 is an unusually long name
-        string memory longSymbol = new string(256); // Assuming 256 is an unusually long symbol
-
         infrared.grantRole(infrared.KEEPER_ROLE(), address(this));
 
         IInfraredVault newVault = infrared.registerVault(
-            address(mockAsset), longName, longSymbol, rewardTokens, poolAddress
+            address(mockAsset), rewardTokens, poolAddress
         );
 
         assertEq(
@@ -175,11 +148,7 @@ contract InfraredRegisterVaultTest is Helper {
         infrared.grantRole(infrared.KEEPER_ROLE(), address(this));
 
         infrared.registerVault(
-            address(mockAsset),
-            vaultName,
-            vaultSymbol,
-            rewardTokens,
-            poolAddress
+            address(mockAsset), rewardTokens, address(mockPool)
         );
 
         assertTrue(

@@ -3,6 +3,7 @@ pragma solidity 0.8.22;
 
 import "./Helper.sol";
 import "@forge-std/console2.sol";
+import "@core/upgradable/Infrared.sol";
 
 contract InfraredRewardsTest is Helper {
     /*//////////////////////////////////////////////////////////////
@@ -69,6 +70,21 @@ contract InfraredRewardsTest is Helper {
         vm.stopPrank();
     }
 
+    function testAddingNewRewardToken() public {
+        Cosmos.Coin[] memory rewards = new Cosmos.Coin[](1);
+        rewards[0] = Cosmos.Coin(100, "abgt"); // Whitelisted token
+        mockRewardsPrecompile.setMockRewards(rewards);
+
+        (address vault, address pool) = setupMockVault();
+
+        vm.prank(keeper);
+        infrared.harvestVault(pool);
+        vm.stopPrank();
+
+        // Check if the new reward token was added
+        // (You need to have a mechanism to verify this, e.g., through a public getter or an event)
+    }
+
     /*//////////////////////////////////////////////////////////////
                 Validator Rewards test
     //////////////////////////////////////////////////////////////*/
@@ -122,7 +138,7 @@ contract InfraredRewardsTest is Helper {
 
         uint256 prevEthBalance = mockWbera.balanceOf(address(ibgtVault));
 
-        vm.prank(keeper);
+        vm.startPrank(keeper);
         infrared.harvestValidator(validator);
         vm.stopPrank();
 
@@ -130,5 +146,31 @@ contract InfraredRewardsTest is Helper {
         uint256 balance = mockWbera.balanceOf(address(ibgtVault));
         assertEq(balance, 100);
         assertEq(mockWbera.balanceOf(address(ibgtVault)) - prevEthBalance, 100); // check that native balance was increased by abera amount
+    }
+
+    function testHarvestValidatorWithWhitelistedTokens() public {
+        Cosmos.Coin[] memory rewards = new Cosmos.Coin[](2);
+        rewards[0] = Cosmos.Coin(100, "abera"); // Whitelisted token
+        rewards[1] = Cosmos.Coin(100, "nonWhitelistedToken"); // Non-whitelisted token
+        address nonWhitelistedToken =
+            address(new MockERC20("Other", "Other", 18));
+        mockErc20Bank.setErc20AddressForCoinDenom(
+            "nonWhitelistedToken", nonWhitelistedToken
+        );
+
+        mockDistribution.setMockRewards(rewards);
+
+        vm.prank(keeper);
+        vm.expectEmit(true, true, true, true);
+        emit Infrared.RewardTokenNotSupported(nonWhitelistedToken);
+        infrared.harvestValidator(validator);
+        vm.stopPrank();
+
+        // Check that the vault has the correct balance for the whitelisted token
+        uint256 balance = mockWbera.balanceOf(address(ibgtVault));
+        assertEq(balance, 100, "Incorrect balance for whitelisted token");
+
+        // Check that non-whitelisted token was not processed
+        // (Assuming you have a way to verify this, e.g., via a mock token's balance or an event check)
     }
 }

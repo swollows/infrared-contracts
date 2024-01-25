@@ -11,10 +11,35 @@ contract InfraredInitializationTest is Helper {
     //////////////////////////////////////////////////////////////*/
     function testInitializationParameters() public {
         assertEq(
-            address(infrared.UPGRADABLE_REWARDS_HANDLER()),
-            address(rewardsHandlerProxy),
-            "Incorrect Rewards Handler address"
+            address(infrared.ibgt()), address(ibgt), "Incorrect IBGT address"
         );
+
+        assertEq(
+            address(infrared.stakingPrecompile()),
+            address(mockStaking),
+            "Incorrect Staking Module address"
+        );
+        assertEq(
+            address(infrared.distributionPrecompile()),
+            address(mockDistribution),
+            "Incorrect Distribution Precompile address"
+        );
+        assertEq(
+            address(infrared.erc20BankPrecompile()),
+            address(mockErc20Bank),
+            "Incorrect ERC20 Bank Module address"
+        );
+        assertEq(
+            address(infrared.wbera()),
+            address(mockWbera),
+            "Incorrect Wbera address"
+        );
+        assertEq(
+            address(infrared.rewardsPrecompile()),
+            address(mockRewardsPrecompile),
+            "Incorrect Rewards Precompile address"
+        );
+
         assertTrue(
             infrared.hasRole(infrared.DEFAULT_ADMIN_ROLE(), admin),
             "Incorrect Admin address"
@@ -52,13 +77,7 @@ contract InfraredInitializationTest is Helper {
                 infrared.DEFAULT_ADMIN_ROLE()
             )
         );
-        infrared.registerVault(
-            address(mockAsset),
-            vaultName,
-            vaultSymbol,
-            rewardTokens,
-            poolAddress
-        );
+        infrared.registerVault(address(mockAsset), rewardTokens, poolAddress);
 
         vm.prank(unauthorizedUser);
         vm.expectRevert(

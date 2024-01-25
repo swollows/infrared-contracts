@@ -5,6 +5,7 @@ library Errors {
     // General errors.
     error ZeroAddress();
     error ZeroAmount();
+    error OverFlow();
 
     // ValidatorSet errors.
     error ValidatorAlreadyExists();
@@ -17,9 +18,11 @@ library Errors {
     error FailedToConvertCoin(string denom, uint256 amount);
     error WrongDataResponse();
     error DelegateCallFailed();
+    error SetWithdrawAddressFailed();
 
     // InfraredVault errors.
     error WithdrawAddressNotSet();
+    error MaxNumberOfRewards();
 
     // InfraredValidators errors.
     error InvalidValidator();
@@ -29,4 +32,6 @@ library Errors {
     error ClaimDistrRewardsFailed();
     error DuplicatePoolAddress();
     error VaultDeploymentFailed();
+    error RewardTokenNotSupported();
+    error BGTBalanceMismatch();
 }

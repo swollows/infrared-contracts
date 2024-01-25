@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.22;
 
-import {ERC20PresetMinterPauser} from
-    "../../vendors/ERC20PresetMinterPauser.sol";
+import {ERC20PresetMinterPauser} from "../vendors/ERC20PresetMinterPauser.sol";
 
 /**
  * @title IBGT

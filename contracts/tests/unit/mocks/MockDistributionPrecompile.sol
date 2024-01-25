@@ -5,6 +5,7 @@ import {Cosmos} from "@polaris/CosmosTypes.sol";
 import "./MockERC20BankModule.sol";
 import {StdCheats, Test} from "forge-std/Test.sol";
 import {PureUtils} from "@utils/PureUtils.sol";
+import {MockERC20} from "./MockERC20.sol";
 
 contract MockDistributionPrecompile is Test {
     Cosmos.Coin[] private mockRewards;
@@ -46,12 +47,17 @@ contract MockDistributionPrecompile is Test {
             Cosmos.Coin memory reward = mockRewards[i];
 
             if (PureUtils.isStringSame(reward.denom, "abera")) {
-                StdCheats.deal(msg.sender, reward.amount);
-            } else {
                 StdCheats.deal(
-                    bank.erc20AddressForCoinDenom(reward.denom),
+                    msg.sender, address(msg.sender).balance + reward.amount
+                );
+            } else {
+                address erc20Address =
+                    bank.erc20AddressForCoinDenom(reward.denom);
+                StdCheats.deal(
+                    erc20Address,
                     msg.sender,
-                    reward.amount,
+                    MockERC20(erc20Address).balanceOf(msg.sender)
+                        + reward.amount,
                     false
                 );
             }

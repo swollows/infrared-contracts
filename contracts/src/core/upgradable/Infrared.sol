@@ -2,20 +2,29 @@
 pragma solidity 0.8.22;
 
 // External dependencies.
-import {AccessControl} from "@openzeppelin/access/AccessControl.sol";
+import {AccessControlUpgradeable} from
+    "@openzeppelin-upgradeable/access/AccessControlUpgradeable.sol";
 import {SafeERC20} from "@openzeppelin/token/ERC20/utils/SafeERC20.sol";
 import {EnumerableSet} from "@openzeppelin/utils/structs/EnumerableSet.sol";
+import {ERC20} from "@solmate/tokens/ERC20.sol";
+import {
+    UUPSUpgradeable,
+    ERC1967Utils
+} from "@openzeppelin-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import {OwnableUpgradeable} from
+    "@openzeppelin-upgradeable/access/OwnableUpgradeable.sol";
+
+import {IBankModule} from "@polaris/IBankModule.sol";
 
 // Internal dependencies.
 import {ValidatorSet} from "@utils/ValidatorSet.sol";
 import {InfraredVaultDeployer} from "@utils/InfraredVaultDeployer.sol";
+import {ValidatorRewards} from "@utils/ValidatorRewards.sol";
+import {ValidatorManagment} from "@utils/ValidatorManagment.sol";
 import {Errors} from "@utils/Errors.sol";
 import {DataTypes} from "@utils/DataTypes.sol";
-import {InfraredValidators} from "./InfraredValidators.sol";
 import {IERC20Mintable} from "@interfaces/IERC20Mintable.sol";
 import {IInfraredVault} from "@interfaces/IInfraredVault.sol";
-import {IUpgradableRewardsHandler} from
-    "@interfaces/IUpgradableRewardsHandler.sol";
 
 /**
  * @title Infrared
@@ -23,7 +32,11 @@ import {IUpgradableRewardsHandler} from
  * @dev This contract is the main entry point for interacting with the Infrared protocol.
  * @dev It is an immutable contract that interacts with the upgradable rewards handler and staking handler. These contracts are upgradable by governance (app + chain), main reason is that they could change with a chain upgrade.
  */
-contract Infrared is InfraredValidators, AccessControl {
+contract Infrared is
+    UUPSUpgradeable,
+    OwnableUpgradeable,
+    AccessControlUpgradeable
+{
     using ValidatorSet for EnumerableSet.AddressSet;
     using SafeERC20 for IERC20Mintable;
 
@@ -35,68 +48,148 @@ contract Infrared is InfraredValidators, AccessControl {
     bytes32 public constant KEEPER_ROLE = keccak256("KEEPER_ROLE");
     bytes32 public constant GOVERNANCE_ROLE = keccak256("GOVERNANCE_ROLE");
 
-    // Upgradable contract used to interact with the Berachain precompiled contracts.
-    // These are upgradable by governance (app + chain), main reason is that they could change with a chain upgrade.
-    IUpgradableRewardsHandler public immutable UPGRADABLE_REWARDS_HANDLER;
+    // mapping of whitelisted reward tokens
+    mapping(address => bool) public whitelistedRewardTokens;
 
     // Mapping of pool address to `IInfraredVault`.
     mapping(address _poolAddress => IInfraredVault _vault) public vaultRegistry;
 
+    // The set of infrared validators.
+    EnumerableSet.AddressSet internal _infraredValidators;
+
     // The IBGT Liquid staked token.
     IERC20Mintable public ibgt;
+
+    // GOVERNANCE token
+    IERC20Mintable public ired;
 
     // The IBGT vault.
     IInfraredVault public ibgtVault;
 
-    event NewVault(address indexed _pool, address indexed _vault);
+    // precompile addresses
+    address public erc20BankPrecompile;
+    address public distributionPrecompile;
+    address public wbera;
+    address public stakingPrecompile;
+    address public rewardsPrecompile;
+    IBankModule public bankModulePrecompile;
 
+    // The rewards duration.
+    uint256 public rewardsDuration = 7 days;
+
+    event NewVault(
+        address _sender,
+        address indexed _pool,
+        address indexed _vault,
+        address _asset,
+        address[] _rewardTokens
+    );
     event IBGTSupplied(address indexed _vault, uint256 _amt);
-
     event RewardSupplied(
         address indexed _vault, address indexed _token, uint256 _amt
     );
+    event Recovered(address _sender, address indexed _token, uint256 _amount);
+    event RewardTokenNotSupported(address _token);
+    event IBGTUpdated(address _sender, address _oldIbgt, address _newIbgt);
+    event IBGTVaultUpdated(
+        address _sender, address _oldIbgtVault, address _newIbgtVault
+    );
+    event VaultWithdrawAddressUpdated(
+        address _sender, address indexed _redVault, address _newWithdrawAddress
+    );
+    event WhiteListedRewardTokensUpdated(
+        address _sender,
+        address indexed _token,
+        bool _wasWhitelisted,
+        bool _isWhitelisted
+    );
+    event RewardsDurationUpdated(
+        address _sender, uint256 _oldDuration, uint256 _newDuration
+    );
+    event VaultHarvested(
+        address _sender,
+        address indexed _pool,
+        address indexed _vault,
+        uint256 _bgtAmt
+    );
+    event ValidatorHarvested(
+        address _sender, address indexed _validator, uint256 _bgtAmt
+    );
+    event ValidatorsAdded(address _sender, address[] _validators);
+    event ValidatorsRemoved(address _sender, address[] _validators);
+    event ValidatorReplaced(address _sender, address _current, address _new);
+    event Delegated(address _sender, address _validator, uint256 _amt);
+    event Undelegated(address _sender, address _validator, uint256 _amt);
+    event RedelegateStarted(
+        address _sender, address _from, address _to, uint256 _amt
+    );
+    event UnbondingDelegationCancelled(
+        address _sender,
+        address indexed _validator,
+        uint256 _amt,
+        int64 _creationHeight
+    );
 
     /*//////////////////////////////////////////////////////////////
-                    CONSTRUCTOR/INITIALIZATION LOGIC
+                INITIALIZATION LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    /**
-     * @notice Constructor for the Infrared contract.
-     * @param _upgradableRewardsHandler address The address of the upgradable rewards handler.
-     * @param _upgradableStakingHandler address The address of the upgradable staking handler.
-     * @param _admin                    address The address of the admin.
-     * @param _ibgt                     address The address of the IBGT token.
-     */
-    constructor(
-        address _upgradableRewardsHandler,
-        address _upgradableStakingHandler,
+    function initialize(
         address _admin,
-        address _ibgt
-    ) InfraredValidators(_upgradableStakingHandler) {
-        if (_upgradableRewardsHandler == address(0)) {
+        address _ibgt,
+        address _erc20BankPrecompile,
+        address _distributionPrecompile,
+        address _wbera,
+        address _stakingPrecompile,
+        address _rewardsPrecompile,
+        address _ired,
+        uint256 _rewardsDuration,
+        address _bankModulePrecompile
+    ) external initializer {
+        if (_admin == address(0) || _ibgt == address(0)) {
+            revert Errors.ZeroAddress();
+        }
+        if (
+            _erc20BankPrecompile == address(0)
+                || _distributionPrecompile == address(0) || _wbera == address(0)
+                || _stakingPrecompile == address(0)
+                || _rewardsPrecompile == address(0)
+        ) {
             revert Errors.ZeroAddress();
         }
 
-        if (_upgradableStakingHandler == address(0)) {
-            revert Errors.ZeroAddress();
-        }
-
-        if (_admin == address(0)) {
-            revert Errors.ZeroAddress();
-        }
-
-        if (_ibgt == address(0)) {
-            revert Errors.ZeroAddress();
-        }
-
-        UPGRADABLE_REWARDS_HANDLER =
-            IUpgradableRewardsHandler(_upgradableRewardsHandler);
-
-        _grantRole(DEFAULT_ADMIN_ROLE, _admin);
-
-        _grantRole(KEEPER_ROLE, _admin);
+        erc20BankPrecompile = _erc20BankPrecompile;
+        distributionPrecompile = _distributionPrecompile;
+        wbera = _wbera;
+        stakingPrecompile = _stakingPrecompile;
+        rewardsPrecompile = _rewardsPrecompile;
 
         ibgt = IERC20Mintable(_ibgt);
+        ired = IERC20Mintable(_ired);
+
+        rewardsDuration = _rewardsDuration;
+        bankModulePrecompile = IBankModule(_bankModulePrecompile);
+
+        __Ownable_init(_admin);
+        __UUPSUpgradeable_init();
+        __AccessControl_init();
+
+        _grantRole(DEFAULT_ADMIN_ROLE, _admin);
+        _grantRole(KEEPER_ROLE, _admin);
+        _grantRole(GOVERNANCE_ROLE, _admin);
+    }
+
+    function _authorizeUpgrade(address newImplementation)
+        internal
+        override
+        onlyRole(GOVERNANCE_ROLE)
+    {
+        // allow only owner to upgrade the implementation
+        // will be called by upgradeToAndCall
+    }
+
+    function currentImplementation() external view returns (address) {
+        return ERC1967Utils.getImplementation();
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -106,37 +199,36 @@ contract Infrared is InfraredValidators, AccessControl {
     /**
      * @notice Registers a new vault.
      * @param _asset            address          The address of the asset, e.g. Honey:Bera LP token.
-     * @param _name             string    memory The name of the vault.
-     * @param _symbol           string    memory The symbol of the vault.
-     * @param _rewardTokens     address[] memory The reward tokens for the vault.
      * @param _poolAddress      address          The address of the pool.
      * @return _new             IInfraredVault   The address of the new `InfraredVault` contract.
      */
     function registerVault(
         address _asset,
-        string memory _name,
-        string memory _symbol,
-        address[] memory _rewardTokens, // @red - dont we enfroce in claimRewardsPrecompile that rewards can only be abgt?
+        address[] memory _rewardTokens,
         address _poolAddress
     ) public onlyRole(KEEPER_ROLE) returns (IInfraredVault) {
         // Check for duplicate pool address
         if (vaultRegistry[_poolAddress] != IInfraredVault(address(0))) {
             revert Errors.DuplicatePoolAddress();
         }
-
+        // Check for invalid reward tokens
+        for (uint256 i = 0; i < _rewardTokens.length; i++) {
+            if (!whitelistedRewardTokens[_rewardTokens[i]]) {
+                revert Errors.RewardTokenNotSupported();
+            }
+        }
         address _new;
         try InfraredVaultDeployer.deploy(
+            owner(), // admin
             _asset,
-            _name,
-            _symbol,
-            _rewardTokens,
             address(this),
             _poolAddress,
-            address(UPGRADABLE_REWARDS_HANDLER),
-            address(this)
+            rewardsPrecompile,
+            distributionPrecompile,
+            _rewardTokens,
+            rewardsDuration
         ) returns (address deployedAddress) {
             _new = deployedAddress;
-            IInfraredVault(deployedAddress).changeWithdrawAddress(address(this));
         } catch {
             revert Errors.VaultDeploymentFailed();
         }
@@ -147,7 +239,7 @@ contract Infrared is InfraredValidators, AccessControl {
 
         vaultRegistry[_poolAddress] = IInfraredVault(_new);
 
-        emit NewVault(_poolAddress, _new);
+        emit NewVault(msg.sender, _poolAddress, _new, _asset, _rewardTokens);
 
         return IInfraredVault(_new);
     }
@@ -160,6 +252,8 @@ contract Infrared is InfraredValidators, AccessControl {
         if (_newIbgt == address(0)) {
             revert Errors.ZeroAddress();
         }
+
+        emit IBGTUpdated(msg.sender, address(ibgt), _newIbgt);
 
         ibgt = IERC20Mintable(_newIbgt);
     }
@@ -176,18 +270,67 @@ contract Infrared is InfraredValidators, AccessControl {
             revert Errors.ZeroAddress();
         }
 
+        emit IBGTVaultUpdated(msg.sender, address(ibgtVault), _newIbgtVault);
+
         ibgtVault = IInfraredVault(_newIbgtVault);
     }
 
-    function updateInfraredVaultWithdrawAddress(
-        address _redVault,
-        address _newWithdrawAddress
-    ) external onlyRole(GOVERNANCE_ROLE) {
-        if (_newWithdrawAddress == address(0) || _redVault == address(0)) {
+    /**
+     * @notice whitelists a reward token
+     * @param _token address The address of the token to whitelist.
+     * @param _whitelisted bool Whether the token is whitelisted or not.
+     */
+    function updateWhiteListedRewardTokens(address _token, bool _whitelisted)
+        external
+        onlyRole(GOVERNANCE_ROLE)
+    {
+        emit WhiteListedRewardTokensUpdated(
+            msg.sender, _token, whitelistedRewardTokens[_token], _whitelisted
+        );
+        whitelistedRewardTokens[_token] = _whitelisted;
+    }
+
+    /**
+     * @notice Updates the period that rewards will be distributed over in InfraredVaults.
+     * @param _rewardsDuration uint256 The new rewards duration.
+     */
+    function updateRewardsDuration(uint256 _rewardsDuration)
+        external
+        onlyRole(GOVERNANCE_ROLE)
+    {
+        if (_rewardsDuration == 0) {
+            revert Errors.ZeroAmount();
+        }
+        emit RewardsDurationUpdated(
+            msg.sender, rewardsDuration, _rewardsDuration
+        );
+        rewardsDuration = _rewardsDuration;
+    }
+
+    /**
+     * @notice Recover ERC20 tokens that were accidentally sent to the contract or where not whitelisted.
+     * @param _to     address The address to send the tokens to.
+     * @param _token  address The address of the token to recover.
+     * @param _amount uint256 The amount of the token to recover.
+     */
+    function recoverERC20(address _to, address _token, uint256 _amount)
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        if (_to == address(0)) {
             revert Errors.ZeroAddress();
         }
 
-        IInfraredVault(_redVault).changeWithdrawAddress(address(this));
+        if (_token == address(0)) {
+            revert Errors.ZeroAddress();
+        }
+
+        if (_amount == 0) {
+            revert Errors.ZeroAmount();
+        }
+
+        IERC20Mintable(_token).safeTransfer(_to, _amount);
+        emit Recovered(msg.sender, _token, _amount);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -208,11 +351,19 @@ contract Infrared is InfraredValidators, AccessControl {
             revert Errors.VaultNotSupported();
         }
 
+        uint256 balanceBefore = getBGTBalance();
+
         uint256 bgtAmt = vault.claimRewardsPrecompile();
+
+        if (getBGTBalance() - balanceBefore != bgtAmt) {
+            revert Errors.BGTBalanceMismatch();
+        }
 
         DataTypes.Token[] memory empty;
 
         _handleRewards(vault, empty, bgtAmt);
+
+        emit VaultHarvested(msg.sender, _pool, address(vault), bgtAmt);
     }
 
     /**
@@ -231,10 +382,18 @@ contract Infrared is InfraredValidators, AccessControl {
             revert Errors.InvalidValidator();
         }
 
+        uint256 balanceBefore = getBGTBalance();
+
         (DataTypes.Token[] memory tokens, uint256 bgtAmt) =
             _claimDistr(_validator);
 
+        if (getBGTBalance() - balanceBefore != bgtAmt) {
+            revert Errors.BGTBalanceMismatch();
+        }
+
         _handleRewards(ibgtVault, tokens, bgtAmt);
+
+        emit ValidatorHarvested(msg.sender, _validator, bgtAmt);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -256,6 +415,8 @@ contract Infrared is InfraredValidators, AccessControl {
 
             _infraredValidators.add(_validators[i]);
         }
+
+        emit ValidatorsAdded(msg.sender, _validators);
     }
 
     /**
@@ -271,8 +432,14 @@ contract Infrared is InfraredValidators, AccessControl {
                 revert Errors.ZeroAddress();
             }
 
+            if (!isInfraredValidator(_validators[i])) {
+                revert Errors.InvalidValidator();
+            }
+
             _infraredValidators.remove(_validators[i]);
         }
+
+        emit ValidatorsRemoved(msg.sender, _validators);
     }
 
     /**
@@ -292,7 +459,13 @@ contract Infrared is InfraredValidators, AccessControl {
             revert Errors.ZeroAddress();
         }
 
+        if (!isInfraredValidator(_current)) {
+            revert Errors.InvalidValidator();
+        }
+
         _infraredValidators.replace(_current, _new);
+
+        emit ValidatorReplaced(msg.sender, _current, _new);
     }
 
     /**
@@ -312,10 +485,17 @@ contract Infrared is InfraredValidators, AccessControl {
             revert Errors.ZeroAmount();
         }
 
-        bool success = _delegate(_validator, _amt);
+        if (!isInfraredValidator(_validator)) {
+            revert Errors.InvalidValidator();
+        }
+
+        bool success =
+            ValidatorManagment._delegate(_validator, _amt, stakingPrecompile);
         if (!success) {
             revert Errors.DelegateCallFailed();
         }
+
+        emit Delegated(msg.sender, _validator, _amt);
     }
 
     /**
@@ -334,11 +514,17 @@ contract Infrared is InfraredValidators, AccessControl {
         if (_amt == 0) {
             revert Errors.ZeroAmount();
         }
+        if (!isInfraredValidator(_validator)) {
+            revert Errors.InvalidValidator();
+        }
 
-        bool success = _undelegate(_validator, _amt);
+        bool success =
+            ValidatorManagment._undelegate(_validator, _amt, stakingPrecompile);
         if (!success) {
             revert Errors.DelegateCallFailed();
         }
+
+        emit Undelegated(msg.sender, _validator, _amt);
     }
 
     /**
@@ -363,10 +549,18 @@ contract Infrared is InfraredValidators, AccessControl {
             revert Errors.ZeroAmount();
         }
 
-        bool success = _beginRedelegate(_from, _to, _amt);
+        if (!isInfraredValidator(_from) || !isInfraredValidator(_to)) {
+            revert Errors.InvalidValidator();
+        }
+
+        bool success = ValidatorManagment._beginRedelegate(
+            _from, _to, _amt, stakingPrecompile
+        );
         if (!success) {
             revert Errors.DelegateCallFailed();
         }
+
+        emit RedelegateStarted(msg.sender, _from, _to, _amt);
     }
 
     /**
@@ -388,11 +582,20 @@ contract Infrared is InfraredValidators, AccessControl {
             revert Errors.ZeroAmount();
         }
 
-        bool success =
-            _cancelUnbondingDelegation(_validator, _amt, _creationHeight);
+        if (!isInfraredValidator(_validator)) {
+            revert Errors.InvalidValidator();
+        }
+
+        bool success = ValidatorManagment._cancelUnbondingDelegation(
+            _validator, _amt, _creationHeight, stakingPrecompile
+        );
         if (!success) {
             revert Errors.DelegateCallFailed();
         }
+
+        emit UnbondingDelegationCancelled(
+            msg.sender, _validator, _amt, _creationHeight
+        );
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -411,11 +614,20 @@ contract Infrared is InfraredValidators, AccessControl {
         uint256 _bgtAmt
     ) internal {
         for (uint256 i = 0; i < _tokens.length; i++) {
+            if (!whitelistedRewardTokens[_tokens[i].tokenAddress]) {
+                emit RewardTokenNotSupported(_tokens[i].tokenAddress);
+                continue; // skip non-whitelisted tokens
+            }
             IERC20Mintable(_tokens[i].tokenAddress).safeIncreaseAllowance(
                 address(_vault), _tokens[i].amount
             );
-            _vault.supply(
-                address(this), _tokens[i].tokenAddress, _tokens[i].amount
+            // add reward if not already added
+            if (_vault.rewardData(_tokens[i].tokenAddress).rewardsDuration == 0)
+            {
+                _vault.addReward(_tokens[i].tokenAddress, rewardsDuration);
+            }
+            _vault.notifyRewardAmount(
+                _tokens[i].tokenAddress, _tokens[i].amount
             );
 
             emit RewardSupplied(
@@ -424,9 +636,12 @@ contract Infrared is InfraredValidators, AccessControl {
         }
 
         if (_bgtAmt > 0) {
+            if (_vault.rewardData(address(ibgt)).rewardsDuration == 0) {
+                _vault.addReward(address(ibgt), rewardsDuration);
+            }
             ibgt.mint(address(this), _bgtAmt);
             ibgt.safeIncreaseAllowance(address(_vault), _bgtAmt);
-            _vault.supply(address(this), address(ibgt), _bgtAmt);
+            _vault.notifyRewardAmount(address(ibgt), _bgtAmt);
 
             emit IBGTSupplied(address(_vault), _bgtAmt);
         }
@@ -442,19 +657,42 @@ contract Infrared is InfraredValidators, AccessControl {
         internal
         returns (DataTypes.Token[] memory _tokens, uint256 _bgtAmt)
     {
-        (bool success, bytes memory data) = address(UPGRADABLE_REWARDS_HANDLER)
-            .delegatecall(
-            abi.encodeWithSelector(
-                UPGRADABLE_REWARDS_HANDLER.claimDistrPrecompile.selector,
-                _validator,
-                address(UPGRADABLE_REWARDS_HANDLER)
+        // abstract call to rewards precompile to library
+        (_tokens, _bgtAmt) = ValidatorRewards.claimDistrPrecompile(
+            _validator,
+            ValidatorRewards.PrecompileAddresses(
+                erc20BankPrecompile, distributionPrecompile, wbera
             )
         );
+    }
 
-        if (!success) {
-            revert Errors.DelegateCallFailed();
-        }
+    /**
+     * @notice Gets the set of infrared validators.
+     * @return _validators address[] memory The set of infrared validators.
+     */
+    function infraredValidators()
+        public
+        view
+        virtual
+        returns (address[] memory _validators)
+    {
+        return _infraredValidators.validators();
+    }
 
-        return abi.decode(data, (DataTypes.Token[], uint256));
+    /**
+     * @notice Checks if a validator is an infrared validator.
+     * @param _validator    address  The validator to check.
+     * @return _isValidator bool     Whether the validator is an infrared validator.
+     */
+    function isInfraredValidator(address _validator)
+        public
+        view
+        returns (bool)
+    {
+        return _infraredValidators.isValidator(_validator);
+    }
+
+    function getBGTBalance() internal view returns (uint256) {
+        return bankModulePrecompile.getBalance(address(this), "abgt");
     }
 }

@@ -56,14 +56,14 @@ contract TestUpdateBGT is Helper {
     function testUpdateIbgtVault() public {
         // Set up a new mock IBGT vault address
         InfraredVault newIbgtVault = new InfraredVault(
-            address(infrared.ibgt()),
-            "IBGT Vault",
-            "IBGT",
-            rewardTokens,
+            admin,
+            address(ibgt),
             address(infrared),
             address(mockPool),
-            address(rewardsHandlerProxy),
-            admin
+            address(mockRewardsPrecompile),
+            address(mockDistribution),
+            rewardTokens,
+            1 days
         );
 
         // Grant GOVERNANCE_ROLE to this contract
@@ -94,14 +94,14 @@ contract TestUpdateBGT is Helper {
     function testFailUpdateIbgtVaultUnauthorized() public {
         // Attempt to update the IBGT vault as an unauthorized user
         InfraredVault newIbgtVault = new InfraredVault(
-            address(infrared.ibgt()),
-            "IBGT Vault",
-            "IBGT",
-            rewardTokens,
+            admin,
+            address(ibgt),
             address(infrared),
             address(mockPool),
-            address(rewardsHandlerProxy),
-            admin
+            address(mockRewardsPrecompile),
+            address(mockDistribution),
+            rewardTokens,
+            1 days
         );
 
         // Expect a revert due to unauthorized access

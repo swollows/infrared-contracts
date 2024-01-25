@@ -1,57 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.22;
 
-// external
-import "@forge-std/Test.sol";
-import "@forge-std/Vm.sol";
+//
+import "@utils/DataTypes.sol";
+import "@utils/ValidatorRewards.sol";
 
-// berachain precompile mock contracts
-import "../mocks/MockDistributionPrecompile.sol";
-import "../mocks/MockERC20BankModule.sol";
-import "../mocks/MockRewardsPrecompile.sol";
-import "../mocks/MockWbera.sol";
+import "../../mocks/MockERC20.sol";
 
 // internal
-import "@core/upgradable/UpgradableRewardsHandler.sol";
+import "../Infrared/Helper.sol";
 
-contract UpgradableRewardsHandlerTest is Test {
-    UpgradableRewardsHandler rewardsHandler;
-    MockDistributionPrecompile mockDistribution;
-    MockERC20BankModule mockErc20Bank;
-    MockWbera mockWbera;
-    MockRewardsPrecompile mockRewardsPrecompile;
-
-    function setUp() public {
-        rewardsHandler = new UpgradableRewardsHandler();
-
-        // Mock contracts
-        mockErc20Bank = new MockERC20BankModule();
-        mockWbera = new MockWbera();
-        mockRewardsPrecompile =
-            new MockRewardsPrecompile(address(mockErc20Bank));
-        mockDistribution =
-            new MockDistributionPrecompile(address(mockErc20Bank));
-
-        // Mapp coin denoms to mock ERC20 addresses
-        mockErc20Bank.setErc20AddressForCoinDenom("abgt", address(mockWbera));
-        mockErc20Bank.setErc20AddressForCoinDenom(
-            "abera", address(new MockWbera())
-        );
-        mockErc20Bank.setErc20AddressForCoinDenom(
-            "other", address(new MockWbera())
-        );
-
-        // Initialize the rewards handler with mock addresses
-        rewardsHandler.initialize(
-            address(mockRewardsPrecompile),
-            address(mockDistribution),
-            address(mockErc20Bank),
-            address(mockWbera)
-        );
-
-        deal(address(rewardsHandler), 10000 ether);
-    }
-
+contract ValidatorRewardsTest is Helper {
     /*//////////////////////////////////////////////////////////////
                             claimDistrPrecompile
     //////////////////////////////////////////////////////////////*/
@@ -61,8 +20,15 @@ contract UpgradableRewardsHandlerTest is Test {
         mockDistribution.setMockRewards(new Cosmos.Coin[](0));
 
         // Call the claimDistrPrecompile function
-        (DataTypes.Token[] memory tokens, uint256 bgtAmt) = rewardsHandler
-            .claimDistrPrecompile(address(1), address(rewardsHandler));
+        (DataTypes.Token[] memory tokens, uint256 bgtAmt) = ValidatorRewards
+            .claimDistrPrecompile(
+            address(1),
+            ValidatorRewards.PrecompileAddresses({
+                erc20BankPrecompile: address(mockErc20Bank),
+                distributionPrecompile: address(mockDistribution),
+                wbera: address(mockWbera)
+            })
+        );
 
         // Assert that no rewards are returned
         assertEq(tokens.length, 0);
@@ -75,8 +41,15 @@ contract UpgradableRewardsHandlerTest is Test {
         rewards[0] = Cosmos.Coin(100, "abgt"); // 100 bgt
         mockDistribution.setMockRewards(rewards);
 
-        (DataTypes.Token[] memory tokens, uint256 bgtAmt) = rewardsHandler
-            .claimDistrPrecompile(address(1), address(rewardsHandler));
+        (DataTypes.Token[] memory tokens, uint256 bgtAmt) = ValidatorRewards
+            .claimDistrPrecompile(
+            address(1),
+            ValidatorRewards.PrecompileAddresses({
+                erc20BankPrecompile: address(mockErc20Bank),
+                distributionPrecompile: address(mockDistribution),
+                wbera: address(mockWbera)
+            })
+        );
 
         assertEq(tokens.length, 0);
         assertEq(bgtAmt, 100);
@@ -89,8 +62,15 @@ contract UpgradableRewardsHandlerTest is Test {
         rewards[1] = Cosmos.Coin(50, "abera"); // 50 bera
         mockDistribution.setMockRewards(rewards);
 
-        (DataTypes.Token[] memory tokens, uint256 bgtAmt) = rewardsHandler
-            .claimDistrPrecompile(address(1), address(rewardsHandler));
+        (DataTypes.Token[] memory tokens, uint256 bgtAmt) = ValidatorRewards
+            .claimDistrPrecompile(
+            address(1),
+            ValidatorRewards.PrecompileAddresses({
+                erc20BankPrecompile: address(mockErc20Bank),
+                distributionPrecompile: address(mockDistribution),
+                wbera: address(mockWbera)
+            })
+        );
 
         assertEq(tokens.length, 1);
         assertEq(tokens[0].amount, 50); // 50 bera wrapped as WBERA
@@ -106,8 +86,17 @@ contract UpgradableRewardsHandlerTest is Test {
         rewards[2] = Cosmos.Coin(200, "other"); // 200 of some other denom
         mockDistribution.setMockRewards(rewards);
 
-        (DataTypes.Token[] memory tokens, uint256 bgtAmt) = rewardsHandler
-            .claimDistrPrecompile(address(1), address(rewardsHandler));
+        // mockErc20Bank.setErc20AddressForCoinDenom(denom, erc20Address);
+
+        (DataTypes.Token[] memory tokens, uint256 bgtAmt) = ValidatorRewards
+            .claimDistrPrecompile(
+            address(1),
+            ValidatorRewards.PrecompileAddresses({
+                erc20BankPrecompile: address(mockErc20Bank),
+                distributionPrecompile: address(mockDistribution),
+                wbera: address(mockWbera)
+            })
+        );
 
         assertEq(tokens.length, 2);
         assertEq(tokens[0].amount, 200);
@@ -123,100 +112,13 @@ contract UpgradableRewardsHandlerTest is Test {
         mockDistribution.setMockRewards(rewards);
 
         vm.expectRevert();
-        rewardsHandler.claimDistrPrecompile(address(1), address(rewardsHandler));
-    }
-
-    /*//////////////////////////////////////////////////////////////
-                            claimRewardsPrecompile
-    //////////////////////////////////////////////////////////////*/
-
-    function testClaimRewardsPrecompileSuccess() public {
-        // Set up mock rewards
-        Cosmos.Coin[] memory rewards = new Cosmos.Coin[](1);
-        rewards[0] = Cosmos.Coin(100, "abgt"); // 100 bgt
-        mockRewardsPrecompile.setMockRewards(rewards);
-
-        // Claim rewards
-        uint256 bgtAmt =
-            rewardsHandler.claimRewardsPrecompile(address(rewardsHandler));
-
-        // Assert that the claimed amount is correct
-        assertEq(bgtAmt, 100);
-    }
-
-    function testClaimRewardsPrecompileNoRewards() public {
-        // Set up no rewards
-        Cosmos.Coin[] memory rewards = new Cosmos.Coin[](0);
-        mockRewardsPrecompile.setMockRewards(rewards);
-
-        // Claim rewards
-        uint256 bgtAmt =
-            rewardsHandler.claimRewardsPrecompile(address(rewardsHandler));
-
-        // Assert that no rewards were claimed
-        assertEq(bgtAmt, 0);
-    }
-
-    function testClaimRewardsPrecompileUnexpectedDenom() public {
-        // Set up mock rewards with an unexpected denomination
-        Cosmos.Coin[] memory rewards = new Cosmos.Coin[](1);
-        rewards[0] = Cosmos.Coin(100, "unexpected"); // 100 of unexpected denom
-        mockRewardsPrecompile.setMockRewards(rewards);
-
-        // Expect revert due to unexpected denomination
-        vm.expectRevert();
-        rewardsHandler.claimRewardsPrecompile(address(rewardsHandler));
-    }
-
-    function testClaimRewardsPrecompileMoreThanOneReward() public {
-        // Set up mock rewards with more than one reward
-        Cosmos.Coin[] memory rewards = new Cosmos.Coin[](2);
-        rewards[0] = Cosmos.Coin(100, "abgt");
-        rewards[1] = Cosmos.Coin(50, "abgt");
-        mockRewardsPrecompile.setMockRewards(rewards);
-
-        // Expect the function to revert due to more than one reward
-        vm.expectRevert();
-        rewardsHandler.claimRewardsPrecompile(address(rewardsHandler));
-    }
-
-    /*//////////////////////////////////////////////////////////////
-                            setWithdrawAddress
-    //////////////////////////////////////////////////////////////*/
-
-    function testSetWithdrawAddressSuccess() public {
-        // Set a valid withdraw address
-        bool success = rewardsHandler.setWithdrawAddress(
-            DataTypes.RewardContract.Distribution,
+        ValidatorRewards.claimDistrPrecompile(
             address(1),
-            address(rewardsHandler)
-        );
-        assertTrue(success);
-
-        // Repeat for the Rewards contract
-        success = rewardsHandler.setWithdrawAddress(
-            DataTypes.RewardContract.Rewards,
-            address(1),
-            address(rewardsHandler)
-        );
-        assertTrue(success);
-    }
-
-    function testSetWithdrawAddressZeroAddress() public {
-        // Attempt to set a zero address and expect a revert
-        vm.expectRevert(Errors.ZeroAddress.selector);
-        rewardsHandler.setWithdrawAddress(
-            DataTypes.RewardContract.Distribution,
-            address(0),
-            address(rewardsHandler)
-        );
-
-        // Repeat for the Rewards contract
-        vm.expectRevert(Errors.ZeroAddress.selector);
-        rewardsHandler.setWithdrawAddress(
-            DataTypes.RewardContract.Rewards,
-            address(0),
-            address(rewardsHandler)
+            ValidatorRewards.PrecompileAddresses({
+                erc20BankPrecompile: address(mockErc20Bank),
+                distributionPrecompile: address(mockDistribution),
+                wbera: address(mockWbera)
+            })
         );
     }
 
@@ -242,7 +144,7 @@ contract UpgradableRewardsHandlerTest is Test {
                 denom: denom
             });
             // Set the mock ERC20 address for the denom
-            address mockAddress = address(new MockWbera());
+            address mockAddress = address(new MockERC20("Mock", "Mock", 18));
             mockErc20Bank.setErc20AddressForCoinDenom(
                 rewards[i].denom, mockAddress
             );
@@ -251,9 +153,18 @@ contract UpgradableRewardsHandlerTest is Test {
         // Set the mock rewards
         mockDistribution.setMockRewards(rewards);
 
+        console2.log(address(this).balance);
+
         // Call the function
-        (DataTypes.Token[] memory tokens, uint256 bgtAmt) = rewardsHandler
-            .claimDistrPrecompile(address(1), address(rewardsHandler));
+        (DataTypes.Token[] memory tokens, uint256 bgtAmt) = ValidatorRewards
+            .claimDistrPrecompile(
+            address(1),
+            ValidatorRewards.PrecompileAddresses({
+                erc20BankPrecompile: address(mockErc20Bank),
+                distributionPrecompile: address(mockDistribution),
+                wbera: address(mockWbera)
+            })
+        );
 
         // Prepare variables to sum amounts for each denomination
         uint256 sumBgt = 0;
