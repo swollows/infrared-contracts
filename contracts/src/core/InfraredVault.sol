@@ -116,6 +116,8 @@ contract InfraredVault is MultiRewards, AccessControl {
             revert Errors.ZeroAddress();
         }
 
+        address _oldWithdrawAddress = getWithdrawAddress();
+
         bool success =
             REWARDS_MODULE.setDepositorWithdrawAddress(_withdrawAddress);
 
@@ -128,6 +130,10 @@ contract InfraredVault is MultiRewards, AccessControl {
         if (!success) {
             revert Errors.SetWithdrawAddressFailed();
         }
+
+        emit UpdateWithdrawAddress(
+            msg.sender, _oldWithdrawAddress, _withdrawAddress
+        );
     }
 
     /**
@@ -175,10 +181,6 @@ contract InfraredVault is MultiRewards, AccessControl {
 
         _setRewardsDuration(_rewardsToken, _rewardsDuration);
     }
-
-    /*//////////////////////////////////////////////////////////////
-                            ADMIN
-    //////////////////////////////////////////////////////////////*/
 
     /**
      * @notice Pause or Unpauses the vault.
@@ -252,6 +254,7 @@ contract InfraredVault is MultiRewards, AccessControl {
         returns (uint256 _amt)
     {
         // Claim from the rewards module, setting the POOL_ADDRESS as the reward receiver (where the rewards accrue from).
+        // @dev Rewards in tokens sent to rewards module withdraw address
         Cosmos.Coin[] memory rewards =
             REWARDS_MODULE.withdrawAllDepositorRewards(POOL_ADDRESS);
 

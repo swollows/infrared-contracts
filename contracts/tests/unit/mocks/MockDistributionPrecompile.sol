@@ -9,6 +9,7 @@ import {MockERC20} from "./MockERC20.sol";
 
 contract MockDistributionPrecompile is Test {
     Cosmos.Coin[] private mockRewards;
+    mapping(address => address) public withdrawAddresses;
     MockERC20BankModule bank;
 
     constructor(address _bank) {
@@ -25,6 +26,7 @@ contract MockDistributionPrecompile is Test {
         returns (bool)
     {
         emit LogSetWithdrawAddress(msg.sender, withdrawAddress);
+        withdrawAddresses[msg.sender] = withdrawAddress;
         return true;
     }
 

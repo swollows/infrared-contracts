@@ -4,7 +4,7 @@ pragma solidity 0.8.22;
 import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
 import "forge-std/Test.sol";
 
-import {InfraredVault, Errors} from "@core/InfraredVault.sol";
+import {InfraredVault, Errors, MultiRewards} from "@core/InfraredVault.sol";
 
 import "../mocks/MockERC20.sol";
 import "../mocks/MockRewardsPrecompile.sol";
@@ -60,7 +60,17 @@ contract InfraredVaultTest is Test {
                         Constructor
     //////////////////////////////////////////////////////////////*/
 
+    event UpdateWithdrawAddress(
+        address _sender,
+        address _oldWithdrawAddress,
+        address _newWithdrawAddress
+    );
+
     function testSuccessfulDeployment() public {
+        // Check for event emission of set withdraw address
+        vm.expectEmit();
+        emit UpdateWithdrawAddress(address(this), address(0), address(2)); // 2 is infrared
+
         // Act: Deploy the contract with valid parameters
         InfraredVault vault = new InfraredVault(
             address(1), // admin
@@ -77,6 +87,35 @@ contract InfraredVaultTest is Test {
         assertTrue(
             address(vault) != address(0),
             "Contract should be successfully deployed"
+        );
+
+        assertEq(vault.rewardTokens(0), rewardTokens[0]);
+
+        (address _distributor, uint256 _duration,,,,) =
+            vault.rewardData(rewardTokens[0]);
+        assertEq(_distributor, address(2));
+        assertEq(_duration, 1 days);
+
+        // check roles granted
+        assertTrue(vault.hasRole(vault.DEFAULT_ADMIN_ROLE(), address(1)));
+        assertTrue(vault.hasRole(vault.INFRARED_ROLE(), address(2)));
+
+        // check immutables set
+        assertEq(vault.INFRARED_ADDRESS(), address(2));
+        assertEq(vault.POOL_ADDRESS(), address(3));
+        assertEq(address(vault.REWARDS_MODULE()), address(mockRewardsModule));
+        assertEq(
+            address(vault.DISTRIBUTION_MODULE()),
+            address(mockDistributionModule)
+        );
+
+        // check withdraw address set on rewards, distribution modules to infrared
+        assertEq(
+            mockRewardsModule.getDepositorWithdrawAddress(address(vault)),
+            address(2)
+        );
+        assertEq(
+            mockDistributionModule.withdrawAddresses(address(vault)), address(2)
         );
     }
 
@@ -127,6 +166,9 @@ contract InfraredVaultTest is Test {
             "abgt", address(rewardsToken)
         );
 
+        address withdrawAddress = infraredVault.INFRARED_ADDRESS();
+        uint256 balance = rewardsToken.balanceOf(withdrawAddress);
+
         vm.prank(infrared);
 
         // event expect
@@ -138,6 +180,9 @@ contract InfraredVaultTest is Test {
 
         // Assert that the claimed amount is correct
         assertEq(bgtAmt, 100);
+
+        // Check balance of abgt increased by 100 to withdraw address
+        assertEq(rewardsToken.balanceOf(withdrawAddress), balance + 100);
     }
 
     function testClaimRewardsPrecompileNoRewards() public {
@@ -193,6 +238,18 @@ contract InfraredVaultTest is Test {
 
         // Add reward
         infraredVault.addReward(address(rewardsToken), rewardsDuration);
+
+        // check reward token added to list
+        assertEq(
+            infraredVault.rewardTokens(rewardTokens.length),
+            address(rewardsToken)
+        );
+
+        // check reward data updated for reward token
+        (address _rewardsDistributor, uint256 _rewardsDuration,,,,) =
+            getRewardData(address(infraredVault), address(rewardsToken));
+        assertEq(_rewardsDistributor, infraredVault.INFRARED_ADDRESS());
+        assertEq(_rewardsDuration, rewardsDuration);
 
         deal(address(rewardsToken), address(infrared), rewardAmount);
         rewardsToken.approve(address(infraredVault), rewardAmount);
@@ -254,9 +311,25 @@ contract InfraredVaultTest is Test {
 
         infraredVault.notifyRewardAmount(address(rewardsToken), rewardAmount);
 
-        (,, uint256 periodFinish,,,) =
-            getRewardData(address(infraredVault), address(rewardsToken));
+        (
+            ,
+            ,
+            uint256 periodFinish,
+            uint256 rewardRate,
+            uint256 lastUpdateTime,
+            uint256 rewardPerTokenStored
+        ) = getRewardData(address(infraredVault), address(rewardsToken));
         assertTrue(periodFinish > block.timestamp, "Reward notification failed");
+
+        // check reward data updated on notify
+        assertEq(rewardRate, rewardAmount / (30 days));
+        assertEq(lastUpdateTime, block.timestamp);
+        assertEq(periodFinish, block.timestamp + 30 days);
+        assertEq(rewardPerTokenStored, 0);
+
+        // check balance transfer
+        assertEq(rewardsToken.balanceOf(address(infraredVault)), rewardAmount);
+        assertEq(rewardsToken.balanceOf(address(infrared)), 0);
     }
 
     function testRevertWithZeroAddressForToken() public {
@@ -295,6 +368,144 @@ contract InfraredVaultTest is Test {
     }
 
     /*//////////////////////////////////////////////////////////////
+                        recoverERC20
+    //////////////////////////////////////////////////////////////*/
+
+    function testSuccessfulRecoverERC20() public {
+        // deploy a random token
+        MockERC20 randomToken = new MockERC20("Random Token", "RND", 18);
+
+        // deal and send in random token to vault
+        uint256 amountTotal = 200 ether;
+        deal(address(randomToken), address(infraredVault), amountTotal);
+
+        // recover random token with admin
+        vm.startPrank(admin);
+        uint256 amount = 100 ether;
+        infraredVault.recoverERC20(user2, address(randomToken), amount);
+        vm.stopPrank();
+
+        // check amount sent to user
+        assertEq(randomToken.balanceOf(user2), amount);
+    }
+
+    function testRevertWithAmountGreaterThanBalanceRecoverERC20() public {
+        // deploy a random token
+        MockERC20 randomToken = new MockERC20("Random Token", "RND", 18);
+
+        // deal and send in random token to vault
+        uint256 amountTotal = 200 ether;
+        deal(address(randomToken), address(infraredVault), amountTotal);
+
+        // check cannot recover random token with amount greater than balance
+        vm.startPrank(admin);
+        vm.expectRevert();
+        infraredVault.recoverERC20(user2, address(randomToken), amountTotal + 1);
+        vm.stopPrank();
+    }
+
+    function testRevertWithZeroAddressToRecoverERC20() public {
+        // deploy a random token
+        MockERC20 randomToken = new MockERC20("Random Token", "RND", 18);
+
+        // deal and send in random token to vault
+        uint256 amount = 200 ether;
+        deal(address(randomToken), address(infraredVault), amount);
+
+        // check cannot recover random token to zero address
+        vm.startPrank(admin);
+        vm.expectRevert(Errors.ZeroAddress.selector);
+        infraredVault.recoverERC20(address(0), address(randomToken), amount);
+        vm.stopPrank();
+    }
+
+    function testRevertWithZeroAddressTokenRecoverERC20() public {
+        // deploy a random token
+        MockERC20 randomToken = new MockERC20("Random Token", "RND", 18);
+
+        // deal and send in random token to vault
+        uint256 amount = 200 ether;
+        deal(address(randomToken), address(infraredVault), amount);
+
+        // check cannot recover random token zero
+        vm.startPrank(admin);
+        vm.expectRevert(Errors.ZeroAddress.selector);
+        infraredVault.recoverERC20(user2, address(0), amount);
+        vm.stopPrank();
+    }
+
+    function testRevertWithZeroAmountRecoverERC20() public {
+        // deploy a random token
+        MockERC20 randomToken = new MockERC20("Random Token", "RND", 18);
+
+        // deal and send in random token to vault
+        uint256 amount = 200 ether;
+        deal(address(randomToken), address(infraredVault), amount);
+
+        // check cannot recover random token with zero amount
+        vm.startPrank(admin);
+        vm.expectRevert(Errors.ZeroAmount.selector);
+        infraredVault.recoverERC20(user2, address(randomToken), 0);
+        vm.stopPrank();
+    }
+
+    function testRevertWithTokenStakingTokenRecoverERC20() public {
+        uint256 stakeAmount = 100 ether;
+        deal(address(stakingToken), user, stakeAmount);
+
+        // User approves the vault to spend their tokens
+        vm.startPrank(user);
+        stakingToken.approve(address(infraredVault), stakeAmount);
+
+        // User stakes tokens into the vault
+        infraredVault.stake(stakeAmount);
+        vm.stopPrank();
+
+        // check cannot recover staking token
+        vm.startPrank(admin);
+        vm.expectRevert("Cannot withdraw staking token");
+        infraredVault.recoverERC20(user2, address(stakingToken), stakeAmount);
+        vm.stopPrank();
+    }
+
+    function testRevertWithTokenRewardTokenRecoverERC20() public {
+        // Setup reward token in the vault and mint rewards
+        vm.startPrank(infrared);
+        uint256 rewardsAmount = 100 ether;
+        infraredVault.addReward(address(rewardsToken), 86400);
+        rewardsToken.mint(address(infrared), rewardsAmount);
+        rewardsToken.approve(address(infraredVault), rewardsAmount);
+        infraredVault.notifyRewardAmount(address(rewardsToken), rewardsAmount);
+        vm.stopPrank();
+
+        // check cannot recover reward token
+        (,,,, uint256 lastUpdateTime,) =
+            infraredVault.rewardData(address(rewardsToken));
+        assertTrue(lastUpdateTime != 0);
+
+        vm.startPrank(admin);
+        vm.expectRevert("Cannot withdraw reward token");
+        infraredVault.recoverERC20(user2, address(rewardsToken), rewardsAmount);
+        vm.stopPrank();
+    }
+
+    function testAccessControlRecoverERC20() public {
+        // deploy a random token
+        address unauthorizedUser = address(3);
+        MockERC20 randomToken = new MockERC20("Random Token", "RND", 18);
+
+        // deal and send in random token to vault
+        uint256 amount = 200 ether;
+        deal(address(randomToken), address(infraredVault), amount);
+
+        // check unauthorized user cannot recover
+        vm.startPrank(unauthorizedUser);
+        vm.expectRevert();
+        infraredVault.recoverERC20(user, address(randomToken), amount);
+        vm.stopPrank();
+    }
+
+    /*//////////////////////////////////////////////////////////////
                         updateRewardsDuration
     //////////////////////////////////////////////////////////////*/
 
@@ -305,6 +516,10 @@ contract InfraredVaultTest is Test {
         infraredVault.addReward(address(rewardsToken), newDuration); // Setup reward token
         vm.stopPrank();
         vm.startPrank(admin);
+        vm.expectEmit();
+        emit MultiRewards.RewardsDurationUpdated(
+            address(rewardsToken), newDuration
+        );
         infraredVault.updateRewardsDuration(address(rewardsToken), newDuration);
         vm.stopPrank();
 
@@ -357,8 +572,64 @@ contract InfraredVaultTest is Test {
     }
 
     /*//////////////////////////////////////////////////////////////
+                        togglePause
+    //////////////////////////////////////////////////////////////*/
+
+    event Paused(address account);
+
+    function testSuccessfulPause() public {
+        // check not paused
+        assertTrue(!infraredVault.paused());
+
+        // check paused event emitted
+        vm.expectEmit();
+        emit Paused(admin);
+
+        // pause vault
+        vm.startPrank(admin);
+        infraredVault.togglePause();
+        vm.stopPrank();
+
+        // check now paused
+        assertTrue(infraredVault.paused());
+    }
+
+    event Unpaused(address account);
+
+    function testSuccessfulUnpause() public {
+        // set up so paused
+        vm.startPrank(admin);
+        infraredVault.togglePause();
+        vm.stopPrank();
+        assertTrue(infraredVault.paused());
+
+        // check unpaused event emitted
+        vm.expectEmit();
+        emit Unpaused(admin);
+
+        // unpause vault
+        vm.startPrank(admin);
+        infraredVault.togglePause();
+        vm.stopPrank();
+
+        // check now unpaused
+        assertTrue(!infraredVault.paused());
+    }
+
+    function testAccessControlPause() public {
+        address unauthorizedUser = address(4);
+        vm.startPrank(unauthorizedUser);
+        vm.expectRevert();
+        infraredVault.togglePause();
+        vm.stopPrank();
+    }
+
+    /*//////////////////////////////////////////////////////////////
                         stake
     //////////////////////////////////////////////////////////////*/
+
+    event Staked(address indexed user, uint256 amount);
+
     function testSuccessfulStake() public {
         uint256 stakeAmount = 100 ether;
         deal(address(stakingToken), user, stakeAmount);
@@ -366,6 +637,9 @@ contract InfraredVaultTest is Test {
         // User approves the vault to spend their tokens
         vm.startPrank(user);
         stakingToken.approve(address(infraredVault), stakeAmount);
+
+        // check stake event emitted
+        emit Staked(user, stakeAmount);
 
         // User stakes tokens into the vault
         infraredVault.stake(stakeAmount);
@@ -377,6 +651,11 @@ contract InfraredVaultTest is Test {
         // Check total supply in the vault
         uint256 totalSupply = infraredVault.totalSupply();
         assertEq(totalSupply, stakeAmount, "Total supply should be updated");
+
+        // Check staking token transferred to vault
+        assertEq(stakingToken.balanceOf(address(infraredVault)), stakeAmount);
+        assertEq(stakingToken.balanceOf(user), 0);
+
         vm.stopPrank();
     }
 
@@ -420,6 +699,8 @@ contract InfraredVaultTest is Test {
                         withdraw
     //////////////////////////////////////////////////////////////*/
 
+    event Withdrawn(address indexed user, uint256 amount);
+
     function testSuccessfulWithdraw() public {
         // User stakes tokens
         vm.startPrank(user2);
@@ -428,6 +709,10 @@ contract InfraredVaultTest is Test {
         vm.stopPrank();
 
         uint256 withdrawAmount = 100 ether;
+
+        // check withdrawn event emitted
+        vm.expectEmit();
+        emit Withdrawn(user2, withdrawAmount);
 
         vm.startPrank(user2);
         infraredVault.withdraw(withdrawAmount);
@@ -632,6 +917,29 @@ contract InfraredVaultTest is Test {
             secondRewardAmount,
             tolerance,
             "Incorrect second reward amount"
+        );
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                        getRewardForUser
+    //////////////////////////////////////////////////////////////*/
+
+    function testSuccessfulGetRewardForUser() public {
+        uint256 rewardsAmount = 100 ether;
+        uint256 rewardsDuration = 30 days;
+        setUpGetReward(rewardsAmount, rewardsDuration);
+
+        // Manipulate time to simulate the passage of the reward duration
+        skip(rewardsDuration + 100 minutes);
+        infraredVault.getRewardForUser(user);
+
+        // Check user's rewards token balance
+        uint256 userRewardsBalance = rewardsToken.balanceOf(user);
+        assertAlmostEqual(
+            userRewardsBalance,
+            rewardsAmount,
+            tolerance,
+            "User should receive the rewards within tolerance"
         );
     }
 

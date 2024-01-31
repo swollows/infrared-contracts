@@ -6,7 +6,6 @@ import {AccessControlUpgradeable} from
     "@openzeppelin-upgradeable/access/AccessControlUpgradeable.sol";
 import {SafeERC20} from "@openzeppelin/token/ERC20/utils/SafeERC20.sol";
 import {EnumerableSet} from "@openzeppelin/utils/structs/EnumerableSet.sol";
-import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {
     UUPSUpgradeable,
     ERC1967Utils
@@ -94,9 +93,6 @@ contract Infrared is
     event IBGTVaultUpdated(
         address _sender, address _oldIbgtVault, address _newIbgtVault
     );
-    event VaultWithdrawAddressUpdated(
-        address _sender, address indexed _redVault, address _newWithdrawAddress
-    );
     event WhiteListedRewardTokensUpdated(
         address _sender,
         address indexed _token,
@@ -113,7 +109,10 @@ contract Infrared is
         uint256 _bgtAmt
     );
     event ValidatorHarvested(
-        address _sender, address indexed _validator, uint256 _bgtAmt
+        address _sender,
+        address indexed _validator,
+        DataTypes.Token[] _rewards,
+        uint256 _bgtAmt
     );
     event ValidatorsAdded(address _sender, address[] _validators);
     event ValidatorsRemoved(address _sender, address[] _validators);
@@ -237,6 +236,8 @@ contract Infrared is
             revert Errors.ZeroAddress();
         }
 
+        // Update pool address to vault if pass in zero address
+        if (_poolAddress == address(0)) _poolAddress = _new;
         vaultRegistry[_poolAddress] = IInfraredVault(_new);
 
         emit NewVault(msg.sender, _poolAddress, _new, _asset, _rewardTokens);
@@ -315,7 +316,7 @@ contract Infrared is
      */
     function recoverERC20(address _to, address _token, uint256 _amount)
         external
-        onlyRole(DEFAULT_ADMIN_ROLE)
+        onlyRole(GOVERNANCE_ROLE)
     {
         if (_to == address(0)) {
             revert Errors.ZeroAddress();
@@ -393,7 +394,7 @@ contract Infrared is
 
         _handleRewards(ibgtVault, tokens, bgtAmt);
 
-        emit ValidatorHarvested(msg.sender, _validator, bgtAmt);
+        emit ValidatorHarvested(msg.sender, _validator, tokens, bgtAmt);
     }
 
     /*//////////////////////////////////////////////////////////////

@@ -14,6 +14,8 @@ contract ValidatorManagment is Helper {
         newValidators[0] = address(777);
         vm.prank(governance);
         // Add the new validators
+        vm.expectEmit();
+        emit Infrared.ValidatorsAdded(governance, newValidators);
         infrared.addValidators(newValidators);
 
         // Assert that the validators were added
@@ -63,6 +65,9 @@ contract ValidatorManagment is Helper {
             "Validators not added correctly"
         );
 
+        vm.expectEmit();
+        emit Infrared.ValidatorsRemoved(governance, newValidators);
+
         // Remove the validators
         infrared.removeValidators(newValidators);
 
@@ -110,6 +115,11 @@ contract ValidatorManagment is Helper {
             infrared.isInfraredValidator(address(777)),
             true,
             "Validators not added correctly"
+        );
+
+        vm.expectEmit();
+        emit Infrared.ValidatorReplaced(
+            governance, newValidators[0], address(45454)
         );
 
         // Remove the validators

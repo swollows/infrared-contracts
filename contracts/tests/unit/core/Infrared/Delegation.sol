@@ -12,6 +12,8 @@ contract DelegationTest is Helper {
         StdCheats.deal(address(bgt), address(infrared), 100, false);
 
         vm.prank(governance);
+        vm.expectEmit();
+        emit Infrared.Delegated(governance, address(validator), 100);
         infrared.delegate(validator, 100);
         vm.stopPrank();
 
@@ -50,6 +52,8 @@ contract DelegationTest is Helper {
 
         vm.startPrank(governance);
         infrared.delegate(validator, 100);
+        vm.expectEmit();
+        emit Infrared.Undelegated(governance, address(validator), 100);
         infrared.undelegate(validator, 100);
         vm.stopPrank();
 
@@ -88,6 +92,10 @@ contract DelegationTest is Helper {
 
         vm.startPrank(governance);
         infrared.delegate(validator, 100);
+        vm.expectEmit();
+        emit Infrared.RedelegateStarted(
+            governance, address(validator), address(validator2), 100
+        );
         infrared.beginRedelegate(validator, validator2, 100);
         vm.stopPrank();
 
@@ -133,6 +141,10 @@ contract DelegationTest is Helper {
         StdCheats.deal(address(bgt), address(infrared), 100, false);
 
         vm.startPrank(governance);
+        vm.expectEmit();
+        emit Infrared.UnbondingDelegationCancelled(
+            governance, address(validator), 100, 100
+        );
         infrared.cancelUnbondingDelegation(validator, 100, 100);
         vm.stopPrank();
     }

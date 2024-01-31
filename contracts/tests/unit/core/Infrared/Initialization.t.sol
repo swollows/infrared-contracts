@@ -89,4 +89,33 @@ contract InfraredInitializationTest is Helper {
         );
         infrared.updateIbgt(address(123));
     }
+
+    function testUpdateWhiteListedRewardTokens() public {
+        vm.expectEmit();
+        emit Infrared.WhiteListedRewardTokensUpdated(
+            address(this), address(12345), false, true
+        );
+        // Update the whitelist
+        infrared.updateWhiteListedRewardTokens(address(12345), true);
+
+        // Check that the whitelist was updated
+        assertTrue(
+            infrared.whitelistedRewardTokens(address(12345)),
+            "Wbera should be whitelisted"
+        );
+    }
+
+    function testUpdateRewardsDuration() public {
+        vm.expectEmit();
+        emit Infrared.RewardsDurationUpdated(
+            address(this), infrared.rewardsDuration(), 123
+        );
+        // Update the rewards duration
+        infrared.updateRewardsDuration(123);
+
+        // Check that the rewards duration was updated
+        assertEq(
+            infrared.rewardsDuration(), 123, "Rewards duration not updated"
+        );
+    }
 }

@@ -16,6 +16,10 @@ contract TestUpdateBGT is Helper {
         // Grant GOVERNANCE_ROLE to this contract
         infrared.grantRole(infrared.GOVERNANCE_ROLE(), address(this));
 
+        vm.expectEmit();
+        emit Infrared.IBGTUpdated(
+            address(this), address(infrared.ibgt()), address(newIbgt)
+        );
         // Update the IBGT token
         infrared.updateIbgt(address(newIbgt));
 
@@ -68,6 +72,11 @@ contract TestUpdateBGT is Helper {
 
         // Grant GOVERNANCE_ROLE to this contract
         infrared.grantRole(infrared.GOVERNANCE_ROLE(), address(this));
+
+        vm.expectEmit();
+        emit Infrared.IBGTVaultUpdated(
+            address(this), address(infrared.ibgtVault()), address(newIbgtVault)
+        );
 
         // Update the IBGT vault
         infrared.updateIbgtVault(address(newIbgtVault));

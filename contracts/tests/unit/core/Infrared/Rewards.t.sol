@@ -16,13 +16,24 @@ contract InfraredRewardsTest is Helper {
 
         (address vault, address pool) = setupMockVault();
 
+        // test for event IBGTSupplied
         vm.prank(keeper);
+        vm.expectEmit();
+        emit Infrared.IBGTSupplied(vault, 100);
+        infrared.harvestVault(pool);
+        vm.stopPrank();
+
+        // test for event VaultHarvested
+        mockRewardsPrecompile.setMockRewards(rewards);
+        vm.prank(keeper);
+        vm.expectEmit();
+        emit Infrared.VaultHarvested(keeper, pool, vault, 100);
         infrared.harvestVault(pool);
         vm.stopPrank();
 
         // check that the vault has the correct balance
         uint256 balance = ibgt.balanceOf(vault);
-        assertEq(balance, 100);
+        assertEq(balance, 200);
     }
 
     function testFailHarvestVaultInvalidPool() public {
@@ -94,13 +105,29 @@ contract InfraredRewardsTest is Helper {
         rewards[0] = Cosmos.Coin(100, "abera"); // 100 bgt
         mockDistribution.setMockRewards(rewards);
 
+        DataTypes.Token[] memory rewardTokens = new DataTypes.Token[](1);
+        rewardTokens[0] =
+            DataTypes.Token({tokenAddress: address(mockWbera), amount: 100});
+
+        // Test for event ValidatorHarvested
         vm.prank(keeper);
+        vm.expectEmit();
+        emit Infrared.ValidatorHarvested(keeper, validator, rewardTokens, 0);
+        infrared.harvestValidator(validator);
+        vm.stopPrank();
+
+        // Test for event RewardSupplied
+        vm.prank(keeper);
+        vm.expectEmit();
+        emit Infrared.RewardSupplied(
+            address(ibgtVault), address(mockWbera), 100
+        );
         infrared.harvestValidator(validator);
         vm.stopPrank();
 
         // check that the vault has the correct balance
         uint256 balance = mockWbera.balanceOf(address(ibgtVault));
-        assertEq(balance, 100);
+        assertEq(balance, 200);
     }
 
     function testFailHarvestValidatorInvalidPool() public {
@@ -169,8 +196,28 @@ contract InfraredRewardsTest is Helper {
         // Check that the vault has the correct balance for the whitelisted token
         uint256 balance = mockWbera.balanceOf(address(ibgtVault));
         assertEq(balance, 100, "Incorrect balance for whitelisted token");
+    }
 
-        // Check that non-whitelisted token was not processed
-        // (Assuming you have a way to verify this, e.g., via a mock token's balance or an event check)
+    function testRecoverERC20() public {
+        // deploy a random token
+        MockERC20 randomToken = new MockERC20("Random Token", "RND", 18);
+
+        // deal and send in random token to vault
+        uint256 amountTotal = 200 ether;
+        deal(address(randomToken), address(infrared), amountTotal);
+        // Test for event ERC20Recovered
+        vm.prank(governance);
+        vm.expectEmit();
+        emit Infrared.Recovered(governance, address(randomToken), amountTotal);
+        infrared.recoverERC20(governance, address(randomToken), amountTotal);
+        vm.stopPrank();
+
+        // check that the vault has the correct balance
+        uint256 balance = randomToken.balanceOf(governance);
+        assertEq(balance, amountTotal);
+
+        // check that the vault has the correct balance
+        balance = randomToken.balanceOf(address(infrared));
+        assertEq(balance, 0);
     }
 }

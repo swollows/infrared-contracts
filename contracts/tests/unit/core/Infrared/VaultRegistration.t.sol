@@ -1,14 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.22;
 
-import {
-    Helper,
-    Infrared,
-    Errors,
-    MockERC20,
-    IInfraredVault,
-    IAccessControl
-} from "./Helper.sol";
+import "./Helper.sol";
 import "@forge-std/console2.sol";
 
 contract InfraredRegisterVaultTest is Helper {
@@ -18,6 +11,16 @@ contract InfraredRegisterVaultTest is Helper {
 
     function testSuccessfulVaultRegistration() public {
         infrared.grantRole(infrared.KEEPER_ROLE(), address(this));
+
+        vm.expectEmit();
+        emit Infrared.NewVault(
+            address(this),
+            poolAddress,
+            0xBB572Bb0e1a478fe5103CAF704a0252Efefe37a7,
+            address(mockAsset),
+            rewardTokens
+        );
+
         IInfraredVault newVault = infrared.registerVault(
             address(mockAsset), rewardTokens, poolAddress
         );

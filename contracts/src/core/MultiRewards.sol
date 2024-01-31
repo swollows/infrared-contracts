@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-only
+// SPDX-License-Identifier: MIT
 pragma solidity 0.8.22;
 
 import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
@@ -10,6 +10,10 @@ import {Math} from "@openzeppelin/utils/math/Math.sol";
 import {Ownable} from "@openzeppelin/access/Ownable.sol";
 import {SafeMath} from "@utils/SafeMath.sol";
 
+/**
+ * @title MultiRewards
+ * @dev https://github.com/curvefi/multi-rewards
+ */
 contract MultiRewards is ReentrancyGuard, Pausable {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
