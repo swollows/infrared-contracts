@@ -25,6 +25,12 @@ contracts/cache
 contracts/out
 contracts/broadcast
 
+### Subgraph ###
+subgraph/node_modules
+subgraph/build
+subgraph/generated
+subgraph/subgraph.yaml
+
 ### Sensitive info ###
 contracts/src/script/devnet/loadEnv.sh
 

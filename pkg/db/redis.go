@@ -9,13 +9,13 @@ import (
 )
 
 // Repository is the struct for the database repository.
-type Repository struct {
+type RedisDB struct {
 	db     *redis.Client
 	logger log.Logger
 }
 
-// NewRepository returns a new database repository.
-func NewRepository(options *redis.Options, logger log.Logger) (*Repository, error) {
+// NewRedis returns a new redis database repository.
+func NewRedis(options *redis.Options, logger log.Logger) (*RedisDB, error) {
 	// Create the database client.
 	db := redis.NewClient(options)
 
@@ -26,11 +26,11 @@ func NewRepository(options *redis.Options, logger log.Logger) (*Repository, erro
 		return nil, status.Err()
 	}
 
-	return &Repository{db, logger}, nil
+	return &RedisDB{db, logger}, nil
 }
 
 // SetCheckpoint sets the checkpoint in the database.
-func (r *Repository) SetCheckpoint(ctx context.Context, checkpoint *CheckPoint) error {
+func (r *RedisDB) SetCheckpoint(ctx context.Context, checkpoint *CheckPoint) error {
 	// Marshal the checkpoint.
 	checkpointBytes, err := json.Marshal(checkpoint)
 	if err != nil {
@@ -49,7 +49,7 @@ func (r *Repository) SetCheckpoint(ctx context.Context, checkpoint *CheckPoint) 
 }
 
 // GetCheckpoint gets the checkpoint from the database.
-func (r *Repository) GetCheckpoint(ctx context.Context) (*CheckPoint, error) {
+func (r *RedisDB) GetCheckpoint(ctx context.Context) (*CheckPoint, error) {
 	// Get the checkpoint from the database.
 	status := r.db.Get(ctx, "checkpoint")
 	if status.Err() != nil {
@@ -69,7 +69,7 @@ func (r *Repository) GetCheckpoint(ctx context.Context) (*CheckPoint, error) {
 }
 
 // SetVault sets the vault in the database. It appends the vault to the vaults array.
-func (r *Repository) SetVault(ctx context.Context, vault *Vault) error {
+func (r *RedisDB) SetVault(ctx context.Context, vault *Vault) error {
 	// Check if the 'vaults-list' key exists in the database.
 	if r.db.Exists(ctx, "vaults-list").Val() == 0 {
 		// Initialize 'vaults-list' as an empty JSON array at the root
@@ -93,7 +93,7 @@ func (r *Repository) SetVault(ctx context.Context, vault *Vault) error {
 }
 
 // GetVaults gets the vaults array from the database.
-func (r *Repository) GetVaults(ctx context.Context) ([]*Vault, error) {
+func (r *RedisDB) GetVaults(ctx context.Context) ([]*Vault, error) {
 	// Get the vaults array from the database.
 	status := r.db.JSONGet(ctx, "vaults-list", "$")
 
@@ -122,7 +122,7 @@ func (r *Repository) GetVaults(ctx context.Context) ([]*Vault, error) {
 
 }
 
-func (r *Repository) VaultExists(ctx context.Context, vaultHexAddress string) (bool, error) {
+func (r *RedisDB) VaultExists(ctx context.Context, vaultHexAddress string) (bool, error) {
 	// Get the vaults array from the database.
 	vaults, err := r.GetVaults(ctx)
 	if err != nil {

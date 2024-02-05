@@ -1,0 +1,30 @@
+{
+  "name": "infrared-subgraph",
+  "version": "1.0.0",
+  "description": "Data API layer for infrared.finance",
+  "main": "index.js",
+  "scripts": {
+    "test": "npm test",
+    "prepare:testnet": "mustache config/testnet.json subgraph.template.yaml > subgraph.yaml",
+    "prepare:public-testnet": "mustache config/public-testnet.json subgraph.template.yaml > subgraph.yaml"
+  },
+  "keywords": [
+    "DeFi",
+    "Berachain"
+  ],
+  "author": "infrared.finance",
+  "license": "MIT",
+  
+  "dependencies": {
+    "@cosmjs/encoding": "^0.32.1",
+    "babel-polyfill": "^6.26.0",
+    "babel-register": "^6.26.0",
+    "mustache": "^4.0.1"
+  },
+
+  "devDependencies": {
+    "@graphprotocol/graph-cli": "0.60.0",
+    "@graphprotocol/graph-ts": "0.31.0",
+    "typescript": "^5.0.4"
+  }
+}

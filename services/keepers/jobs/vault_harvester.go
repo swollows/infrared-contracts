@@ -2,20 +2,20 @@ package jobs
 
 import (
 	"context"
-	"crypto/ecdsa"
 	"math/big"
 	"time"
 
+	"github.com/berachain/offchain-sdk/core/transactor"
+	"github.com/berachain/offchain-sdk/core/transactor/tracker"
+	txrtypes "github.com/berachain/offchain-sdk/core/transactor/types"
 	"github.com/berachain/offchain-sdk/job"
 	"github.com/berachain/offchain-sdk/log"
 	sdk "github.com/berachain/offchain-sdk/types"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/infrared-dao/infrared-mono-repo/pkg/bindings/infrared"
 	"github.com/infrared-dao/infrared-mono-repo/pkg/bindings/rewards"
 	"github.com/infrared-dao/infrared-mono-repo/pkg/db"
-	"github.com/infrared-dao/infrared-mono-repo/pkg/tools"
-	util "github.com/infrared-dao/infrared-mono-repo/services/keepers/utils"
 )
 
 // ==============================================================================
@@ -25,7 +25,6 @@ import (
 // VaultHarvesterDB is the interface for the vault harvester database.
 type VaultHarvesterDB interface {
 	GetVaults(ctx context.Context) ([]*db.Vault, error)
-	SetCheckpoint(ctx context.Context, checkpoint *db.CheckPoint) error
 }
 
 // The method names for this job.
@@ -40,9 +39,10 @@ const (
 
 // Compile time check to ensure this type implements the Job interface.
 var (
-	_ job.Polling  = &VaultHarvester{}
-	_ job.Basic    = &VaultHarvester{}
-	_ job.HasSetup = &VaultHarvester{}
+	_ job.Polling        = &VaultHarvester{}
+	_ job.Basic          = &VaultHarvester{}
+	_ job.HasSetup       = &VaultHarvester{}
+	_ tracker.Subscriber = &VaultHarvester{}
 )
 
 // VaultHarvester is the job that harvests the vault.
@@ -51,10 +51,6 @@ type VaultHarvester struct {
 	db VaultHarvesterDB
 	// interval is the interval at which the job runs.
 	interval *time.Duration
-	// pubKey is the public key of the vault harvester.
-	pubKey common.Address
-	// privKey is the private key of the vault harvester.
-	privKey *ecdsa.PrivateKey
 	// minBGT is the minimum amount of BGT to harvest.
 	minBGT *big.Int
 	// rewardsPrecompileAddress is the address of the rewards precompile.
@@ -63,34 +59,33 @@ type VaultHarvester struct {
 	rewardsPrecompileContract *rewards.Contract
 	// infraredContractAddress is the address of the infrared contract.
 	infraredContractAddress common.Address
-	// infraredBoundContract is the contract of the infrared contract.
-	infraredBoundContract *bind.BoundContract
 	// infraredContract is the contract of the infrared contract used to query state.
 	infraredContract *infrared.Contract
-	// gasLimit is the gas limit for the transaction.
-	gasLimit uint64
+	// txManager is the transaction manager for the job.
+	txMgr *transactor.TxrV2
+	// txPacker is the transaction packer for the job.
+	txPacker *txrtypes.Packer
+	// logger is the logger for the job.
+	logger log.Logger
 }
 
 // NewVaultHarvester creates a new vault harvester job.
 func NewVaultHarvester(
 	db VaultHarvesterDB,
 	interval *time.Duration,
-	pubKey common.Address,
-	privKey *ecdsa.PrivateKey,
 	minBGT *big.Int,
 	rewardsPrecompileAddress common.Address,
 	infraredContractAddress common.Address,
-	gasLimit uint64,
+	txMgr *transactor.TxrV2,
 ) *VaultHarvester {
 	return &VaultHarvester{
 		db:                       db,
 		interval:                 interval,
-		pubKey:                   pubKey,
-		privKey:                  privKey,
 		minBGT:                   minBGT,
 		rewardsPrecompileAddress: rewardsPrecompileAddress,
 		infraredContractAddress:  infraredContractAddress,
-		gasLimit:                 gasLimit,
+		txMgr:                    txMgr,
+		txPacker:                 &txrtypes.Packer{MetaData: infrared.ContractMetaData},
 	}
 }
 
@@ -121,19 +116,11 @@ func (vh *VaultHarvester) Setup(ctx context.Context) error {
 	}
 	vh.infraredContract = ic
 
-	// Setup the infrared bound contract.
-	infraredAbi, err := infrared.ContractMetaData.GetAbi()
-	if err != nil {
-		logger.Error("❌ Failed to get infrared abi", "Error", err)
-		return err
-	}
-	vh.infraredBoundContract = bind.NewBoundContract(
-		vh.infraredContractAddress,
-		*infraredAbi,
-		ethClient,
-		ethClient,
-		ethClient,
-	)
+	// Handle the transaction results from the transaction manager.
+	vh.txMgr.SubscribeTxResults(ctx, vh, make(chan *tracker.InFlightTx, 1024))
+
+	// Set the logger.
+	vh.logger = logger
 
 	return nil
 }
@@ -161,25 +148,45 @@ func (vh *VaultHarvester) Execute(ctx context.Context, _ any) (any, error) {
 		if err != nil {
 			return nil, err
 		}
-
-		// Sleep for 1 second to avoid any nonce issues.
-		time.Sleep(1 * time.Second)
-	}
-
-	// Get the block number after the harvest.
-	blockNumber, err := sCtx.Chain().BlockNumber(sCtx)
-	if err != nil {
-		logger.Error("⚠️  Failed to get block number", "Error", err)
-		return nil, err
-	}
-
-	// Set the checkpoint in the database.
-	if err := vh.db.SetCheckpoint(sCtx, db.NewCheckPoint(blockNumber)); err != nil {
-		logger.Error("⚠️  Failed to set checkpoint", "Error", err)
-		return nil, err
 	}
 
 	return nil, nil
+}
+
+// ==============================================================================
+//  Transaction Subscriber
+// ==============================================================================
+
+// OnSuccess implements the tracker.Subscriber interface.
+func (vh *VaultHarvester) OnSuccess(tx *tracker.InFlightTx, receipt *types.Receipt) error {
+	// Check if the transaction is from the infrared contract.
+	if receipt.ContractAddress != vh.infraredContractAddress {
+		return nil
+	}
+
+	vh.logger.Info("✅ Successfully harvested vault", "TxHash", tx.Hash())
+	return nil
+}
+
+// OnRevert is called when a transaction reverts.
+func (vh *VaultHarvester) OnRevert(tx *tracker.InFlightTx, receipt *types.Receipt) error {
+	// Check if the transaction is from the infrared contract.
+	if receipt.ContractAddress != vh.infraredContractAddress {
+		return nil
+	}
+	vh.logger.Info("❌ Failed to harvest vault", "TxHash", tx.Hash())
+	return nil
+}
+
+// OnStale is called when a transaction becomes stale.
+func (vh *VaultHarvester) OnStale(ctx context.Context, tx *tracker.InFlightTx) error {
+	vh.logger.Info("⚠️ Stale transaction", "TxHash", tx.Hash())
+	return nil
+}
+
+// OnError is called when a transaction errors.
+func (vh *VaultHarvester) OnError(ctx context.Context, tx *tracker.InFlightTx, err error) {
+	vh.logger.Error("❌ Transaction error", "TxHash", tx.Hash(), "Error", err)
 }
 
 // ==============================================================================
@@ -188,26 +195,31 @@ func (vh *VaultHarvester) Execute(ctx context.Context, _ any) (any, error) {
 
 // harvestVault is a helper method to publish the harvest vault transaction and handle the response.
 func (vh *VaultHarvester) harvestVault(sCtx *sdk.Context, vault *db.Vault, logger log.Logger) error {
-	// Generate the transaction options.
-	txOpts, err := util.GenerateTransactionOps(sCtx, vh.privKey, vh.pubKey, vh.gasLimit)
-	if err != nil {
-		logger.Error("❌ Failed to generate transaction options", "Error", err)
-		return err
-	}
+	tx := &txrtypes.TxRequest{}
 
-	// Generate the transaction.
-	tx, err := vh.infraredBoundContract.Transact(
-		txOpts,
-		vaultHarvestCallName,
-		common.HexToAddress(vault.VaultHexAddress),
+	// Create the transaction request.
+	tx, err := vh.txPacker.CreateTxRequest(
+		vh.infraredContractAddress, // to
+		nil,                        // value
+		nil,                        // gas tip cap
+		nil,                        // gas fee cap
+		0,                          // gas limit
+		vaultHarvestCallName,       // method
+		common.HexToAddress(vault.PoolHexAddress), // args
 	)
 	if err != nil {
-		logger.Error("❌ Failed to generate transaction", "Error", err)
+		logger.Error("❌ Failed to create transaction request", "Error", err)
 		return err
 	}
 
-	// Handle the transaction response in a separate goroutine.
-	go tools.HandleTxResponse(sCtx, sCtx.Chain(), vh.pubKey, tx, logger)
+	// Add the transaction to the transaction queue.
+	_, err = vh.txMgr.SendTxRequest(tx)
+	if err != nil {
+		logger.Error("❌ Failed to send transaction request", "Error", err)
+		return err
+	}
+
+	logger.Info("📡 Sent transaction request", "To", tx.To, "Vault", vault.VaultHexAddress, "Pool", vault.PoolHexAddress)
 
 	return nil
 }

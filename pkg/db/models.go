@@ -14,9 +14,7 @@ var (
 // Vault is the struct for the vault.
 type Vault struct {
 	VaultHexAddress        string   `json:"vaultHexAddress"`
-	Name                   string   `json:"name"`
-	Symbol                 string   `json:"symbol"`
-	AssetHexAddress        string   `json:"assetHexAddress"`
+	StakingAssetHexAddress string   `json:"stakingAssetHexAddress"`
 	RewardTokensHexAddress []string `json:"rewardTokensHexAddress"`
 	PoolHexAddress         string   `json:"poolHexAddress"`
 }
@@ -24,9 +22,7 @@ type Vault struct {
 // NewVault creates a new vault and returns a pointer to it.
 func NewVault(
 	vault common.Address,
-	name string,
-	symbol string,
-	asset common.Address,
+	stakingAsset common.Address,
 	rewards []common.Address,
 	pool common.Address,
 ) *Vault {
@@ -38,9 +34,7 @@ func NewVault(
 
 	return &Vault{
 		VaultHexAddress:        vault.Hex(),
-		Name:                   name,
-		Symbol:                 symbol,
-		AssetHexAddress:        asset.Hex(),
+		StakingAssetHexAddress: stakingAsset.Hex(),
 		RewardTokensHexAddress: rewardTokensHexAddress,
 		PoolHexAddress:         pool.Hex(),
 	}
@@ -49,9 +43,7 @@ func NewVault(
 // SafeNewVault creates a new vault and returns a pointer to it and an error.
 func SafeNewVault(
 	vault common.Address,
-	name string,
-	symbol string,
-	asset common.Address,
+	stakingAsset common.Address,
 	rewards []common.Address,
 	pool common.Address,
 ) (*Vault, error) {
@@ -60,14 +52,9 @@ func SafeNewVault(
 		return nil, ErrEmptyVaultAddress
 	}
 
-	// Check if the vault name is empty.
-	if name == "" {
-		return nil, ErrEmptyVaultName
-	}
-
-	// Check if the vault symbol is empty.
-	if symbol == "" {
-		return nil, ErrEmptyVaultSymbol
+	// Check if the staking asset address is empty.
+	if stakingAsset.Cmp(common.Address{}) == 0 {
+		return nil, ErrEmptyStakingAssetAddress
 	}
 
 	// Check if the asset address is empty.
@@ -82,7 +69,7 @@ func SafeNewVault(
 		return nil, ErrEmptyPoolAddress
 	}
 
-	return NewVault(vault, name, symbol, asset, rewards, pool), nil
+	return NewVault(vault, stakingAsset, rewards, pool), nil
 }
 
 // MarshalBinary marshals the vault into bytes.

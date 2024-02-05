@@ -1,0 +1,124 @@
+type Token @entity(immutable: true) {
+  """ The token's contract address """
+  id: ID! 
+  """ The token's contract address """
+  address: Bytes!
+  """ The token's name """
+  name: String!
+  """ The token's symbol """
+  symbol: String!
+  """ The token's symbol """
+  decimals: BigInt!
+}
+
+type Reward @entity {
+    """ The reward's contract address """
+    id: ID!
+    """ The token that is being rewarded """
+    token: Token!
+    """ The vault that is being rewarded """
+    vault: Vault!
+    """ The reward's amount """
+    amount: BigDecimal!
+    """ The reward's timestamp """
+    timestamp: BigInt!
+}
+
+type IBGTReward @entity {
+    """ The reward's contract address """
+    id: ID!
+    """ The vault that is being rewarded """
+    vault: Vault!
+    """ The reward's amount """
+    amount: BigDecimal!
+    """ The reward's timestamp """
+    timestamp: BigInt!
+}
+
+type Validator @entity {
+    """ The validator's address """
+    id: ID!
+
+    """ The protocol that the validator is from"""
+    protocol: Infrared!
+}
+
+# --------------------------------------
+#          ACTIONS
+# --------------------------------------
+
+type Deposit @entity {
+    """ Unique ID for the deposit"""
+    id: ID!
+    """ The user who made the deposit """
+    user: User!
+    """ The vault where the deposit was made """
+    vault: Vault! 
+    """ The amount deposited """
+    amount: BigDecimal!
+    """ The timestamp of the deposit """
+    timestamp: BigInt!
+}
+
+type Withdraw @entity {
+    """ Unique ID for the withdraw"""
+    id: ID!
+    """ The user who made the withdraw """
+    user: User!
+    """ The vault where the withdraw was made """
+    vault: Vault! 
+    """ The amount withdrawn """
+    amount: BigDecimal!
+    """ The timestamp of the withdraw """
+    timestamp: BigInt!
+}
+
+# --------------------------------------
+#          TOP LEVEL TYPES
+# --------------------------------------
+
+type Vault @entity {
+    """ The vault's address """
+    id: ID!
+    """ The pool's address """
+    pool: Bytes!
+    """ The staking token """
+    stakingToken: Token!
+    """ Is the pool active """
+    active: Boolean!
+    """ The reward tokens from the vault """
+    rewardTokens: [Token!]!
+    """ name of the vault """
+    name: String!
+    """ The total amount of deposits """
+    tvl: BigDecimal!
+    """ Rewards made to the vault """
+    rewards: [Reward!]! @derivedFrom(field: "vault")
+    """ IBGT Rewards made to the vault """
+    ibgtRewards: [IBGTReward!]! @derivedFrom(field: "vault")
+    """ Deposits made to the vault """
+    deposits: [Deposit!]! @derivedFrom(field: "vault")
+    """ Withdraws made from the vault """
+    withdraws: [Withdraw!]! @derivedFrom(field: "vault")
+}
+
+
+
+type User @entity {
+    """ The user's address """
+    id: ID!
+    """ The user's address """
+    address: Bytes!
+    """ Deposits made by the user """
+    deposits: [Deposit!]! @derivedFrom(field: "user")
+    """ Withdraws made by the user """
+    withdraws: [Withdraw!]! @derivedFrom(field: "user")
+}
+
+type Infrared @entity {
+    """ The address of the contract """
+    id: ID!
+
+    """ The validators """
+    validators: [Validator!]! @derivedFrom(field: "protocol")
+}

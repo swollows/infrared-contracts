@@ -37,7 +37,7 @@ type CosmosCoin struct {
 
 // ContractMetaData contains all meta data concerning the Contract contract.
 var ContractMetaData = &bind.MetaData{
-	ABI: "[{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"caller\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"depositor\",\"type\":\"address\"},{\"components\":[{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"string\",\"name\":\"denom\",\"type\":\"string\"}],\"indexed\":false,\"internalType\":\"structCosmos.Coin[]\",\"name\":\"assets\",\"type\":\"tuple[]\"},{\"components\":[{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"string\",\"name\":\"denom\",\"type\":\"string\"}],\"indexed\":false,\"internalType\":\"structCosmos.Coin\",\"name\":\"shares\",\"type\":\"tuple\"}],\"name\":\"InitializeDeposit\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"depositor\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"withdrawAddress\",\"type\":\"address\"}],\"name\":\"SetDepositorWithdrawAddress\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"withdrawer\",\"type\":\"address\"},{\"components\":[{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"string\",\"name\":\"denom\",\"type\":\"string\"}],\"indexed\":false,\"internalType\":\"structCosmos.Coin[]\",\"name\":\"rewardAmount\",\"type\":\"tuple[]\"}],\"name\":\"WithdrawDepositRewards\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"depositor\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"}],\"name\":\"getCurrentRewards\",\"outputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"string\",\"name\":\"denom\",\"type\":\"string\"}],\"internalType\":\"structCosmos.Coin[]\",\"name\":\"\",\"type\":\"tuple[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"depositor\",\"type\":\"address\"}],\"name\":\"getDepositorWithdrawAddress\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"}],\"name\":\"getOutstandingRewards\",\"outputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"string\",\"name\":\"denom\",\"type\":\"string\"}],\"internalType\":\"structCosmos.Coin[]\",\"name\":\"\",\"type\":\"tuple[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"withdrawAddress\",\"type\":\"address\"}],\"name\":\"setDepositorWithdrawAddress\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"}],\"name\":\"withdrawAllDepositorRewards\",\"outputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"string\",\"name\":\"denom\",\"type\":\"string\"}],\"internalType\":\"structCosmos.Coin[]\",\"name\":\"\",\"type\":\"tuple[]\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"withdrawDepositorRewards\",\"outputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"string\",\"name\":\"denom\",\"type\":\"string\"}],\"internalType\":\"structCosmos.Coin[]\",\"name\":\"\",\"type\":\"tuple[]\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"recipient\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"withdrawDepositorRewardsTo\",\"outputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"string\",\"name\":\"denom\",\"type\":\"string\"}],\"internalType\":\"structCosmos.Coin[]\",\"name\":\"\",\"type\":\"tuple[]\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
+	ABI: "[{\"type\":\"function\",\"name\":\"getCurrentRewards\",\"inputs\":[{\"name\":\"depositor\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"receiver\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"\",\"type\":\"tuple[]\",\"internalType\":\"structCosmos.Coin[]\",\"components\":[{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"denom\",\"type\":\"string\",\"internalType\":\"string\"}]}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getDepositorWithdrawAddress\",\"inputs\":[{\"name\":\"depositor\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getOutstandingRewards\",\"inputs\":[{\"name\":\"receiver\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"\",\"type\":\"tuple[]\",\"internalType\":\"structCosmos.Coin[]\",\"components\":[{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"denom\",\"type\":\"string\",\"internalType\":\"string\"}]}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"setDepositorWithdrawAddress\",\"inputs\":[{\"name\":\"withdrawAddress\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"withdrawAllDepositorRewards\",\"inputs\":[{\"name\":\"receiver\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"\",\"type\":\"tuple[]\",\"internalType\":\"structCosmos.Coin[]\",\"components\":[{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"denom\",\"type\":\"string\",\"internalType\":\"string\"}]}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"withdrawDepositorRewards\",\"inputs\":[{\"name\":\"receiver\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"tuple[]\",\"internalType\":\"structCosmos.Coin[]\",\"components\":[{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"denom\",\"type\":\"string\",\"internalType\":\"string\"}]}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"withdrawDepositorRewardsTo\",\"inputs\":[{\"name\":\"receiver\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"recipient\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"tuple[]\",\"internalType\":\"structCosmos.Coin[]\",\"components\":[{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"denom\",\"type\":\"string\",\"internalType\":\"string\"}]}],\"stateMutability\":\"nonpayable\"},{\"type\":\"event\",\"name\":\"InitializeDeposit\",\"inputs\":[{\"name\":\"caller\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"depositor\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"assets\",\"type\":\"tuple[]\",\"indexed\":false,\"internalType\":\"structCosmos.Coin[]\",\"components\":[{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"denom\",\"type\":\"string\",\"internalType\":\"string\"}]},{\"name\":\"shares\",\"type\":\"tuple\",\"indexed\":false,\"internalType\":\"structCosmos.Coin\",\"components\":[{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"denom\",\"type\":\"string\",\"internalType\":\"string\"}]}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"SetDepositorWithdrawAddress\",\"inputs\":[{\"name\":\"depositor\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"withdrawAddress\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"WithdrawDepositRewards\",\"inputs\":[{\"name\":\"rewardReceiver\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"withdrawer\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"rewardRecipient\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"rewardAmount\",\"type\":\"tuple[]\",\"indexed\":false,\"internalType\":\"structCosmos.Coin[]\",\"components\":[{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"denom\",\"type\":\"string\",\"internalType\":\"string\"}]}],\"anonymous\":false}]",
 }
 
 // ContractABI is the input ABI used to generate the binding from.
@@ -740,39 +740,57 @@ func (it *ContractWithdrawDepositRewardsIterator) Close() error {
 
 // ContractWithdrawDepositRewards represents a WithdrawDepositRewards event raised by the Contract contract.
 type ContractWithdrawDepositRewards struct {
-	Withdrawer   common.Address
-	RewardAmount []CosmosCoin
-	Raw          types.Log // Blockchain specific contextual infos
+	RewardReceiver  common.Address
+	Withdrawer      common.Address
+	RewardRecipient common.Address
+	RewardAmount    []CosmosCoin
+	Raw             types.Log // Blockchain specific contextual infos
 }
 
-// FilterWithdrawDepositRewards is a free log retrieval operation binding the contract event 0x20f794976baea9d3a602da251b574d567f0ae74f1db1317b44b126628389cb6a.
+// FilterWithdrawDepositRewards is a free log retrieval operation binding the contract event 0xeaf9ad68989c4779cdb8274ed825acd8dd664e333e1168e03e7fb4766bc514a4.
 //
-// Solidity: event WithdrawDepositRewards(address indexed withdrawer, (uint256,string)[] rewardAmount)
-func (_Contract *ContractFilterer) FilterWithdrawDepositRewards(opts *bind.FilterOpts, withdrawer []common.Address) (*ContractWithdrawDepositRewardsIterator, error) {
+// Solidity: event WithdrawDepositRewards(address indexed rewardReceiver, address indexed withdrawer, address indexed rewardRecipient, (uint256,string)[] rewardAmount)
+func (_Contract *ContractFilterer) FilterWithdrawDepositRewards(opts *bind.FilterOpts, rewardReceiver []common.Address, withdrawer []common.Address, rewardRecipient []common.Address) (*ContractWithdrawDepositRewardsIterator, error) {
 
+	var rewardReceiverRule []interface{}
+	for _, rewardReceiverItem := range rewardReceiver {
+		rewardReceiverRule = append(rewardReceiverRule, rewardReceiverItem)
+	}
 	var withdrawerRule []interface{}
 	for _, withdrawerItem := range withdrawer {
 		withdrawerRule = append(withdrawerRule, withdrawerItem)
 	}
+	var rewardRecipientRule []interface{}
+	for _, rewardRecipientItem := range rewardRecipient {
+		rewardRecipientRule = append(rewardRecipientRule, rewardRecipientItem)
+	}
 
-	logs, sub, err := _Contract.contract.FilterLogs(opts, "WithdrawDepositRewards", withdrawerRule)
+	logs, sub, err := _Contract.contract.FilterLogs(opts, "WithdrawDepositRewards", rewardReceiverRule, withdrawerRule, rewardRecipientRule)
 	if err != nil {
 		return nil, err
 	}
 	return &ContractWithdrawDepositRewardsIterator{contract: _Contract.contract, event: "WithdrawDepositRewards", logs: logs, sub: sub}, nil
 }
 
-// WatchWithdrawDepositRewards is a free log subscription operation binding the contract event 0x20f794976baea9d3a602da251b574d567f0ae74f1db1317b44b126628389cb6a.
+// WatchWithdrawDepositRewards is a free log subscription operation binding the contract event 0xeaf9ad68989c4779cdb8274ed825acd8dd664e333e1168e03e7fb4766bc514a4.
 //
-// Solidity: event WithdrawDepositRewards(address indexed withdrawer, (uint256,string)[] rewardAmount)
-func (_Contract *ContractFilterer) WatchWithdrawDepositRewards(opts *bind.WatchOpts, sink chan<- *ContractWithdrawDepositRewards, withdrawer []common.Address) (event.Subscription, error) {
+// Solidity: event WithdrawDepositRewards(address indexed rewardReceiver, address indexed withdrawer, address indexed rewardRecipient, (uint256,string)[] rewardAmount)
+func (_Contract *ContractFilterer) WatchWithdrawDepositRewards(opts *bind.WatchOpts, sink chan<- *ContractWithdrawDepositRewards, rewardReceiver []common.Address, withdrawer []common.Address, rewardRecipient []common.Address) (event.Subscription, error) {
 
+	var rewardReceiverRule []interface{}
+	for _, rewardReceiverItem := range rewardReceiver {
+		rewardReceiverRule = append(rewardReceiverRule, rewardReceiverItem)
+	}
 	var withdrawerRule []interface{}
 	for _, withdrawerItem := range withdrawer {
 		withdrawerRule = append(withdrawerRule, withdrawerItem)
 	}
+	var rewardRecipientRule []interface{}
+	for _, rewardRecipientItem := range rewardRecipient {
+		rewardRecipientRule = append(rewardRecipientRule, rewardRecipientItem)
+	}
 
-	logs, sub, err := _Contract.contract.WatchLogs(opts, "WithdrawDepositRewards", withdrawerRule)
+	logs, sub, err := _Contract.contract.WatchLogs(opts, "WithdrawDepositRewards", rewardReceiverRule, withdrawerRule, rewardRecipientRule)
 	if err != nil {
 		return nil, err
 	}
@@ -804,9 +822,9 @@ func (_Contract *ContractFilterer) WatchWithdrawDepositRewards(opts *bind.WatchO
 	}), nil
 }
 
-// ParseWithdrawDepositRewards is a log parse operation binding the contract event 0x20f794976baea9d3a602da251b574d567f0ae74f1db1317b44b126628389cb6a.
+// ParseWithdrawDepositRewards is a log parse operation binding the contract event 0xeaf9ad68989c4779cdb8274ed825acd8dd664e333e1168e03e7fb4766bc514a4.
 //
-// Solidity: event WithdrawDepositRewards(address indexed withdrawer, (uint256,string)[] rewardAmount)
+// Solidity: event WithdrawDepositRewards(address indexed rewardReceiver, address indexed withdrawer, address indexed rewardRecipient, (uint256,string)[] rewardAmount)
 func (_Contract *ContractFilterer) ParseWithdrawDepositRewards(log types.Log) (*ContractWithdrawDepositRewards, error) {
 	event := new(ContractWithdrawDepositRewards)
 	if err := _Contract.contract.UnpackLog(event, "WithdrawDepositRewards", log); err != nil {

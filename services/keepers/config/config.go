@@ -1,6 +1,10 @@
 package config
 
-import "time"
+import (
+	"time"
+
+	"github.com/berachain/offchain-sdk/core/transactor"
+)
 
 // DBConfig contains the configuration for the database.
 type DBConfig struct {
@@ -17,8 +21,6 @@ type IntervalConfig struct {
 
 // SignerConfig contains the configuration for the signer.
 type SignerConfig struct {
-	// PublicKey is the public key of the signer.
-	PublicKey string
 	// PrivateKey is the private key of the signer.
 	PrivateKey string
 }
@@ -56,4 +58,5 @@ type Config struct {
 	ContractsConfig    ContractsConfig
 	VaultHarvester     VaultHarvesterConfig
 	ValidatorHarvester ValidatorHarvesterConfig
+	Transactor         transactor.Config
 }

@@ -16,14 +16,9 @@ func PopulateKeeperAppConfig(config *config.Config, logger log.Logger) {
 // populateSignerConfig gets the signer info from the env and sets it in the config struct.
 func populateSignerConfig(config *config.Config) {
 	config.Signer.PrivateKey = tools.GetEnv("KEEPERS_PRIVATE_KEY", "")
-	config.Signer.PublicKey = tools.GetEnv("KEEPERS_PUBLIC_KEY", "")
 
 	if config.Signer.PrivateKey == "" {
 		panic("KEEPERS_PRIVATE_KEY is required")
-	}
-
-	if config.Signer.PublicKey == "" {
-		panic("KEEPERS_PUBLIC_KEY is required")
 	}
 }
 

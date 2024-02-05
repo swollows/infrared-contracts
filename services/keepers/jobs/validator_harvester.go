@@ -2,30 +2,24 @@ package jobs
 
 import (
 	"context"
-	"crypto/ecdsa"
 	"math/big"
 	"time"
 
+	"github.com/berachain/offchain-sdk/core/transactor"
+	"github.com/berachain/offchain-sdk/core/transactor/tracker"
+	txrtypes "github.com/berachain/offchain-sdk/core/transactor/types"
 	"github.com/berachain/offchain-sdk/job"
 	"github.com/berachain/offchain-sdk/log"
 	sdk "github.com/berachain/offchain-sdk/types"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/infrared-dao/infrared-mono-repo/pkg/bindings/distribution"
 	"github.com/infrared-dao/infrared-mono-repo/pkg/bindings/infrared"
-	"github.com/infrared-dao/infrared-mono-repo/pkg/db"
-	"github.com/infrared-dao/infrared-mono-repo/pkg/tools"
-	util "github.com/infrared-dao/infrared-mono-repo/services/keepers/utils"
 )
 
 // ==============================================================================
 //  Dependencies & constants
 // ==============================================================================
-
-// VaValidatorHarvestDB is the interface for the validator harvester database.
-type ValidatorHarvestDB interface {
-	SetCheckpoint(ctx context.Context, checkpoint *db.CheckPoint) error
-}
 
 // The method names for this job.
 const (
@@ -39,21 +33,16 @@ const (
 
 // Compile time check to ensure this type implements the Job interface.
 var (
-	_ job.Polling  = &ValidatorHarvester{}
-	_ job.Basic    = &ValidatorHarvester{}
-	_ job.HasSetup = &ValidatorHarvester{}
+	_ job.Polling        = &ValidatorHarvester{}
+	_ job.Basic          = &ValidatorHarvester{}
+	_ job.HasSetup       = &ValidatorHarvester{}
+	_ tracker.Subscriber = &VaultHarvester{}
 )
 
 // ValidatorHarvester is the job that harvests the validator.
 type ValidatorHarvester struct {
-	// db is the database for the validator harvester job.
-	db ValidatorHarvestDB
 	// interval is the interval at which the job runs.
 	interval *time.Duration
-	// pubKey is the public key of the validator harvester.
-	pubKey common.Address
-	// privKey is the private key of the validator harvester.
-	privKey *ecdsa.PrivateKey
 	// minBera is the minimum amount of Bera to harvest.
 	minBera *big.Int
 	// distributionPrecompileAddress is the address of the distribution precompile.
@@ -62,34 +51,31 @@ type ValidatorHarvester struct {
 	distributionPrecompileContract *distribution.Contract
 	// infraredContractAddress is the address of the infrared contract.
 	infraredContractAddress common.Address
-	// infraredBoundContract is the contract of the infrared contract.
-	infraredBoundContract *bind.BoundContract
 	// infraredContract is the contract of the infrared contract used to query state.
 	infraredContract *infrared.Contract
-	// gasLimit is the gas limit for the transaction.
-	gasLimit uint64
+	// txMgr is the transaction manager for the job.
+	txMgr *transactor.TxrV2
+	// txPacker is the transaction packer for the job.
+	txPacker *txrtypes.Packer
+	// logger is the logger for the job.
+	logger log.Logger
 }
 
 // NewValidatorHarvester returns a new validator harvester job.
 func NewValidatorHarvester(
-	db ValidatorHarvestDB,
 	interval *time.Duration,
-	pubKey common.Address,
-	privKey *ecdsa.PrivateKey,
 	minBera *big.Int,
 	distributionPrecompileAddress common.Address,
 	infraredContractAddress common.Address,
-	gasLimit uint64,
+	txMgr *transactor.TxrV2,
 ) *ValidatorHarvester {
 	return &ValidatorHarvester{
-		db:                            db,
 		interval:                      interval,
-		pubKey:                        pubKey,
-		privKey:                       privKey,
 		minBera:                       minBera,
 		distributionPrecompileAddress: distributionPrecompileAddress,
 		infraredContractAddress:       infraredContractAddress,
-		gasLimit:                      gasLimit,
+		txMgr:                         txMgr,
+		txPacker:                      &txrtypes.Packer{MetaData: infrared.ContractMetaData},
 	}
 }
 
@@ -120,19 +106,11 @@ func (vh *ValidatorHarvester) Setup(ctx context.Context) error {
 	}
 	vh.infraredContract = infraredContract
 
-	// Setup the infrared bound contract.
-	infraredAbi, err := infrared.ContractMetaData.GetAbi()
-	if err != nil {
-		logger.Error("❌ Failed to get infrared abi", "Error", err)
-		return err
-	}
-	vh.infraredBoundContract = bind.NewBoundContract(
-		vh.infraredContractAddress,
-		*infraredAbi,
-		ethClient,
-		ethClient,
-		ethClient,
-	)
+	// Handle the transaction results from the transaction manager.
+	vh.txMgr.SubscribeTxResults(ctx, vh, make(chan *tracker.InFlightTx, 1024))
+
+	// Setup the logger.
+	vh.logger = logger
 
 	return nil
 }
@@ -160,22 +138,6 @@ func (vh *ValidatorHarvester) Execute(ctx context.Context, _ any) (any, error) {
 		if err != nil {
 			return nil, err
 		}
-
-		// Sleep for 1 second to avoid spamming the node.
-		time.Sleep(1 * time.Second)
-	}
-
-	// Get the block number after the harvest.
-	blockNumber, err := sCtx.Chain().BlockNumber(sCtx)
-	if err != nil {
-		logger.Error("⚠️  Failed to get block number", "Error", err)
-		return nil, err
-	}
-
-	// Set the checkpoint in the database.
-	if err := vh.db.SetCheckpoint(sCtx, db.NewCheckPoint(blockNumber)); err != nil {
-		logger.Error("⚠️  Failed to set checkpoint", "Error", err)
-		return nil, err
 	}
 
 	return nil, nil
@@ -187,77 +149,119 @@ func (vh *ValidatorHarvester) Execute(ctx context.Context, _ any) (any, error) {
 
 // harvestValidators is a helper method that harvests the ripe the validators.
 func (vh *ValidatorHarvester) harvestValidator(sCtx *sdk.Context, validator common.Address, logger log.Logger) error {
-	// Generate the transaction opts.
-	txOpts, err := util.GenerateTransactionOps(sCtx, vh.privKey, vh.pubKey, vh.gasLimit)
-	if err != nil {
-		logger.Error("❌ Failed to generate transaction options", "Error", err)
-		return err
-	}
-
-	// Generate the transaction.
-	tx, err := vh.infraredBoundContract.Transact(
-		txOpts,
+	tx := &txrtypes.TxRequest{}
+	tx, err := vh.txPacker.CreateTxRequest(
+		vh.infraredContractAddress,
+		nil, // value
+		nil, // gas tip cap
+		nil, // gas fee cap
+		0,   // Gas limit
 		validatorHarvestCallName,
 		validator,
 	)
 	if err != nil {
-		logger.Error("❌ Failed to generate transaction", "Error", err)
+		logger.Error("❌ Failed to create transaction request", "Error", err)
 		return err
 	}
 
-	// Handle the transaction response in a seperate goroutine.
-	go tools.HandleTxResponse(sCtx, sCtx.Chain(), vh.pubKey, tx, logger)
+	_, err = vh.txMgr.SendTxRequest(tx)
+	if err != nil {
+		logger.Error("❌ Failed to send transaction request", "Error", err)
+		return err
+	}
+
+	logger.Info("📡 Sent transaction request", "To", tx.To, "Validator", validator.Hex())
 
 	return nil
 }
 
 // getRipe returns the ripe validators.
 func (vh *ValidatorHarvester) getRipe(ctx *sdk.Context, logger log.Logger) ([]common.Address, error) {
-	// Get all the infrared validators on-chain.
 	validators, err := vh.infraredContract.InfraredValidators(nil)
 	if err != nil {
 		logger.Error("⚠️ Failed to get validators", "Error", err)
 		return nil, err
 	}
 
-	// Filter out the ripe validators from the infrared validators.
-	ripeValidators := make([]common.Address, 0)
+	ripe := make([]common.Address, 0)
 	for _, validator := range validators {
-		// Get the validators current rewards.
-		cr, err := vh.distributionPrecompileContract.GetDelegatorValidatorReward(
-			nil,
-			vh.infraredContractAddress,
-			validator,
-		)
+		cr, err := vh.distributionPrecompileContract.GetAllDelegatorRewards(nil, vh.infraredContractAddress)
 		if err != nil {
 			logger.Error("⚠️ Failed to get current rewards", "Error", err)
 			return nil, err
 		}
 
-		// Check if the validator is ripe and add it to the list if it is.
-		if vh.isRipe(cr) {
-			ripeValidators = append(ripeValidators, validator)
+		if vh.isRipe(validator, cr) {
+			ripe = append(ripe, validator)
 		}
 	}
 
-	return ripeValidators, nil
+	return ripe, nil
 }
 
 // isRipe returns true if the validator is ready to be harvested, false otherwise.
-func (vh *ValidatorHarvester) isRipe(coins []distribution.CosmosCoin) bool {
-	// If the rewards are empty, then the validator is not ripe.
-	if len(coins) == 0 {
-		return false
-	}
-
-	// Get the amount of Bera.
-	amt := big.NewInt(0)
-	for _, coin := range coins {
-		if coin.Denom == "abera" {
-			amt = coin.Amount
-			break // Break early since we only care about Bera.
+func (vh *ValidatorHarvester) isRipe(
+	validator common.Address,
+	validatorRewards []distribution.IDistributionModuleValidatorReward,
+) bool {
+	for _, vr := range validatorRewards {
+		// Check if this is the validator we are looking for.
+		if vr.Validator != validator {
+			continue
 		}
+
+		// Check if the rewards are empty, then the validator is not ripe.
+		if len(vr.Rewards) == 0 {
+			return false
+		}
+
+		// Get the amount of Bera.
+		amt := big.NewInt(0)
+		for _, reward := range vr.Rewards {
+			if reward.Denom == "abera" {
+				amt = reward.Amount
+				break // Break early since we only care about Bera.
+			}
+		}
+
+		return amt.Cmp(vh.minBera) >= 0
 	}
 
-	return amt.Cmp(vh.minBera) >= 0
+	// If we reach here, then the validator is not ripe.
+	return false
+}
+
+// ==============================================================================
+//  Transaction Subscriber
+// ==============================================================================
+
+// OnSuccess implements the tracker.Subscriber interface.
+func (vh *ValidatorHarvester) OnSuccess(tx *tracker.InFlightTx, receipt *types.Receipt) error {
+	// Check if the transaction is from the infrared contract.
+	if receipt.ContractAddress != vh.infraredContractAddress {
+		return nil
+	}
+	vh.logger.Info("✅ successfuly harvested validator", "TxHash", tx.Hash())
+	return nil
+}
+
+// OnRevert is called when a transaction reverts.
+func (vh *ValidatorHarvester) OnRevert(tx *tracker.InFlightTx, receipt *types.Receipt) error {
+	// Check if the transaction is from the infrared contract.
+	if receipt.ContractAddress != vh.infraredContractAddress {
+		return nil
+	}
+	vh.logger.Info("❌ Failed to harvest validator", "TxHash", tx.Hash())
+	return nil
+}
+
+// OnStale is called when a transaction becomes stale.
+func (vh *ValidatorHarvester) OnStale(ctx context.Context, tx *tracker.InFlightTx) error {
+	vh.logger.Info("⚠️ Stale transaction", "TxHash", tx.Hash())
+	return nil
+}
+
+// OnError is called when a transaction errors.
+func (vh *ValidatorHarvester) OnError(ctx context.Context, tx *tracker.InFlightTx, err error) {
+	vh.logger.Error("❌ Transaction error", "TxHash", tx.Hash(), "Error", err)
 }
