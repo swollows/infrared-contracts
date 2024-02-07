@@ -76,6 +76,7 @@ export function handleStake(event: Staked): Deposit {
     deposit.vault = event.address.toHexString();
     deposit.amount = event.params.amount.toBigDecimal();
     deposit.timestamp = event.block.timestamp;
+    deposit.txHash = event.transaction.hash;
     deposit.save();
   }
 
@@ -93,6 +94,7 @@ export function handleWithdraw(event: Withdrawn): Withdraw {
     withdraw.vault = event.address.toHexString();
     withdraw.amount = event.params.amount.toBigDecimal();
     withdraw.timestamp = event.block.timestamp;
+    withdraw.txHash = event.transaction.hash;
     withdraw.save();
   }
   updateTvl(event.address);

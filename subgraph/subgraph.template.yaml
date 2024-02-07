@@ -22,9 +22,9 @@ dataSources:
         - Vault
       abis:
         - name: Infrared
-          file: ../contracts/out/Infrared.sol/Infrared.abi.json
+          file: ../contracts/out/Infrared.sol/Infrared.json
         - name: ERC20
-          file: ../contracts/out/ERC20.sol/ERC20.abi.json
+          file: ../contracts/out/ERC20.sol/ERC20.json
       eventHandlers:
         - event: NewVault(address,indexed address,indexed address,address,address[])
           handler: handleNewVault
@@ -59,9 +59,9 @@ templates:
         - Token
       abis:
         - name: InfraredVault
-          file: ../contracts/out/InfraredVault.sol/InfraredVault.abi.json
+          file: ../contracts/out/InfraredVault.sol/InfraredVault.json
         - name: ERC20
-          file: ../contracts/out/ERC20.sol/ERC20.abi.json
+          file: ../contracts/out/ERC20.sol/ERC20.json
       eventHandlers:
         - event: Staked(indexed address,uint256)
           handler: handleStaked
