@@ -9,35 +9,26 @@ contract InfraredInitializationTest is Helper {
     /*//////////////////////////////////////////////////////////////
                 Initialization and Setup Tests
     //////////////////////////////////////////////////////////////*/
+
     function testInitializationParameters() public {
         assertEq(
             address(infrared.ibgt()), address(ibgt), "Incorrect IBGT address"
         );
 
         assertEq(
-            address(infrared.stakingPrecompile()),
-            address(mockStaking),
-            "Incorrect Staking Module address"
+            address(infrared.rewardsFactory()),
+            address(rewardsFactory),
+            "Incorrect Bera Chain Rewards Factory address"
         );
-        assertEq(
-            address(infrared.distributionPrecompile()),
-            address(mockDistribution),
-            "Incorrect Distribution Precompile address"
-        );
-        assertEq(
-            address(infrared.erc20BankPrecompile()),
-            address(mockErc20Bank),
-            "Incorrect ERC20 Bank Module address"
-        );
+        // assertEq(     // TODO: wait until the distribution contract is implemented
+        //     address(infrared.distributionPrecompile()),
+        //     address(distribution),
+        //     "Incorrect Distribution Precompile address"
+        // );
         assertEq(
             address(infrared.wbera()),
             address(mockWbera),
             "Incorrect Wbera address"
-        );
-        assertEq(
-            address(infrared.rewardsPrecompile()),
-            address(mockRewardsPrecompile),
-            "Incorrect Rewards Precompile address"
         );
 
         assertTrue(
@@ -45,7 +36,10 @@ contract InfraredInitializationTest is Helper {
             "Incorrect Admin address"
         );
         assertEq(
-            address(infrared.ibgt()), address(ibgt), "Incorrect IBGT address"
+            address(infrared.ired()), address(ired), "Incorrect iRED address"
+        );
+        assertEq(
+            infrared.rewardsDuration(), 1 days, "Incorrect rewards duration"
         );
     }
 
@@ -69,17 +63,7 @@ contract InfraredInitializationTest is Helper {
         address unauthorizedUser = address(3);
 
         // Expecting a revert when unauthorizedUser tries to access a role-specific function
-        vm.prank(unauthorizedUser);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                IAccessControl.AccessControlUnauthorizedAccount.selector,
-                unauthorizedUser,
-                infrared.DEFAULT_ADMIN_ROLE()
-            )
-        );
-        infrared.registerVault(address(mockAsset), rewardTokens, poolAddress);
-
-        vm.prank(unauthorizedUser);
+        vm.startPrank(unauthorizedUser);
         vm.expectRevert(
             abi.encodeWithSelector(
                 IAccessControl.AccessControlUnauthorizedAccount.selector,
@@ -87,7 +71,52 @@ contract InfraredInitializationTest is Helper {
                 infrared.KEEPER_ROLE()
             )
         );
-        infrared.updateIbgt(address(123));
+        infrared.registerVault(address(stakingAsset), rewardTokens);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAccessControl.AccessControlUnauthorizedAccount.selector,
+                unauthorizedUser,
+                infrared.KEEPER_ROLE()
+            )
+        );
+        // infrared.harvestValidator(address(1));
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAccessControl.AccessControlUnauthorizedAccount.selector,
+                unauthorizedUser,
+                infrared.GOVERNANCE_ROLE()
+            )
+        );
+        infrared.updateWhiteListedRewardTokens(address(12345), true);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAccessControl.AccessControlUnauthorizedAccount.selector,
+                unauthorizedUser,
+                infrared.GOVERNANCE_ROLE()
+            )
+        );
+        infrared.updateRewardsDuration(2 days);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAccessControl.AccessControlUnauthorizedAccount.selector,
+                unauthorizedUser,
+                infrared.GOVERNANCE_ROLE()
+            )
+        );
+        infrared.pauseVault(address(infraredVault));
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAccessControl.AccessControlUnauthorizedAccount.selector,
+                unauthorizedUser,
+                infrared.GOVERNANCE_ROLE()
+            )
+        );
+        infrared.recoverERC20(address(12345), address(this), 100);
     }
 
     function testUpdateWhiteListedRewardTokens() public {

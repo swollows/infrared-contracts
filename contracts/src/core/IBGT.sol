@@ -8,5 +8,9 @@ import {ERC20PresetMinterPauser} from "../vendors/ERC20PresetMinterPauser.sol";
  * @notice This contract is the IBGT token.
  */
 contract IBGT is ERC20PresetMinterPauser {
-    constructor() ERC20PresetMinterPauser("Infrared BGT", "iBGT") {}
+    address public immutable bgt;
+
+    constructor(address _bgt) ERC20PresetMinterPauser("Infrared BGT", "iBGT") {
+        bgt = _bgt;
+    }
 }

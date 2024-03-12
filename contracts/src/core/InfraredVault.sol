@@ -1,326 +1,200 @@
-// SPDX-License-Identifier: AGPL-3.0-only
+// SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.22;
 
-import {MultiRewards, IERC20, SafeERC20} from "./MultiRewards.sol";
-import {AccessControl} from "@openzeppelin/access/AccessControl.sol";
+import {IBerachainRewardsVault} from
+    "@berachain/interfaces/IBerachainRewardsVault.sol";
+import {IBerachainRewardsVaultFactory} from
+    "@berachain/interfaces/IBerachainRewardsVaultFactory.sol";
+
 import {Errors} from "@utils/Errors.sol";
-import {IRewardsModule} from "@berachain/Rewards.sol";
-import {IDistributionModule} from "@polaris/Distribution.sol";
-import {Cosmos} from "@polaris/CosmosTypes.sol";
-import {PureUtils} from "@utils/PureUtils.sol";
+import {MultiRewards, IERC20, SafeERC20} from "@core/MultiRewards.sol";
+
+import {IInfrared} from "@interfaces/IInfrared.sol";
+import {IInfraredVault} from "@interfaces/IInfraredVault.sol";
 
 /**
  * @title InfraredVault
  * @notice This contract is the vault for staking tokens, and receiving rewards from the Proof of Liquidity protocol.
- * @dev This contract uses the MultiRewards contract to distribute rewards to stakers, this is taken from curve.fi. (inspired by Synthetix).
+ * @dev This contract uses the MultiRewards contract to distribute rewards to vault stakers, this is taken from curve.fi. (inspired by Synthetix).
+ * @dev Does not support staking tokens with non-standard ERC20 transfer tax behavior.
  */
-contract InfraredVault is MultiRewards, AccessControl {
+contract InfraredVault is MultiRewards, IInfraredVault {
     using SafeERC20 for IERC20;
-    // This role is reserved for the main infrared contract.
-
-    bytes32 public constant INFRARED_ROLE = keccak256("INFRARED_ROLE");
-
-    // The infrared contract address, this is where the rewards will be coming from .
-    address public immutable INFRARED_ADDRESS;
-
-    // The pool address that the staking token is coming from.
-    address public immutable POOL_ADDRESS;
-
-    // The rewards module.
-    IRewardsModule public immutable REWARDS_MODULE;
-
-    // The distribution module.
-    IDistributionModule public immutable DISTRIBUTION_MODULE;
-
-    // The token denominations for key berachain tokens.
-    string public constant bgtDenom = "abgt";
 
     // Number of reward tokens that can be added to the vault.
     uint256 public constant MAX_NUM_REWARD_TOKENS = 10;
 
+    // The infrared contract address acts a vault factory and coordinator
+    address public immutable infrared;
+
+    // The address of the berachain rewards vault
+    IBerachainRewardsVault public rewardsVault;
+
     // events
-    event UpdateWithdrawAddress(
-        address _sender,
-        address _oldWithdrawAddress,
-        address _newWithdrawAddress
-    );
-    event ClaimRewardsPrecompile(address _sender, uint256 _amt);
+    event UpdateOperator(address _sender, address _to);
+
+    /// Modifier to check that the caller is infrared contract
+    modifier onlyInfrared() {
+        if (msg.sender != infrared) revert Errors.Unauthorized(msg.sender);
+        _;
+    }
 
     constructor(
-        address _admin,
         address _stakingToken,
-        address _infrared,
-        address _pool,
-        address _rewardsModule,
-        address _distributionModule,
         address[] memory _rewardTokens,
         uint256 _rewardsDuration
     ) MultiRewards(_stakingToken) {
-        if (_admin == address(0)) {
-            revert Errors.ZeroAddress();
-        }
+        // infrared factory/coordinator
+        infrared = msg.sender;
 
-        if (_stakingToken == address(0)) {
-            revert Errors.ZeroAddress();
-        }
-
-        if (_infrared == address(0)) {
-            revert Errors.ZeroAddress();
-        }
-
-        if (_rewardsModule == address(0)) {
-            revert Errors.ZeroAddress();
-        }
-
-        if (_distributionModule == address(0)) {
-            revert Errors.ZeroAddress();
-        }
-
-        if (_rewardsDuration == 0) {
-            revert Errors.ZeroAmount();
-        }
-
+        if (_stakingToken == address(0)) revert Errors.ZeroAddress();
+        if (_rewardsDuration == 0) revert Errors.ZeroAmount();
         if (_rewardTokens.length > MAX_NUM_REWARD_TOKENS) {
             revert Errors.MaxNumberOfRewards();
         }
 
+        // set the berachain rewards vault and operator as infrared if rewards vault exists
+        address _rewardsVaultAddress =
+            getRewardsVaultAddress(infrared, _stakingToken);
+        rewardsVault = IBerachainRewardsVault(_rewardsVaultAddress);
+        if (_rewardsVaultAddress != address(0)) _setOperator(infrared);
+
         // add initial rewardToken
+        bool hasIBGT;
+        address _ibgt = address(IInfrared(infrared).ibgt());
         for (uint256 i = 0; i < _rewardTokens.length; i++) {
             if (_rewardTokens[i] == address(0)) {
                 revert Errors.ZeroAddress();
             }
-            _addReward(_rewardTokens[i], _infrared, _rewardsDuration);
+            _addReward(_rewardTokens[i], infrared, _rewardsDuration);
+            if (!hasIBGT) hasIBGT = (_rewardTokens[i] == _ibgt);
         }
+        if (!hasIBGT) revert Errors.IBGTNotRewardToken();
+    }
 
-        _grantRole(DEFAULT_ADMIN_ROLE, _admin);
-        _grantRole(INFRARED_ROLE, _infrared);
+    /**
+     * @notice Gets the berachain rewards vault address for given staking token
+     * @param _infrared The address of Infrared
+     * @param _stakingToken The address of the staking token for this vault
+     * @return The address of the berachain rewards vault
+     */
+    function getRewardsVaultAddress(address _infrared, address _stakingToken)
+        internal
+        view
+        returns (address)
+    {
+        IBerachainRewardsVaultFactory rewardsFactory =
+            IInfrared(_infrared).rewardsFactory();
+        return rewardsFactory.getVault(_stakingToken);
+    }
 
-        INFRARED_ADDRESS = _infrared;
-        POOL_ADDRESS = _pool != address(0) ? _pool : address(this);
-        REWARDS_MODULE = IRewardsModule(_rewardsModule);
-        DISTRIBUTION_MODULE = IDistributionModule(_distributionModule);
+    /**
+     * @notice Sets operator address of rewards for harvesting vault.
+     * @param to The operator address to manager rewards for this vault.
+     */
+    function _setOperator(address to) private {
+        rewardsVault.setOperator(to);
+        emit UpdateOperator(msg.sender, to);
+    }
 
-        _setWithdrawAddress(_infrared);
+    /// @inheritdoc IInfraredVault
+    function stakedInRewardsVault() public view returns (bool) {
+        return (rewardsVault != IBerachainRewardsVault(address(0)));
     }
 
     /*//////////////////////////////////////////////////////////////
-                             ADMIN
+                            STAKE/WITHDRAW
     //////////////////////////////////////////////////////////////*/
 
     /**
-     * @notice Change the withdraw address for the depositor.
-     * @param _withdrawAddress address The new withdraw address.
+     * @notice Transfers to berachain low level module on staking of LP tokens with the vault after transferring tokens in
+     * @param amount The amount of staking token transferred in to the contract
      */
-    function _setWithdrawAddress(address _withdrawAddress) internal {
-        if (_withdrawAddress == address(0)) {
-            revert Errors.ZeroAddress();
-        }
-
-        address _oldWithdrawAddress = getWithdrawAddress();
-
-        bool success =
-            REWARDS_MODULE.setDepositorWithdrawAddress(_withdrawAddress);
-
-        if (!success) {
-            revert Errors.SetWithdrawAddressFailed();
-        }
-
-        success = DISTRIBUTION_MODULE.setWithdrawAddress(_withdrawAddress);
-
-        if (!success) {
-            revert Errors.SetWithdrawAddressFailed();
-        }
-
-        emit UpdateWithdrawAddress(
-            msg.sender, _oldWithdrawAddress, _withdrawAddress
-        );
+    function onStake(uint256 amount) internal override {
+        if (!stakedInRewardsVault()) return;
+        stakingToken.safeIncreaseAllowance(address(rewardsVault), amount);
+        rewardsVault.stake(amount);
     }
 
     /**
-     * @notice Recover ERC20 tokens that were accidentally sent to the contract.
-     * @param _to     address The address to send the tokens to.
-     * @param _token  address The address of the token to recover.
-     * @param _amount uint256 The amount of the token to recover.
+     * @notice Redeems from berachain low level module on withdraw of LP tokens from the vault before transferring tokens out
+     * @param amount The amount of staking token transferred out of the contract
      */
-    function recoverERC20(address _to, address _token, uint256 _amount)
-        external
-        onlyRole(DEFAULT_ADMIN_ROLE)
-    {
-        if (_to == address(0)) {
-            revert Errors.ZeroAddress();
-        }
-
-        if (_token == address(0)) {
-            revert Errors.ZeroAddress();
-        }
-
-        if (_amount == 0) {
-            revert Errors.ZeroAmount();
-        }
-
-        _recoverERC20(_to, _token, _amount);
+    function onWithdraw(uint256 amount) internal override {
+        if (!stakedInRewardsVault()) return;
+        rewardsVault.withdraw(amount);
     }
 
-    /**
-     * @notice Update the rewards duration for a specific rewards token.
-     * @dev    The token must be a valid rewards token and have a non-zero duration.
-     * @param _rewardsToken    address The address of the rewards token.
-     * @param _rewardsDuration uint256 The duration of the rewards to be distributed over.
-     */
+    /// @inheritdoc IInfraredVault
+    function migrate() external {
+        if (stakedInRewardsVault()) revert Errors.StakedInRewardsVault();
+
+        // set berachain rewards vault and set operator on vault as infrared
+        address _rewardsVaultAddress =
+            getRewardsVaultAddress(infrared, address(stakingToken));
+        if (_rewardsVaultAddress == address(0)) {
+            revert Errors.NoRewardsVault();
+        }
+        rewardsVault = IBerachainRewardsVault(_rewardsVaultAddress);
+        _setOperator(infrared);
+
+        // stake total supply for berachain proof of liquidity rewards
+        rewardsVault.stake(_totalSupply);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                            INFRARED ONLY
+    //////////////////////////////////////////////////////////////*/
+
+    /// @inheritdoc IInfraredVault
     function updateRewardsDuration(
         address _rewardsToken,
         uint256 _rewardsDuration
-    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (_rewardsToken == address(0)) {
-            revert Errors.ZeroAddress();
-        }
-
-        if (_rewardsDuration == 0) {
-            revert Errors.ZeroAmount();
-        }
-
+    ) external onlyInfrared {
+        if (_rewardsToken == address(0)) revert Errors.ZeroAddress();
+        if (_rewardsDuration == 0) revert Errors.ZeroAmount();
         _setRewardsDuration(_rewardsToken, _rewardsDuration);
     }
 
-    /**
-     * @notice Pause or Unpauses the vault.
-     * @dev    This function is only callable by the DEFAULT_ADMIN_ROLE.
-     */
-    function togglePause() external onlyRole(DEFAULT_ADMIN_ROLE) {
+    /// @inheritdoc IInfraredVault
+    function togglePause() external onlyInfrared {
         bool isPaused = paused();
-        if (isPaused) {
-            _unpause();
-        } else {
-            _pause();
-        }
+        if (isPaused) _unpause();
+        else _pause();
     }
 
-    /*//////////////////////////////////////////////////////////////
-                            INFRARED
-    //////////////////////////////////////////////////////////////*/
-
-    /**
-     * @notice Add a reward to the vault and the period that it will be distributed over.
-     * @param _rewardsToken    address The address of the rewards token.
-     * @param _rewardsDuration address The duration of the rewards to be distributed over.
-     */
+    /// @inheritdoc IInfraredVault
     function addReward(address _rewardsToken, uint256 _rewardsDuration)
         external
-        onlyRewardRoles
+        onlyInfrared
     {
-        if (_rewardsToken == address(0)) {
-            revert Errors.ZeroAddress();
-        }
-
-        if (_rewardsDuration == 0) {
-            revert Errors.ZeroAmount();
-        }
-
+        if (_rewardsToken == address(0)) revert Errors.ZeroAddress();
+        if (_rewardsDuration == 0) revert Errors.ZeroAmount();
         if (rewardTokens.length == MAX_NUM_REWARD_TOKENS) {
             revert Errors.MaxNumberOfRewards();
         }
-
-        _addReward(_rewardsToken, INFRARED_ADDRESS, _rewardsDuration);
+        _addReward(_rewardsToken, infrared, _rewardsDuration);
     }
 
-    /**
-     * @notice Notify the vault that a reward has been added.
-     * @param _rewardToken address The address of the reward token.
-     * @param _reward      uint256 The amount of the reward.
-     */
+    /// @inheritdoc IInfraredVault
     function notifyRewardAmount(address _rewardToken, uint256 _reward)
         external
-        onlyRewardRoles
+        onlyInfrared
     {
-        if (_rewardToken == address(0)) {
-            revert Errors.ZeroAddress();
-        }
-
-        if (_reward == 0) {
-            revert Errors.ZeroAmount();
-        }
-
+        if (_rewardToken == address(0)) revert Errors.ZeroAddress();
+        if (_reward == 0) revert Errors.ZeroAmount();
         _notifyRewardAmount(_rewardToken, _reward);
     }
 
-    /**
-     * @notice Claim the rewards for the vault from the rewards module.
-     * @dev    This function is only callable by the INFRARED_ROLE.
-     * @return _amt uint256 The amount of rewards claimed.
-     */
-    function claimRewardsPrecompile()
+    /// @inheritdoc IInfraredVault
+    function recoverERC20(address _to, address _token, uint256 _amount)
         external
-        onlyRole(INFRARED_ROLE)
-        returns (uint256 _amt)
+        onlyInfrared
     {
-        // Claim from the rewards module, setting the POOL_ADDRESS as the reward receiver (where the rewards accrue from).
-        // @dev Rewards in tokens sent to rewards module withdraw address
-        Cosmos.Coin[] memory rewards =
-            REWARDS_MODULE.withdrawAllDepositorRewards(POOL_ADDRESS);
-
-        // Invariant: rewards.length <= 1, since we only have one reward token from the rewards module; "abgt".
-        // Could be zero if there are no rewards to claim.
-        // https://github.com/berachain/berachain/blob/ad8eefa4f27a4193209612542111090fbd7fd92f/x/cosmos/distribution/keeper/allocate.go#L119
-        assert(rewards.length <= 1);
-
-        if (rewards.length == 0) {
-            return 0;
+        if (_to == address(0) || _token == address(0)) {
+            revert Errors.ZeroAddress();
         }
-
-        // Invariant: rewards[0].denom == "abgt", since we only have one reward token from the rewards module.
-        assert(PureUtils.isStringSame(rewards[0].denom, bgtDenom)); // Sanity check. Should always be true.
-
-        emit ClaimRewardsPrecompile(msg.sender, rewards[0].amount);
-
-        return rewards[0].amount;
-    }
-
-    /*//////////////////////////////////////////////////////////////
-                             USER INTERACTIONS
-    //////////////////////////////////////////////////////////////*/
-
-    /**
-     * @notice claims the rewards for the user.
-     * @param _user address The address of the user to claim the rewards for.
-     */
-    function getRewardForUser(address _user)
-        public
-        nonReentrant
-        updateReward(_user)
-    {
-        for (uint256 i; i < rewardTokens.length; i++) {
-            address _rewardsToken = rewardTokens[i];
-            uint256 reward = rewards[_user][_rewardsToken];
-            if (reward > 0) {
-                rewards[_user][_rewardsToken] = 0;
-                IERC20(_rewardsToken).safeTransfer(_user, reward);
-                emit RewardPaid(_user, _rewardsToken, reward);
-            }
-        }
-    }
-
-    /*//////////////////////////////////////////////////////////////
-                            VIEWS
-    //////////////////////////////////////////////////////////////*/
-
-    function getWithdrawAddress() public view returns (address) {
-        return REWARDS_MODULE.getDepositorWithdrawAddress(address(this));
-    }
-
-    /*//////////////////////////////////////////////////////////////
-                            MODIFIERS
-    //////////////////////////////////////////////////////////////*/
-
-    /**
-     * @notice Modifier to check that the caller is the INFRARED_ROLE or the DEFAULT_ADMIN_ROLE.
-     */
-    modifier onlyRewardRoles() {
-        if (
-            !hasRole(INFRARED_ROLE, msg.sender)
-                && !hasRole(DEFAULT_ADMIN_ROLE, msg.sender)
-        ) {
-            revert AccessControlUnauthorizedAccount(msg.sender, INFRARED_ROLE);
-        }
-        _;
+        if (_amount == 0) revert Errors.ZeroAmount();
+        _recoverERC20(_to, _token, _amount);
     }
 }

@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.22;
 
+import {IMultiRewards} from "../interfaces/IMultiRewards.sol";
+
 import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
 import {Pausable} from "@openzeppelin/utils/Pausable.sol";
 import {ReentrancyGuard} from "@openzeppelin/utils/ReentrancyGuard.sol";
@@ -12,9 +14,9 @@ import {SafeMath} from "@utils/SafeMath.sol";
 
 /**
  * @title MultiRewards
- * @dev https://github.com/curvefi/multi-rewards
+ * @dev Fork of https://github.com/curvefi/multi-rewards with hooks on stake/withdraw of LP tokens
  */
-contract MultiRewards is ReentrancyGuard, Pausable {
+abstract contract MultiRewards is ReentrancyGuard, Pausable, IMultiRewards {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
@@ -22,21 +24,11 @@ contract MultiRewards is ReentrancyGuard, Pausable {
                                 STATE
     //////////////////////////////////////////////////////////////*/
 
-    // Reward data for a particular reward token.
-    struct Reward {
-        address rewardsDistributor;
-        uint256 rewardsDuration;
-        uint256 periodFinish;
-        uint256 rewardRate;
-        uint256 lastUpdateTime;
-        uint256 rewardPerTokenStored;
-    }
-
     // The token that users stake to earn rewards.
     IERC20 public stakingToken;
 
     // RewardData for each reward token.
-    mapping(address => Reward) public rewardData;
+    mapping(address => Reward) public override rewardData;
 
     // List of reward tokens.
     address[] public rewardTokens;
@@ -47,10 +39,10 @@ contract MultiRewards is ReentrancyGuard, Pausable {
 
     mapping(address => mapping(address => uint256)) public rewards;
 
-    uint256 private _totalSupply;
+    uint256 internal _totalSupply;
 
     // The balance of staked token for each user.
-    mapping(address => uint256) private _balances;
+    mapping(address => uint256) internal _balances;
 
     /*//////////////////////////////////////////////////////////////
                             EVENTS
@@ -222,9 +214,18 @@ contract MultiRewards is ReentrancyGuard, Pausable {
         require(amount > 0, "Cannot stake 0");
         _totalSupply = _totalSupply.add(amount);
         _balances[msg.sender] = _balances[msg.sender].add(amount);
+
+        // transfer staking token in then hook stake, for hook to have access to collateral
         stakingToken.safeTransferFrom(msg.sender, address(this), amount);
+        onStake(amount);
         emit Staked(msg.sender, amount);
     }
+
+    /**
+     * @notice Hook called in the stake function after transfering staking token in
+     * @param amount The amount of staking token transferred in to the contract
+     */
+    function onStake(uint256 amount) internal virtual;
 
     /**
      * @notice Withdraws the staked tokens for the user (msg.sender).
@@ -238,23 +239,45 @@ contract MultiRewards is ReentrancyGuard, Pausable {
         require(amount > 0, "Cannot withdraw 0");
         _totalSupply = _totalSupply.sub(amount);
         _balances[msg.sender] = _balances[msg.sender].sub(amount);
+
+        // hook withdraw then transfer staking token out, in case hook needs to bring in collateral
+        onWithdraw(amount);
         stakingToken.safeTransfer(msg.sender, amount);
         emit Withdrawn(msg.sender, amount);
     }
 
     /**
-     * @notice Claims all pending rewards for the user (msg.sender).
+     * @notice Hook called in withdraw function before transferring staking token out
+     * @param amount The amount of staking token to be transferred out of the contract
      */
-    function getReward() public nonReentrant updateReward(msg.sender) {
+    function onWithdraw(uint256 amount) internal virtual;
+
+    /**
+     * @notice claims the rewards for the given user.
+     * @param _user address The address of the user to claim the rewards for.
+     */
+    function getRewardForUser(address _user)
+        public
+        nonReentrant
+        updateReward(_user)
+    {
         for (uint256 i; i < rewardTokens.length; i++) {
             address _rewardsToken = rewardTokens[i];
-            uint256 reward = rewards[msg.sender][_rewardsToken];
+            uint256 reward = rewards[_user][_rewardsToken];
             if (reward > 0) {
-                rewards[msg.sender][_rewardsToken] = 0;
-                IERC20(_rewardsToken).safeTransfer(msg.sender, reward);
-                emit RewardPaid(msg.sender, _rewardsToken, reward);
+                rewards[_user][_rewardsToken] = 0;
+                IERC20(_rewardsToken).safeTransfer(_user, reward);
+                emit RewardPaid(_user, _rewardsToken, reward);
             }
         }
+    }
+
+    /**
+     * @notice Claims all pending rewards for msg sender.
+     * @dev Change from forked MultiRewards.sol to allow for claim of reward for any user to their address
+     */
+    function getReward() public {
+        getRewardForUser(msg.sender);
     }
 
     /**

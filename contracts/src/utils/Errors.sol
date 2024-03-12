@@ -5,6 +5,7 @@ library Errors {
     // General errors.
     error ZeroAddress();
     error ZeroAmount();
+    error ZeroBytes();
     error OverFlow();
 
     // ValidatorSet errors.
@@ -17,21 +18,31 @@ library Errors {
     error DenomNotFound(string denom);
     error FailedToConvertCoin(string denom, uint256 amount);
     error WrongDataResponse();
-    error DelegateCallFailed();
+    error DelegationFailed();
     error SetWithdrawAddressFailed();
+    error BeraModuleWhitelisted();
 
     // InfraredVault errors.
     error WithdrawAddressNotSet();
     error MaxNumberOfRewards();
+    error Unauthorized(address sender);
+    error NoRewardsHarvested();
+    error IBGTNotRewardToken();
+    error IBGTNotStakingToken();
+    error StakedInRewardsVault();
+    error NoRewardsVault();
 
     // InfraredValidators errors.
     error InvalidValidator();
+    error InvalidDepositAmount();
 
     // Infrared errors.
     error VaultNotSupported();
     error ClaimDistrRewardsFailed();
-    error DuplicatePoolAddress();
+    error DuplicateAssetAddress();
     error VaultDeploymentFailed();
     error RewardTokenNotSupported();
     error BGTBalanceMismatch();
+    error NotInfrared();
+    error NotInitialized();
 }

@@ -5,27 +5,23 @@ pragma solidity 0.8.22;
 import "forge-std/Test.sol";
 
 // external
-import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
 import {ERC1967Proxy} from
     "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
-
-import {TransparentUpgradeableProxy} from
-    "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
+import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
 
 // internal
-import {Infrared, Errors, IInfraredVault} from "@core/upgradable/Infrared.sol";
+import "@core/Infrared.sol";
 import "@core/IBGT.sol";
 import "@core/InfraredVault.sol";
+import "@utils/DataTypes.sol";
+import "@utils/ValidatorUtils.sol";
 
 // mocks
-import "../../mocks/MockPool.sol";
 import "../../mocks/MockERC20.sol";
-import "../../mocks/MockDistributionPrecompile.sol";
-import "../../mocks/MockERC20BankModule.sol";
 import "../../mocks/MockWbera.sol";
-import "../../mocks/MockRewardsPrecompile.sol";
-import "../../mocks/MockStakingModule.sol";
-import "../../mocks/MockBankModulePrecompile.sol";
+import "../../mocks/MockBerachainRewardsVaultFactory.sol";
+import "../../mocks/MockBeaconDepositContract.sol";
+import "../../mocks/MockBeraChef.sol";
 
 contract Helper is Test {
     Infrared public infrared;
@@ -37,15 +33,12 @@ contract Helper is Test {
 
     MockERC20 public bgt;
     MockERC20 public ired;
-    MockERC20 mockAsset;
-    MockERC20 mockRewardToken;
-    MockERC20 mockPool;
-    MockDistributionPrecompile mockDistribution;
-    MockERC20BankModule mockErc20Bank;
-    MockWbera mockWbera;
-    MockRewardsPrecompile mockRewardsPrecompile;
-    MockStakingModule mockStaking;
-    MockBankModule mockBankModule;
+    MockWbera public mockWbera;
+
+    MockERC20 public mockPool;
+    MockBerachainRewardsVaultFactory public rewardsFactory;
+    MockBeaconDepositContract public depositor;
+    MockBeraChef public chef;
 
     string vaultName;
     string vaultSymbol;
@@ -54,6 +47,7 @@ contract Helper is Test {
     address poolAddress;
 
     InfraredVault public ibgtVault;
+    InfraredVault public infraredVault;
 
     //
     address validator = address(888);
@@ -66,125 +60,89 @@ contract Helper is Test {
         // Mock non transferable token BGT token
         bgt = new MockERC20("BGT", "BGT", 18);
         // Mock contract instantiations
-        ibgt = new IBGT();
+        ibgt = new IBGT(address(bgt));
         ired = new MockERC20("IRED", "IRED", 18);
-
-        mockAsset = new MockERC20("Mock Asset", "MAS", 18);
-        mockRewardToken = new MockERC20("Mock Reward Token", "MRT", 18);
-        mockPool = new MockERC20("Mock Asset", "MAS", 18);
-        vaultName = "Test Vault";
-        vaultSymbol = "TVT";
-        rewardTokens = new address[](2);
-        rewardTokens[0] = address(ibgt); // all Infrared vaults will only receive ibgt as rewards
-        rewardTokens[1] = address(ired);
-        stakingAsset = address(mockPool);
-        poolAddress = address(mockAsset);
+        mockWbera = new MockWbera();
 
         // Set up addresses for roles
         admin = address(this);
         keeper = address(1);
         governance = address(2);
 
-        // Mock contracts
-        mockErc20Bank = new MockERC20BankModule();
-        mockWbera = new MockWbera();
-        mockRewardsPrecompile =
-            new MockRewardsPrecompile(address(mockErc20Bank));
-        mockDistribution =
-            new MockDistributionPrecompile(address(mockErc20Bank));
-        mockStaking = new MockStakingModule(address(bgt));
-        mockBankModule = new MockBankModule(bgt);
+        // TODO: mock contracts
+        mockPool = new MockERC20("Mock Asset", "MAS", 18);
+        stakingAsset = address(mockPool);
 
-        // deploy Infrared Implementation contracts
-        address infraredImpl = address(new Infrared());
-        // deploy Infrared Proxy contracts
-        address infraredProxy = address(new ERC1967Proxy(infraredImpl, ""));
-        // initialize Infrared Proxy contracts
-        infrared = Infrared(infraredProxy);
-        infrared.initialize(
-            address(this), // make helper contract the admin
-            address(ibgt),
-            address(mockErc20Bank),
-            address(mockDistribution),
-            address(mockWbera),
-            address(mockStaking),
-            address(mockRewardsPrecompile),
-            address(ired),
-            1 days,
-            address(mockBankModule)
+        // deploy a rewards vault for IBGT
+        rewardsFactory = new MockBerachainRewardsVaultFactory(address(bgt));
+        address rewardsVault = rewardsFactory.createRewardsVault(address(ibgt));
+        assertEq(rewardsVault, rewardsFactory.getVault(address(ibgt)));
+
+        // Set up bera bgt distribution for mockPool
+        address beraVault = rewardsFactory.createRewardsVault(stakingAsset);
+        rewardsFactory.increaseRewardsForVault(stakingAsset, 1000 ether);
+
+        // Set up the depositor
+        depositor = new MockBeaconDepositContract();
+
+        // Set up the chef
+        chef = new MockBeraChef();
+
+        // initialize Infrared contracts
+        address implementation = address(
+            new Infrared(
+                address(ibgt),
+                address(rewardsFactory),
+                address(depositor),
+                address(chef),
+                address(mockWbera),
+                address(ired)
+            )
         );
+        address infraredProxy = address(new ERC1967Proxy(implementation, ""));
+        infrared = Infrared(infraredProxy);
+        infrared.initialize(address(this), 1 days); // make helper contract the admin
 
-        // Set up roles
+        // set access control
         infrared.grantRole(infrared.KEEPER_ROLE(), keeper);
         infrared.grantRole(infrared.GOVERNANCE_ROLE(), governance);
 
-        vm.startPrank(governance);
-        // Set up reward tokens
-        infrared.updateWhiteListedRewardTokens(address(ibgt), true);
-        infrared.updateWhiteListedRewardTokens(address(ired), true);
-        infrared.updateWhiteListedRewardTokens(address(mockWbera), true);
-        vm.stopPrank();
-
-        ibgtVault = new InfraredVault(
-            admin,
-            address(ibgt),
-            address(infrared),
-            address(mockPool),
-            address(mockRewardsPrecompile),
-            address(mockDistribution),
-            rewardTokens,
-            1 days
-        );
-
         ibgt.grantRole(ibgt.MINTER_ROLE(), address(infrared));
 
-        address[] memory validatorAddresses = new address[](2);
-        validatorAddresses[0] = validator;
-        validatorAddresses[1] = validator2;
-
-        vm.startPrank(governance);
-        infrared.updateIbgtVault(address(ibgtVault));
-        infrared.addValidators(validatorAddresses);
-        vm.stopPrank();
-
-        mockErc20Bank.setErc20AddressForCoinDenom("abgt", address(bgt));
-        mockErc20Bank.setErc20AddressForCoinDenom(
-            "abera", 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE
+        address[] memory _rewardTokens = new address[](2);
+        _rewardTokens[0] = address(ibgt); // all Infrared vaults will only receive ibgt as rewards
+        _rewardTokens[1] = address(ired);
+        infraredVault = InfraredVault(
+            address(infrared.registerVault(stakingAsset, _rewardTokens))
         );
-        mockErc20Bank.setErc20AddressForCoinDenom(
-            "other", address(new MockERC20("Other", "Other", 18))
-        );
-
-        // // labeling contracts
-        labelContracts();
-    }
-
-    function setupMockVault() public returns (address vault, address pool) {
-        // Set up a number of mock pools
-        MockERC20 newPool = new MockERC20("Mock Asset", "MAS", 18);
-        mockPools.push(mockPool);
-
-        // Register a vault for each mock pool
-        vault = address(
-            infrared.registerVault(stakingAsset, rewardTokens, address(newPool))
-        );
-        pool = address(newPool);
     }
 
     function labelContracts() public {
         // labeling contracts
         vm.label(address(infrared), "infrared");
         vm.label(address(ibgt), "ibgt");
-        vm.label(address(mockAsset), "mockAsset");
-        vm.label(address(mockRewardToken), "mockRewardToken");
         vm.label(address(mockPool), "mockPool");
-        vm.label(address(mockDistribution), "mockDistribution");
-        vm.label(address(mockErc20Bank), "mockErc20Bank");
         vm.label(address(mockWbera), "mockWbera");
-        vm.label(address(mockRewardsPrecompile), "mockRewardsPrecompile");
-        vm.label(address(mockStaking), "mockStaking");
         vm.label(admin, "admin");
         vm.label(keeper, "keeper");
         vm.label(stakingAsset, "stakingAsset");
+        vm.label(governance, "governance");
+        vm.label(address(rewardsFactory), "rewardsFactory");
+        vm.label(address(depositor), "depositor");
+        vm.label(address(chef), "chef");
+        vm.label(address(ibgtVault), "ibgtVault");
+    }
+
+    function stakeInVault(
+        address iVault,
+        address asset,
+        address user,
+        uint256 amount
+    ) internal {
+        deal(asset, user, amount);
+        vm.startPrank(user);
+        IERC20(asset).approve(iVault, amount);
+        InfraredVault(iVault).stake(amount);
+        vm.stopPrank();
     }
 }

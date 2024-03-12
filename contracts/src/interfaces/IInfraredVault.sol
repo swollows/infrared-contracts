@@ -1,18 +1,44 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.22;
+pragma solidity ^0.8.0;
 
-interface IInfraredVault {
-    /**
-     * @notice Returns the withdraw address for the rewards and distribution modules.
-     */
-    function getWithdrawAddress() external view returns (address);
+import {IBerachainRewardsVault} from
+    "@berachain/interfaces/IBerachainRewardsVault.sol";
+import {IMultiRewards} from "./IMultiRewards.sol";
+
+interface IInfraredVault is IMultiRewards {
+    /// @notice The infrared core coordinate/factory contract address
+    function infrared() external view returns (address);
+
+    /// @notice The berachain rewards vault contract for the staking token
+    function rewardsVault() external view returns (IBerachainRewardsVault);
 
     /**
-     * @notice Claims all the rewards for this vault.
-     * @dev    This function can only be called by the INFRARED.
-     * @return _amt uint256 The amount of `abgt` that was claimed to the withdraw address.
+     * @notice Returns whether staking asset in a Proof of Liquidity berachain rewards
+     * @return Whether staked in Proof of Liquidity
      */
-    function claimRewardsPrecompile() external returns (uint256 _amt);
+    function stakedInRewardsVault() external view returns (bool);
+
+    /**
+     * @notice Migrates any staked tokens in the vault to berachain rewards vault contract for staking token
+     */
+    function migrate() external;
+
+    /**
+     * @notice Update the rewards duration for a specific rewards token.
+     * @dev    The token must be a valid rewards token and have a non-zero duration.
+     * @param _rewardsToken    address The address of the rewards token.
+     * @param _rewardsDuration uint256 The duration of the rewards to be distributed over.
+     */
+    function updateRewardsDuration(
+        address _rewardsToken,
+        uint256 _rewardsDuration
+    ) external;
+
+    /**
+     * @notice Pause or Unpauses the vault.
+     * @dev    This function is only callable by the infrared factory.
+     */
+    function togglePause() external;
 
     /**
      * @notice Add a reward to the vault and the period that it will be distributed over.
@@ -30,22 +56,12 @@ interface IInfraredVault {
     function notifyRewardAmount(address _rewardToken, uint256 _reward)
         external;
 
-    // Reward data for a particular reward token.
-    struct Reward {
-        address rewardsDistributor;
-        uint256 rewardsDuration;
-        uint256 periodFinish;
-        uint256 rewardRate;
-        uint256 lastUpdateTime;
-        uint256 rewardPerTokenStored;
-    }
-
     /**
-     * @notice Gets the reward data for a given rewards token.
-     * @param _rewardsToken address The address of the rewards token.
-     * @return reward Reward The reward data.
+     * @notice Recover ERC20 tokens that were accidentally sent to the contract.
+     * @param _to     address The address to send the tokens to.
+     * @param _token  address The address of the token to recover.
+     * @param _amount uint256 The amount of the token to recover.
      */
-    function rewardData(address _rewardsToken)
-        external
-        returns (Reward memory reward);
+    function recoverERC20(address _to, address _token, uint256 _amount)
+        external;
 }

@@ -4,6 +4,7 @@ pragma solidity 0.8.22;
 import {EnumerableSet} from "@openzeppelin/utils/structs/EnumerableSet.sol";
 import {DataTypes} from "@utils/DataTypes.sol";
 import {Errors} from "@utils/Errors.sol";
+import {ValidatorUtils} from "@utils/ValidatorUtils.sol";
 
 /**
  * @title ValidatorSet
@@ -20,116 +21,133 @@ import {Errors} from "@utils/Errors.sol";
  * The `isValidator` function checks if a validator is in the set.
  */
 library ValidatorSet {
-    using EnumerableSet for EnumerableSet.AddressSet;
+    using EnumerableSet for EnumerableSet.Bytes32Set;
+
+    bytes private constant EMPTY_BYTES = "";
 
     /// Events.
     event ValidatorSetUpdated(
-        address indexed _old,
-        address indexed _new,
+        bytes indexed _old,
+        bytes indexed _new,
         DataTypes.ValidatorSetAction _action
     );
 
     /**
-     * @notice Adds a validator to the set.
-     * @param  _set       EnumerableSet.AddressSet storage The set to add the validator to.
-     * @param  _validator address                          The validator to add.
+     * @notice Gets a validator from the set.
+     * @param  _set       Set storage                      The set to get the validator from.
+     * @param  _pubKey    bytes                            The public key of the validator to get.
+     * @return _validator Validator                        The validator to get
      */
-    function add(EnumerableSet.AddressSet storage _set, address _validator)
+    function get(DataTypes.ValidatorSet storage _set, bytes memory _pubKey)
         internal
+        view
+        returns (DataTypes.Validator memory _validator)
     {
-        if (_set.contains(_validator)) {
-            revert Errors.ValidatorAlreadyExists();
-        }
+        return _set.map[ValidatorUtils.hash(_pubKey)];
+    }
 
-        bool success = _set.add(_validator);
-        if (!success) {
-            revert Errors.FailedToAddValidator();
-        }
+    /**
+     * @notice Adds a validator to the set.
+     * @param  _set       Set storage                      The set to add the validator to.
+     * @param  _validator Validator                        The validator to add.
+     */
+    function add(
+        DataTypes.ValidatorSet storage _set,
+        DataTypes.Validator memory _validator
+    ) internal {
+        bytes32 _key = ValidatorUtils.hash(_validator.pubKey);
+        if (_set.keys.contains(_key)) revert Errors.ValidatorAlreadyExists();
+
+        bool success = _set.keys.add(_key);
+        if (!success) revert Errors.FailedToAddValidator();
+        _set.map[_key] = _validator;
 
         emit ValidatorSetUpdated(
-            address(0), _validator, DataTypes.ValidatorSetAction.Add
+            EMPTY_BYTES, _validator.pubKey, DataTypes.ValidatorSetAction.Add
         );
     }
 
     /**
      * @notice Removes a validator from the set.
-     * @param  _set       EnumerableSet.AddressSet storage The set to remove the validator from.
-     * @param  _validator address                          The validator to remove.
+     * @param  _set       Set storage                      The set to remove the validator from.
+     * @param  _validator Validator                        The validator to remove.
      */
-    function remove(EnumerableSet.AddressSet storage _set, address _validator)
-        internal
-    {
-        if (!_set.contains(_validator)) {
-            revert Errors.ValidatorDoesNotExist();
-        }
+    function remove(
+        DataTypes.ValidatorSet storage _set,
+        DataTypes.Validator memory _validator
+    ) internal {
+        bytes32 _key = ValidatorUtils.hash(_validator.pubKey);
+        if (!_set.keys.contains(_key)) revert Errors.ValidatorDoesNotExist();
 
-        bool success = _set.remove(_validator);
-        if (!success) {
-            revert Errors.FailedToRemoveValidator();
-        }
+        bool success = _set.keys.remove(_key);
+        if (!success) revert Errors.FailedToRemoveValidator();
+        delete _set.map[_key];
 
         emit ValidatorSetUpdated(
-            _validator, address(0), DataTypes.ValidatorSetAction.Remove
+            _validator.pubKey, EMPTY_BYTES, DataTypes.ValidatorSetAction.Remove
         );
     }
 
     /**
      * @notice Replaces a validator in the set.
-     * @param  _set           EnumerableSet.AddressSet storage The set to replace the validator in.
-     * @param  _oldValidator  address                          The validator to replace.
-     * @param  _newValidator  address                          The new validator.
+     * @param  _set           Set storage                        The set to replace the validator in.
+     * @param  _oldValidator  Validator                          The validator to replace.
+     * @param  _newValidator  Validator                          The new validator.
      */
     function replace(
-        EnumerableSet.AddressSet storage _set,
-        address _oldValidator,
-        address _newValidator
+        DataTypes.ValidatorSet storage _set,
+        DataTypes.Validator memory _oldValidator,
+        DataTypes.Validator memory _newValidator
     ) internal {
-        if (!_set.contains(_oldValidator)) {
-            revert Errors.ValidatorDoesNotExist();
-        }
+        bytes32 _oldKey = ValidatorUtils.hash(_oldValidator.pubKey);
+        bytes32 _newKey = ValidatorUtils.hash(_newValidator.pubKey);
 
-        if (_set.contains(_newValidator)) {
-            revert Errors.ValidatorAlreadyExists();
-        }
+        if (!_set.keys.contains(_oldKey)) revert Errors.ValidatorDoesNotExist();
+        if (_set.keys.contains(_newKey)) revert Errors.ValidatorAlreadyExists();
 
-        bool success = _set.remove(_oldValidator);
-        if (!success) {
-            revert Errors.FailedToRemoveValidator();
-        }
+        bool success = _set.keys.remove(_oldKey);
+        if (!success) revert Errors.FailedToRemoveValidator();
+        delete _set.map[_oldKey];
 
-        success = _set.add(_newValidator);
-        if (!success) {
-            revert Errors.FailedToAddValidator();
-        }
+        success = _set.keys.add(_newKey);
+        if (!success) revert Errors.FailedToAddValidator();
+        _set.map[_newKey] = _newValidator;
 
         emit ValidatorSetUpdated(
-            _oldValidator, _newValidator, DataTypes.ValidatorSetAction.Replace
+            _oldValidator.pubKey,
+            _newValidator.pubKey,
+            DataTypes.ValidatorSetAction.Replace
         );
     }
 
     /**
      * @notice Returns all the validators in the set.
-     * @param  _set        EnumerableSet.AddressSet storage The set to get the validators from.
-     * @return _validators address[]                  The validators in the set.
+     * @param  _set        Set storage                The set to get the validators from.
+     * @return _validators Validator[]                The validators in the set.
      */
-    function validators(EnumerableSet.AddressSet storage _set)
+    function validators(DataTypes.ValidatorSet storage _set)
         internal
         view
-        returns (address[] memory _validators)
+        returns (DataTypes.Validator[] memory _validators)
     {
-        return _set.values();
+        bytes32[] memory _keys = _set.keys.values();
+        _validators = new DataTypes.Validator[](_keys.length);
+        for (uint256 i = 0; i < _keys.length; i++) {
+            _validators[i] = _set.map[_keys[i]];
+        }
     }
 
     /**
      * @notice Checks if a validator is apart of the set.
-     * @param  _set       EnumerableSet.AddressSet storage The set to check.
-     * @param  _validator address                          The validator to check.
+     * @param  _set         Set storage                    The set to check.
+     * @param  _pubKey      bytes                          The public key of the validator to check.
      * @return _isValidator bool                           Whether the validator is in the set.
      */
     function isValidator(
-        EnumerableSet.AddressSet storage _set,
-        address _validator
+        DataTypes.ValidatorSet storage _set,
+        bytes memory _pubKey
     ) internal view returns (bool _isValidator) {
-        return _set.contains(_validator);
+        bytes32 _key = ValidatorUtils.hash(_pubKey);
+        return _set.keys.contains(_key);
     }
 }
