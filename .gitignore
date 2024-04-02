@@ -21,21 +21,14 @@ node_modules
 bin
 
 ### Forge ###
-contracts/cache
-contracts/out
-contracts/broadcast
-
-### Subgraph ###
-subgraph/node_modules
-subgraph/build
-subgraph/generated
-subgraph/subgraph.yaml
+cache
+out
+broadcast
 
 ### Sensitive info ###
-contracts/src/script/devnet/loadEnv.sh
+src/script/devnet/loadEnv.sh
 
 ## IDE
-services/.idea/
 .idea/
 
 ## Secrets.

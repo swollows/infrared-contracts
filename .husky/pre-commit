@@ -4,8 +4,5 @@
 # Format the contracts
 npm run format:contracts
 
-# Format the services
-npm run format:services
-
 # Stage the changes
 git add -u
