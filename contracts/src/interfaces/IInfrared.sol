@@ -180,4 +180,166 @@ interface IInfrared {
      * @return bgtBalance The BGT balance held by this address
      */
     function getBGTBalance() external view returns (uint256 bgtBalance);
+
+    /**
+     * @notice Emitted when a new vault is registered.
+     * @param _sender The address that initiated the vault registration.
+     * @param _asset The address of the asset for which the vault is registered.
+     * @param _vault The address of the newly created vault.
+     * @param _rewardTokens An array of addresses of the reward tokens for the new vault.
+     */
+    event NewVault(
+        address _sender,
+        address indexed _asset,
+        address indexed _vault,
+        address[] _rewardTokens
+    );
+
+    /**
+     * @notice Emitted when IBGT tokens are supplied to a vault.
+     * @param _vault The address of the vault receiving the IBGT tokens.
+     * @param _amt The amount of IBGT tokens supplied.
+     */
+    event IBGTSupplied(address indexed _vault, uint256 _amt);
+
+    /**
+     * @notice Emitted when rewards are supplied to a vault.
+     * @param _vault The address of the vault receiving the reward.
+     * @param _token The address of the token being supplied as a reward.
+     * @param _amt The amount of the reward token supplied.
+     */
+    event RewardSupplied(
+        address indexed _vault, address indexed _token, uint256 _amt
+    );
+
+    /**
+     * @notice Emitted when tokens are recovered from the contract.
+     * @param _sender The address that initiated the recovery.
+     * @param _token The address of the token being recovered.
+     * @param _amount The amount of the token recovered.
+     */
+    event Recovered(address _sender, address indexed _token, uint256 _amount);
+
+    /**
+     * @notice Emitted when a reward token is marked as unsupported.
+     * @param _token The address of the reward token.
+     */
+    event RewardTokenNotSupported(address _token);
+
+    /**
+     * @notice Emitted when the IBGT token address is updated.
+     * @param _sender The address that initiated the update.
+     * @param _oldIbgt The previous address of the IBGT token.
+     * @param _newIbgt The new address of the IBGT token.
+     */
+    event IBGTUpdated(address _sender, address _oldIbgt, address _newIbgt);
+
+    /**
+     * @notice Emitted when the IBGT vault address is updated.
+     * @param _sender The address that initiated the update.
+     * @param _oldIbgtVault The previous address of the IBGT vault.
+     * @param _newIbgtVault The new address of the IBGT vault.
+     */
+    event IBGTVaultUpdated(
+        address _sender, address _oldIbgtVault, address _newIbgtVault
+    );
+
+    /**
+     * @notice Emitted when reward tokens are whitelisted or unwhitelisted.
+     * @param _sender The address that initiated the update.
+     * @param _token The address of the token being updated.
+     * @param _wasWhitelisted The previous whitelist status of the token.
+     * @param _isWhitelisted The new whitelist status of the token.
+     */
+    event WhiteListedRewardTokensUpdated(
+        address _sender,
+        address indexed _token,
+        bool _wasWhitelisted,
+        bool _isWhitelisted
+    );
+
+    /**
+     * @notice Emitted when the rewards duration is updated.
+     * @param _sender The address that initiated the update.
+     * @param _oldDuration The previous rewards duration.
+     * @param _newDuration The new rewards duration.
+     */
+    event RewardsDurationUpdated(
+        address _sender, uint256 _oldDuration, uint256 _newDuration
+    );
+
+    /**
+     * @notice Emitted when a vault harvests its rewards.
+     * @param _sender The address that initiated the harvest.
+     * @param _asset The asset associated with the vault being harvested.
+     * @param _vault The address of the vault being harvested.
+     * @param _bgtAmt The amount of BGT harvested.
+     */
+    event VaultHarvested(
+        address _sender,
+        address indexed _asset,
+        address indexed _vault,
+        uint256 _bgtAmt
+    );
+
+    /**
+     * @notice Emitted when a validator harvests its rewards.
+     * @param _sender The address that initiated the harvest.
+     * @param _validator The public key of the validator.
+     * @param _rewards An array of tokens and amounts harvested.
+     * @param _bgtAmt The amount of BGT included in the rewards.
+     */
+    event ValidatorHarvested(
+        address _sender,
+        bytes indexed _validator,
+        DataTypes.Token[] _rewards,
+        uint256 _bgtAmt
+    );
+
+    /**
+     * @notice Emitted when validators are added.
+     * @param _sender The address that initiated the addition.
+     * @param _validators An array of validators' public keys that were added.
+     */
+    event ValidatorsAdded(address _sender, bytes[] _validators);
+
+    /**
+     * @notice Emitted when validators are removed from validator set.
+     * @param _sender The address that initiated the removal.
+     * @param _validators An array of validators' public keys that were removed.
+     */
+    event ValidatorsRemoved(address _sender, bytes[] _validators);
+
+    /**
+     * @notice Emitted when a validator is replaced with a new validator.
+     * @param _sender The address that initiated the replacement.
+     * @param _current The public key of the current validator being replaced.
+     * @param _new The public key of the new validator.
+     */
+    event ValidatorReplaced(address _sender, bytes _current, bytes _new);
+
+    /**
+     * @notice Emitted when tokens are delegated to a validator.
+     * @param _sender The address that initiated the delegation.
+     * @param _validator The public key of the validator to which tokens are delegated.
+     * @param _amt The amount of tokens that were delegated.
+     */
+    event Delegated(address _sender, bytes _validator, uint256 _amt);
+
+    /**
+     * @notice Emitted when tokens are undelegated from a validator.
+     * @param _sender The address that initiated the undelegation.
+     * @param _validator The public key of the validator from which tokens are undelegated.
+     * @param _amt The amount of tokens that were undelegated.
+     */
+    event Undelegated(address _sender, bytes _validator, uint256 _amt);
+
+    /**
+     * @notice Emitted when tokens are redelegated from one validator to another.
+     * @param _sender The address that initiated the redelegation.
+     * @param _from The public key of the validator from which tokens are redelegated.
+     * @param _to The public key of the validator to which tokens are redelegated.
+     * @param _amt The amount of tokens that were redelegated.
+     */
+    event Redelegated(address _sender, bytes _from, bytes _to, uint256 _amt);
 }

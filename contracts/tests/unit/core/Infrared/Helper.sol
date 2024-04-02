@@ -16,12 +16,14 @@ import "@core/InfraredVault.sol";
 import "@utils/DataTypes.sol";
 import "@utils/ValidatorUtils.sol";
 
+import "@interfaces/IInfrared.sol";
+
 // mocks
-import "../../mocks/MockERC20.sol";
-import "../../mocks/MockWbera.sol";
-import "../../mocks/MockBerachainRewardsVaultFactory.sol";
-import "../../mocks/MockBeaconDepositContract.sol";
-import "../../mocks/MockBeraChef.sol";
+import "@mocks/MockERC20.sol";
+import "@mocks/MockWbera.sol";
+import "@mocks/MockBerachainRewardsVaultFactory.sol";
+import "@mocks/MockBeaconDepositContract.sol";
+import "@mocks/MockBerachef.sol";
 
 contract Helper is Test {
     Infrared public infrared;
@@ -115,12 +117,15 @@ contract Helper is Test {
         infraredVault = InfraredVault(
             address(infrared.registerVault(stakingAsset, _rewardTokens))
         );
+
+        labelContracts();
     }
 
     function labelContracts() public {
         // labeling contracts
         vm.label(address(infrared), "infrared");
         vm.label(address(ibgt), "ibgt");
+        vm.label(address(bgt), "bgt");
         vm.label(address(mockPool), "mockPool");
         vm.label(address(mockWbera), "mockWbera");
         vm.label(admin, "admin");
@@ -144,5 +149,26 @@ contract Helper is Test {
         IERC20(asset).approve(iVault, amount);
         InfraredVault(iVault).stake(amount);
         vm.stopPrank();
+    }
+
+    function isStringSame(string memory _a, string memory _b)
+        internal
+        pure
+        returns (bool _isSame)
+    {
+        bytes memory a = bytes(_a);
+        bytes memory b = bytes(_b);
+
+        if (a.length != b.length) {
+            return false;
+        }
+
+        for (uint256 i = 0; i < a.length; i++) {
+            if (a[i] != b[i]) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

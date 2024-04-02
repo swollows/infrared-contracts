@@ -14,14 +14,6 @@ library Errors {
     error ValidatorDoesNotExist();
     error FailedToRemoveValidator();
 
-    // Berachain interaction errors.
-    error DenomNotFound(string denom);
-    error FailedToConvertCoin(string denom, uint256 amount);
-    error WrongDataResponse();
-    error DelegationFailed();
-    error SetWithdrawAddressFailed();
-    error BeraModuleWhitelisted();
-
     // InfraredVault errors.
     error WithdrawAddressNotSet();
     error MaxNumberOfRewards();

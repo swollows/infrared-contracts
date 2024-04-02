@@ -1,84 +1,97 @@
-// // SPDX-License-Identifier: MIT
-// pragma solidity 0.8.22;
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.22;
 
-// import "@core/IBGT.sol";
-// import "@core/InfraredVault.sol";
-// import "@core/Infrared.sol";
+import "@core/IBGT.sol";
+import "@core/InfraredVault.sol";
+import "@core/Infrared.sol";
 
-// import "../SetupHelper.sol";
-// import "forge-std/Test.sol";
+import "@core/MultiRewards.sol";
 
-// contract InfraredVaultHandler is Test {
-//     Infrared public infrared;
-//     IInfraredVault public vault;
-//     address public keeper;
-//     address public rewardsModuleAddress;
+import "forge-std/Test.sol";
+import "@mocks/MockBerachainRewardsVaultFactory.sol";
 
-//     uint256 public totalBgtRewards;
+contract Keeper is Test {
+    Infrared public infrared;
+    MockBerachainRewardsVaultFactory public rewardsFactory;
+    address public keeper;
 
-//     uint256 public totalDelegatedBgt;
-//     address public validator;
+    uint256 public totalBgtRewards;
 
-//     constructor(
-//         Infrared _infrared,
-//         address _keeper,
-//         address _rewardsModuleAddress,
-//         address _validator
-//     ) public {
-//         // Initialize mock assets
-//         (
-//             address stakingTokenAddress,
-//             address mockRewardTokenAddress,
-//             address mockPoolAddress
-//         ) = SetupHelper.setUpMockAssets();
-//         MockERC20 stakingToken = MockERC20(stakingTokenAddress);
-//         MockERC20 mockRewardToken = MockERC20(mockRewardTokenAddress);
-//         MockERC20 mockPool = MockERC20(mockPoolAddress);
+    IInfraredVault[] public vaults;
 
-//         address[] memory rewardTokens = new address[](1);
-//         rewardTokens[0] = address(_infrared.ibgt()); // all Infrared vaults will only receive ibgt as rewards
+    address ibgt;
 
-//         vm.startPrank(_keeper);
-//         vault = _infrared.registerVault(stakingTokenAddress, rewardTokens);
-//         vm.stopPrank();
+    constructor(
+        Infrared _infrared,
+        address _keeper,
+        MockBerachainRewardsVaultFactory _rewardsFactory
+    ) public {
+        // Initialize mock assets
+        infrared = _infrared;
+        keeper = _keeper;
+        rewardsFactory = _rewardsFactory;
+        ibgt = address(infrared.ibgt());
+        vm.deal(keeper, type(uint256).max);
+        vm.deal(address(this), type(uint256).max);
+    }
 
-//         infrared = _infrared;
-//         keeper = _keeper;
-//         rewardsModuleAddress = _rewardsModuleAddress;
-//         validator = _validator;
-//     }
+    function registerVault() public {
+        if (vaults.length == 5 || vaults.length > 5) {
+            return;
+        }
 
-//     function harvestVault(uint256 bgtReward) public {
-//         vm.assume(
-//             bgtReward < type(uint256).max
-//                 && bgtReward < type(uint128).max - totalBgtRewards
-//         );
+        vm.roll(block.number + 10);
 
-//         // Cosmos.Coin[] memory rewards = new Cosmos.Coin[](1);
-//         // rewards[0] = Cosmos.Coin(bgtReward, "abgt"); // 100 bgt
+        MockERC20 stakingAsset = new MockERC20("MockPool", "MP", 18);
 
-//         // set bgt rewards on rewards
-//         // MockRewardsPrecompile(rewardsModuleAddress).setMockRewards(rewards);
+        address beraVault =
+            rewardsFactory.createRewardsVault(address(stakingAsset));
 
-//         totalBgtRewards += bgtReward;
+        vm.startPrank(keeper);
+        address[] memory rewardTokens = new address[](1);
+        rewardTokens[0] = ibgt;
+        IInfraredVault v =
+            infrared.registerVault(address(stakingAsset), rewardTokens);
+        vm.stopPrank();
 
-//         // impersonate keeper and call harvestVault
-//         vm.prank(keeper);
-//         infrared.harvestVault(address(vault));
-//         vm.stopPrank();
-//     }
+        console.log("Vault registered: ", address(v));
 
-//     function delegateBGT(uint256 amount) public {
-//         vm.assume(totalBgtRewards >= totalDelegatedBgt + amount);
-//         totalDelegatedBgt += amount;
+        // optional - stake 1 ether in the vault
+        deal(address(stakingAsset), address(this), 1 ether);
+        MockERC20(address(stakingAsset)).approve(address(v), 1 ether);
+        InfraredVault(address(v)).stake(1 ether);
 
-//         // infrared.delegate(validator, amount);
-//     }
+        vaults.push(v);
+    }
 
-//     function undelegateBGT(uint256 amount) public {
-//         vm.assume(totalDelegatedBgt >= amount);
-//         totalDelegatedBgt -= amount;
+    function harvestVault(uint256 bgtReward, uint256 vaultIndex) public {
+        if (vaults.length == 0) {
+            return;
+        }
+        bgtReward = bound(
+            bgtReward, 0, ((type(uint256).max / 1e48) - (totalBgtRewards + 1))
+        );
+        if (bgtReward == 0) {
+            return;
+        }
+        vaultIndex = uint8(bound(vaultIndex, 0, vaults.length - 1)); // bound to vaults.length which should be less than uint8.max
 
-//         // infrared.undelegate(validator, amount);
-//     }
-// }
+        address vault = address(vaults[uint256(vaultIndex)]);
+        address stakingAsset = address(InfraredVault(vault).stakingToken());
+
+        totalBgtRewards += bgtReward;
+
+        rewardsFactory.increaseRewardsForVault(stakingAsset, bgtReward);
+
+        vm.warp(block.timestamp + 10 days);
+
+        // impersonate keeper and call harvestVault
+        vm.prank(keeper);
+        infrared.harvestVault(stakingAsset);
+        vm.stopPrank();
+    }
+
+    function getVaults() public view returns (IInfraredVault[] memory) {
+        return vaults;
+    }
+}

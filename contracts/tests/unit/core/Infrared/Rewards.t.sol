@@ -19,7 +19,7 @@ contract InfraredRewardsTest is Helper {
         vm.startPrank(keeper);
         uint256 vaultBalanceBefore = ibgt.balanceOf(address(infraredVault));
         vm.expectEmit();
-        emit Infrared.VaultHarvested(
+        emit IInfrared.VaultHarvested(
             keeper, stakingAsset, address(infraredVault), 1099999999999999958400
         );
         infrared.harvestVault(stakingAsset);
@@ -28,7 +28,7 @@ contract InfraredRewardsTest is Helper {
         uint256 vaultBalanceAfter = ibgt.balanceOf(address(infraredVault));
         assertEq(vaultBalanceAfter, vaultBalanceBefore + 1099999999999999958400); // adjust for rounding error
         // assert that bgt balance and IBGT balance are equal
-        assertEq(ibgt.totalSupply(), bgt.balanceOf(address(infraredVault)));
+        assertEq(ibgt.totalSupply(), bgt.balanceOf(address(infrared)));
     }
 
     function testFailHarvestVaultInvalidPool() public {
@@ -58,14 +58,24 @@ contract InfraredRewardsTest is Helper {
                 infrared.KEEPER_ROLE()
             )
         );
-        infrared.harvestVault(stakingAsset);
-        // vm.expectRevert(
-        //     abi.encodeWithSelector(
-        //         IAccessControl.AccessControlUnauthorizedAccount.selector,
-        //         address(1234),
-        //         infrared.KEEPER_ROLE()
-        //     )
-        // );
+        try infrared.harvestVault(stakingAsset) {
+            fail();
+        } catch Error(string memory reason) {
+            assertTrue(
+                isStringSame(
+                    reason,
+                    string(
+                        abi.encodeWithSelector(
+                            IAccessControl
+                                .AccessControlUnauthorizedAccount
+                                .selector,
+                            address(1234),
+                            infrared.KEEPER_ROLE()
+                        )
+                    )
+                )
+            );
+        }
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -80,7 +90,7 @@ contract InfraredRewardsTest is Helper {
 
         address vault = address(infrared.ibgtVault());
         vm.expectEmit();
-        emit Infrared.RewardSupplied(vault, address(ired), 100 ether);
+        emit IInfrared.RewardSupplied(vault, address(ired), 100 ether);
         infrared.harvestTokenRewards(rewardTokens);
         vm.stopPrank();
 
@@ -106,14 +116,14 @@ contract InfraredRewardsTest is Helper {
         // Test for event ValidatorHarvested
         vm.prank(keeper);
         vm.expectEmit();
-        emit Infrared.ValidatorHarvested(keeper, validator, rewardTokens, 0);
+        emit IInfrared.ValidatorHarvested(keeper, validator, rewardTokens, 0);
         infrared.harvestValidator(validator);
         vm.stopPrank();
 
         // Test for event RewardSupplied
         vm.prank(keeper);
         vm.expectEmit();
-        emit Infrared.RewardSupplied(
+        emit IInfrared.RewardSupplied(
             address(ibgtVault), address(mockWbera), 100
         );
         infrared.harvestValidator(validator);
@@ -183,7 +193,7 @@ contract InfraredRewardsTest is Helper {
 
         vm.prank(keeper);
         vm.expectEmit(true, true, true, true);
-        emit Infrared.RewardTokenNotSupported(nonWhitelistedToken);
+        emit IInfrared.RewardTokenNotSupported(nonWhitelistedToken);
         infrared.harvestValidator(validator);
         vm.stopPrank();
 
@@ -202,7 +212,7 @@ contract InfraredRewardsTest is Helper {
         // Test for event ERC20Recovered
         vm.prank(governance);
         vm.expectEmit();
-        emit Infrared.Recovered(governance, address(randomToken), amountTotal);
+        emit IInfrared.Recovered(governance, address(randomToken), amountTotal);
         infrared.recoverERC20(governance, address(randomToken), amountTotal);
         vm.stopPrank();
 

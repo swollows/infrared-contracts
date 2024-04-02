@@ -25,6 +25,7 @@ remappings = [
     '@core/=src/core/',
     '@prb/=lib/prb-test/src/',
     '@vesting/=src/vesting/',
+    '@mocks/=tests/unit/mocks'
 ]
 
 [profile.ci]
@@ -43,6 +44,7 @@ remappings = [
     '@core/=src/core/',
     '@prb/=lib/prb-test/src/',
     '@vesting/=src/vesting/',
+    '@mocks/=tests/unit/mocks'
 ]
 
 [rpc_endpoints]

@@ -80,7 +80,29 @@ contract MockBerachainRewardsVault is MultiRewards {
             msg.sender == user || operator[user] == msg.sender,
             "msg.sender != user or operator"
         );
-        getRewardForUser(user);
+
+        _getRewardForUser(user, operator[user] == msg.sender);
+    }
+
+    function _getRewardForUser(address _user, bool _isOperator)
+        internal
+        nonReentrant
+        updateReward(_user)
+    {
+        for (uint256 i; i < rewardTokens.length; i++) {
+            address _rewardsToken = rewardTokens[i];
+            uint256 reward = rewards[_user][_rewardsToken];
+            if (reward > 0) {
+                rewards[_user][_rewardsToken] = 0;
+                IERC20(_rewardsToken).safeTransfer(
+                    _isOperator ? msg.sender : _user, reward
+                );
+                emit RewardPaid(_user, _rewardsToken, reward);
+                if (_isOperator) {
+                    emit RewardsClaimedByOperator(msg.sender, _user, reward);
+                }
+            }
+        }
     }
 
     function setOperator(address _operator) external {

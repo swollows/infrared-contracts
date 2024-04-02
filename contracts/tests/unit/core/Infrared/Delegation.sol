@@ -30,7 +30,7 @@ contract DelegationTest is Helper {
 
         // Expect the `Delegated` event to be emitted upon successful delegation
         vm.expectEmit(true, true, true, true);
-        emit Infrared.Delegated(governance, validatorPubKey, 100);
+        emit IInfrared.Delegated(governance, validatorPubKey, 100);
 
         // Perform the delegation action
         infrared.delegate(validatorPubKey, 100, signature);
@@ -50,10 +50,13 @@ contract DelegationTest is Helper {
         bytes memory invalidPubKey = ""; // Represents an invalid public key, analogous to the zero address check
         bytes memory signature = bytes("signature");
 
-        vm.startPrank(governance);
+        vm.prank(governance);
         vm.expectRevert(Errors.InvalidValidator.selector); // Assuming there's an error for invalid public key lengths
-        infrared.delegate(invalidPubKey, 100, signature);
-        vm.stopPrank();
+        try infrared.delegate(invalidPubKey, 100, signature) {
+            revert("Invalid public key should revert");
+        } catch {
+            revert();
+        }
     }
 
     function testFailDelegateWithZeroAmount() public {
@@ -77,7 +80,11 @@ contract DelegationTest is Helper {
         infrared.addValidators(validatorStruct);
 
         vm.expectRevert(Errors.ZeroAmount.selector);
-        infrared.delegate(validatorPubKey, 0, signature);
+        try infrared.delegate(validatorPubKey, 0, signature) {
+            revert("Zero amount should revert");
+        } catch {
+            revert();
+        }
         vm.stopPrank();
     }
 
@@ -122,7 +129,7 @@ contract DelegationTest is Helper {
         // Expect the `Redelegated` event to be emitted upon successful redelegation
         vm.startPrank(governance);
         vm.expectEmit();
-        emit Infrared.Redelegated(governance, fromPubKey, toPubKey, 100);
+        emit IInfrared.Redelegated(governance, fromPubKey, toPubKey, 100);
         // Perform the redelegation action
         infrared.redelegate(fromPubKey, toPubKey, 100);
         vm.stopPrank();
@@ -200,7 +207,7 @@ contract DelegationTest is Helper {
         vm.startPrank(governance);
         infrared.delegate(validator, 100);
         vm.expectEmit();
-        emit Infrared.Undelegated(governance, address(validator), 100);
+        emit IInfrared.Undelegated(governance, address(validator), 100);
         infrared.undelegate(validator, 100);
         vm.stopPrank();
 

@@ -9,10 +9,10 @@ import {IBGT} from "@core/IBGT.sol";
 
 import {IInfrared} from "@interfaces/IInfrared.sol";
 
-import "../mocks/MockERC20.sol";
-import "../mocks/MockInfrared.sol";
-import "../mocks/MockBerachainRewardsVaultFactory.sol";
-import "../mocks/MockBerachainRewardsVault.sol";
+import "@mocks/MockERC20.sol";
+import "@mocks/MockInfrared.sol";
+import "@mocks/MockBerachainRewardsVaultFactory.sol";
+import "@mocks/MockBerachainRewardsVault.sol";
 
 import {stdStorage, StdStorage} from "forge-std/Test.sol";
 
@@ -140,6 +140,85 @@ contract InfraredVaultTest is Test {
                 1 days
             );
         }
+    }
+
+    function testSuccessfulMigration() public {
+        // deploy infrared vault without MockBerachainRewardsVault
+        vm.prank(infrared);
+        InfraredVault infraredVault = new InfraredVault(
+            address(ibgt),
+            rewardTokens,
+            1 days // Rewards duration
+        );
+
+        // ensure that rewardsVault is address(0) before migration
+        assertTrue(
+            !infraredVault.stakedInRewardsVault(),
+            "Rewards vault should be address(0)"
+        );
+
+        // test depositing into non migrated vault
+        deal(address(ibgt), user, 1000 ether);
+        vm.startPrank(user);
+        ibgt.approve(address(infraredVault), 1000 ether);
+        infraredVault.stake(1000 ether);
+        vm.stopPrank();
+
+        assertEq(
+            infraredVault.balanceOf(user),
+            1000 ether,
+            "User balance should be updated"
+        );
+        assertEq(
+            infraredVault.totalSupply(),
+            1000 ether,
+            "Total supply should be updated"
+        );
+
+        // deploy a berachain rewards vault for staking token
+        address beraVault = rewardsFactory.createRewardsVault(address(ibgt));
+        // migrate to new rewards vault
+        vm.startPrank(infrared);
+        infraredVault.migrate();
+
+        // check that rewardsVault is now set
+        assertTrue(
+            infraredVault.stakedInRewardsVault(), "Rewards vault should be set"
+        );
+        // check that stakingToken balance has been moved to bera rewards vault
+        assertEq(ibgt.balanceOf(beraVault), 1000 ether);
+        // check rewards vault operator is set to infrared
+        assertEq(
+            MockBerachainRewardsVault(beraVault).operator(
+                address(infraredVault)
+            ),
+            infrared
+        );
+
+        // test depositing into migrated vault
+        deal(address(ibgt), user, 1000 ether);
+        vm.startPrank(user);
+        ibgt.approve(address(infraredVault), 1000 ether);
+        infraredVault.stake(1000 ether);
+        vm.stopPrank();
+
+        assertTrue(
+            infraredVault.balanceOf(user) == 2000 ether,
+            "User balance should be updated"
+        );
+        assertTrue(
+            infraredVault.totalSupply() == 2000 ether,
+            "Total supply should be updated"
+        );
+        assertTrue(
+            ibgt.balanceOf(beraVault) == 2000 ether,
+            "Rewards vault balance should be updated"
+        );
+        assertTrue(
+            InfraredVault(beraVault).balanceOf(address(infraredVault))
+                == 2000 ether,
+            "Rewards vault balance should be updated"
+        );
     }
 
     /*//////////////////////////////////////////////////////////////

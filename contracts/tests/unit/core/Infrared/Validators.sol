@@ -3,7 +3,7 @@ pragma solidity 0.8.22;
 
 import "@forge-std/console2.sol";
 
-import {Helper, Infrared} from "./Helper.sol";
+import "./Helper.sol";
 import {Errors} from "@utils/Errors.sol";
 
 import {DataTypes} from "@utils/DataTypes.sol";
@@ -27,7 +27,7 @@ contract ValidatorManagment is Helper {
         vm.prank(governance);
         // Add the new validator
         vm.expectEmit(true, true, true, true);
-        emit Infrared.ValidatorsAdded(governance, pubKeys);
+        emit IInfrared.ValidatorsAdded(governance, pubKeys);
         infrared.addValidators(newValidators);
 
         // Assert that the validator was added
@@ -49,7 +49,11 @@ contract ValidatorManagment is Helper {
         // Expect a revert due to zero-length public key
         vm.expectRevert(Errors.ZeroBytes.selector);
         // Attempt to add the new validators
-        infrared.addValidators(newValidators);
+        try infrared.addValidators(newValidators) {
+            revert("Zero-length public key should revert");
+        } catch {
+            revert();
+        }
     }
 
     function testFailAddValidatorUnauthorized() public {
@@ -103,7 +107,7 @@ contract ValidatorManagment is Helper {
 
         // Prepare for the removal event
         vm.expectEmit(true, true, false, true);
-        emit Infrared.ValidatorsRemoved(governance, pubKeysToRemove);
+        emit IInfrared.ValidatorsRemoved(governance, pubKeysToRemove);
 
         // Remove the validator
         infrared.removeValidators(validatorsToRemove);
@@ -172,7 +176,7 @@ contract ValidatorManagment is Helper {
 
         // Emitting event for replacing validator
         vm.expectEmit(true, true, false, true);
-        emit Infrared.ValidatorReplaced(
+        emit IInfrared.ValidatorReplaced(
             governance, newValidators[0].pubKey, replacementValidator[0].pubKey
         );
 

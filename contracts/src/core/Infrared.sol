@@ -82,50 +82,6 @@ contract Infrared is InfraredUpgradeable, IInfrared {
     /// @inheritdoc IInfrared
     IInfraredVault public ibgtVault;
 
-    event NewVault(
-        address _sender,
-        address indexed _asset,
-        address indexed _vault,
-        address[] _rewardTokens
-    );
-    event IBGTSupplied(address indexed _vault, uint256 _amt);
-    event RewardSupplied(
-        address indexed _vault, address indexed _token, uint256 _amt
-    );
-    event Recovered(address _sender, address indexed _token, uint256 _amount);
-    event RewardTokenNotSupported(address _token);
-    event IBGTUpdated(address _sender, address _oldIbgt, address _newIbgt);
-    event IBGTVaultUpdated(
-        address _sender, address _oldIbgtVault, address _newIbgtVault
-    );
-    event WhiteListedRewardTokensUpdated(
-        address _sender,
-        address indexed _token,
-        bool _wasWhitelisted,
-        bool _isWhitelisted
-    );
-    event RewardsDurationUpdated(
-        address _sender, uint256 _oldDuration, uint256 _newDuration
-    );
-    event VaultHarvested(
-        address _sender,
-        address indexed _asset,
-        address indexed _vault,
-        uint256 _bgtAmt
-    );
-    event ValidatorHarvested(
-        address _sender,
-        bytes indexed _validator,
-        DataTypes.Token[] _rewards,
-        uint256 _bgtAmt
-    );
-    event ValidatorsAdded(address _sender, bytes[] _validators);
-    event ValidatorsRemoved(address _sender, bytes[] _validators);
-    event ValidatorReplaced(address _sender, bytes _current, bytes _new);
-    event Delegated(address _sender, bytes _validator, uint256 _amt);
-    event Undelegated(address _sender, bytes _validator, uint256 _amt);
-    event Redelegated(address _sender, bytes _from, bytes _to, uint256 _amt);
-
     /*//////////////////////////////////////////////////////////////
                 INITIALIZATION LOGIC
     //////////////////////////////////////////////////////////////*/

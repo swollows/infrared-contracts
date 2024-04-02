@@ -4,53 +4,75 @@ pragma solidity 0.8.22;
 import "./Helper.sol";
 
 contract InfraredTest is Helper {
-/*//////////////////////////////////////////////////////////////
+    /*//////////////////////////////////////////////////////////////
                END TO END TESTS, FULL LIFE CYCLE
     //////////////////////////////////////////////////////////////*/
 
-/* TODO: fix
     function testEndToEndFlow() public {
+        MockERC20 mockAsset = new MockERC20("MockAsset", "MCK", 18);
+        rewardsFactory.createRewardsVault(address(mockAsset));
+
+        address[] memory rewardTokens = new address[](1);
+        rewardTokens[0] = address(ibgt);
+
         // Step 1: Vault Registration
-        (address deployedInfraredVault, address pool) = setupMockVault();
-        // stakingAsset is the staking token for the vault
-        InfraredVault vault = InfraredVault(deployedInfraredVault);
-        vault.stakingToken();
+        infrared.grantRole(infrared.KEEPER_ROLE(), address(this));
+        InfraredVault vault = InfraredVault(
+            address(infrared.registerVault(address(mockAsset), rewardTokens))
+        );
 
         // Step 2: User Interaction - Staking Tokens
         address user = address(10);
         uint256 stakeAmount = 1000 ether;
-        MockERC20(stakingAsset).mint(user, stakeAmount);
+        mockAsset.mint(user, stakeAmount);
         vm.startPrank(user);
-        MockERC20(stakingAsset).approve(deployedInfraredVault, stakeAmount);
+        mockAsset.approve(address(vault), stakeAmount);
         vault.stake(stakeAmount);
         vm.stopPrank();
 
-        // Simulate Infrared harvesting and distributing rewards to the vault
-        vm.prank(keeper);
-        // infrared.harvestVault(pool);
+        // Step 3: Reward Accrual via Rewards Factory (Simulate Reward Increase)
+        // Assuming rewardsFactory and infrared contracts have been set up to interact correctly
+        rewardsFactory.increaseRewardsForVault(address(mockAsset), 100 ether);
 
         // Step 4: Passage of Time for Rewards Distribution
-        vm.warp(block.timestamp + 30 days); // Simulating 30 days for reward distribution
+        vm.warp(block.timestamp + 10 days); // Simulating 10 days for reward accrual
 
-        // Step 5: Claiming Rewards
-        vm.startPrank(user);
-        vault.getReward();
-        uint256 rewardBalance = ibgt.balanceOf(user);
+        // Step 5: Harvest Vault - Distributing Rewards
+        vm.startPrank(keeper);
+        uint256 vaultBalanceBefore = ibgt.balanceOf(address(vault));
+        vm.expectEmit();
+        emit IInfrared.VaultHarvested(
+            keeper, address(mockAsset), address(vault), 99999999999999964000
+        );
+        infrared.harvestVault(address(mockAsset));
         vm.stopPrank();
+
+        uint256 vaultBalanceAfter = ibgt.balanceOf(address(vault));
+        assertTrue(
+            vaultBalanceAfter > vaultBalanceBefore,
+            "Vault should have more IBGT after harvest"
+        );
+
+        // Step 6: Claiming Rewards
+        vm.startPrank(user);
+        vm.warp(block.timestamp + 10 days); //
+        vault.getReward();
+        vm.stopPrank();
+        uint256 rewardBalance = ibgt.balanceOf(user);
         assertTrue(rewardBalance > 0, "User should have rewards");
 
-        // Step 6: Users Withdraw Tokens
+        // Step 7: Users Withdraw Tokens
         vm.startPrank(user);
         vault.withdraw(stakeAmount);
-        uint256 finalBalance = MockERC20(stakingAsset).balanceOf(user);
+        uint256 finalBalance = mockAsset.balanceOf(user);
         vm.stopPrank();
-        assertTrue(
-            finalBalance == stakeAmount,
+        assertEq(
+            finalBalance,
+            stakeAmount,
             "User should have withdrawn all staked tokens"
         );
 
-        // Step 7: Assertions
-        // Ensure the vault's state is correct
+        // Step 8: Assertions
         assertEq(
             vault.totalSupply(),
             0,
@@ -62,8 +84,7 @@ contract InfraredTest is Helper {
             "User balance in vault should be zero after withdrawal"
         );
     }
-
-    // TODO: fix
+    /* TODO: fix
     function testEndToEndHarvestValidator() public {
         // Staking by User in IBGT Vault
         address user = address(10);

@@ -1,114 +1,153 @@
-// // SPDX-License-Identifier: MIT
-// pragma solidity 0.8.22;
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.22;
 
-// import "@core/IBGT.sol";
-// import "@core/InfraredVault.sol";
-// import "@core/Infrared.sol";
+import "@core/IBGT.sol";
+import "@core/InfraredVault.sol";
+import "@core/Infrared.sol";
 
-// import "../SetupHelper.sol";
+import "./Keeper.sol";
 
-// import "../../../unit/mocks/MockERC20.sol";
+import "../../../unit/mocks/MockERC20.sol";
 
-// contract UserHandler is Test {
-//     Infrared public infrared;
-//     InfraredVault public vault;
-//     IERC20 public stakingToken;
+contract User is Test {
+    Infrared public infrared;
+    Keeper public keeper;
 
-//     address public user1;
-//     address public user2;
-//     address public user3;
+    address[] public users;
 
-//     uint256 public totalStaked;
-//     uint256 public totalWithdrawn;
+    uint256 public totalStaked;
+    uint256 public totalWithdrawn;
 
-//     mapping(address => uint256) public userStaked;
-//     mapping(address => uint256) public userClaimed;
+    mapping(address => InfraredVault[]) public userVaults;
+    mapping(address => mapping(InfraredVault => uint256)) public userVaultStaked;
+    mapping(address => mapping(InfraredVault => uint256)) public
+        userVaultClaimed;
 
-//     constructor(Infrared _infrared, address _vault) public {
-//         infrared = _infrared;
-//         vault = InfraredVault(_vault);
-//         stakingToken = InfraredVault(_vault).stakingToken();
+    constructor(Infrared _infrared, Keeper _keeper) public {
+        infrared = _infrared;
+        keeper = _keeper;
 
-//         // derrive user addresses from address(this)
-//         user1 = address(
-//             uint160(
-//                 uint256(keccak256(abi.encodePacked(address(this), address(1))))
-//             )
-//         );
-//         user2 = address(
-//             uint160(
-//                 uint256(keccak256(abi.encodePacked(address(this), address(2))))
-//             )
-//         );
-//         user3 = address(
-//             uint160(
-//                 uint256(keccak256(abi.encodePacked(address(this), address(3))))
-//             )
-//         );
-//     }
+        // create a number of users
+        users.push(address(0x1));
+        users.push(address(0x2));
+        users.push(address(0x3));
+        users.push(address(0x4));
+        users.push(address(0x5));
+        users.push(address(0x6));
+        users.push(address(0x7));
+        users.push(address(0x8));
+        users.push(address(0x9));
+        users.push(address(0x10));
+    }
 
-//     function deposit(uint256 amount, uint256 seed) public {
-//         // jump in time
-//         vm.warp(block.timestamp + 1 days);
-//         // pick a user either user1, user2, or user3
-//         address user;
-//         if (seed % 3 == 0) {
-//             user = user1;
-//         } else if (seed % 3 == 1) {
-//             user = user2;
-//         } else {
-//             user = user3;
-//         }
-//         vm.assume(
-//             amount < type(uint256).max
-//                 && amount < type(uint128).max - totalStaked
-//         );
+    function deposit(uint256 amount, uint8 vaultIndex, uint8 userIndex)
+        public
+    {
+        // pick a user either user1, user2, or user3
+        amount = bound(amount, 0, type(uint128).max - totalStaked);
+        uint256 maxVaultIndex = keeper.getVaults().length;
 
-//         deal(address(stakingToken), user, amount);
+        vaultIndex = uint8(bound(vaultIndex, 0, maxVaultIndex - 1));
+        userIndex = uint8(bound(userIndex, 0, users.length - 1));
 
-//         totalStaked += amount;
-//         userStaked[user] += amount;
+        address user = users[userIndex];
 
-//         stakingToken.approve(address(vault), amount);
-//         vault.stake(amount);
-//     }
+        IInfraredVault[] memory vs = keeper.getVaults();
+        InfraredVault vault =
+            InfraredVault(address(keeper.getVaults()[vaultIndex]));
+        address stakingToken = address(vault.stakingToken());
 
-//     function withdraw(uint256 amount, uint256 seed) public {
-//         // jump in time
-//         vm.warp(block.timestamp + 1 days);
-//         // pick a user either user1, user2, or user3
-//         address user;
-//         if (seed % 3 == 0) {
-//             user = user1;
-//         } else if (seed % 3 == 1) {
-//             user = user2;
-//         } else {
-//             user = user3;
-//         }
+        deal(address(stakingToken), user, amount);
 
-//         vm.assume(amount <= userStaked[user]);
+        totalStaked += amount;
+        userVaultStaked[user][vault] += amount;
+        userVaults[user].push(vault);
 
-//         totalWithdrawn += amount;
-//         userStaked[user] -= amount;
+        vm.startPrank(user);
+        MockERC20(address(stakingToken)).approve(address(vault), amount);
+        vault.stake(amount);
+        vm.stopPrank();
 
-//         vault.withdraw(amount);
-//     }
+        // jump in time
+        vm.warp(block.timestamp + 10 days);
+    }
 
-//     function claim(uint256 seed) public {
-//         // jump in time
-//         vm.warp(block.timestamp + 1 days);
-//         // pick a user either user1, user2, or user3
-//         address user;
-//         if (seed % 3 == 0) {
-//             user = user1;
-//         } else if (seed % 3 == 1) {
-//             user = user2;
-//         } else {
-//             user = user3;
-//         }
+    function deposit2(
+        uint256 amount,
+        uint8 vaultIndex,
+        uint8 userIndex // increase the chances of calling deposit
+    ) public {
+        // pick a user either user1, user2, or user3
+        amount = bound(amount, 0, type(uint128).max - totalStaked);
+        uint256 maxVaultIndex = keeper.getVaults().length;
 
-//         uint256 reward = vault.earned(user, address(infrared.ibgt()));
-//         vault.getReward();
-//         userClaimed[user] += reward;
-//     }
-// }
+        vaultIndex = uint8(bound(vaultIndex, 0, maxVaultIndex - 1));
+        userIndex = uint8(bound(userIndex, 0, users.length - 1));
+
+        address user = users[userIndex];
+
+        InfraredVault vault =
+            InfraredVault(address(keeper.getVaults()[vaultIndex]));
+        address stakingToken = address(vault.stakingToken());
+
+        deal(address(stakingToken), user, amount);
+
+        totalStaked += amount;
+        userVaultStaked[user][vault] += amount;
+        userVaults[user].push(vault);
+
+        vm.startPrank(user);
+        MockERC20(address(stakingToken)).approve(address(vault), amount);
+        vault.stake(amount);
+        vm.stopPrank();
+
+        // jump in time
+        vm.warp(block.timestamp + 10 days);
+    }
+
+    function withdraw(uint256 amount, uint8 userIndex, uint8 vaultIndex)
+        public
+    {
+        userIndex = uint8(bound(userIndex, 0, users.length - 1));
+
+        address user = users[userIndex];
+
+        vaultIndex = uint8(bound(vaultIndex, 0, userVaults[user].length - 1));
+
+        InfraredVault vault = userVaults[user][vaultIndex];
+
+        amount = bound(amount, 0, userVaultStaked[user][vault]);
+
+        if (amount == 0) {
+            return;
+        }
+
+        userVaultStaked[user][vault] -= amount;
+
+        vm.startPrank(user);
+        vault.withdraw(amount);
+        vm.stopPrank();
+    }
+
+    function claim(uint8 userIndex, uint8 vaultIndex) public {
+        userIndex = uint8(bound(userIndex, 0, users.length - 1));
+
+        address user = users[userIndex];
+
+        vaultIndex = uint8(bound(vaultIndex, 0, userVaults[user].length - 1));
+
+        vm.warp(block.timestamp + 1 days);
+
+        InfraredVault vault = userVaults[user][vaultIndex];
+
+        vm.startPrank(user);
+        uint256 reward = vault.earned(user, address(infrared.ibgt()));
+        userVaultClaimed[user][vault] += reward;
+        vault.getReward();
+        vm.stopPrank();
+    }
+
+    function getUsers() public view returns (address[] memory) {
+        return users;
+    }
+}

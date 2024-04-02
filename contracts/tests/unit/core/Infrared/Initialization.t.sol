@@ -3,7 +3,7 @@ pragma solidity 0.8.22;
 
 //external
 
-import {Helper, Infrared, Errors, IAccessControl} from "./Helper.sol";
+import "./Helper.sol";
 
 contract InfraredInitializationTest is Helper {
     /*//////////////////////////////////////////////////////////////
@@ -121,7 +121,7 @@ contract InfraredInitializationTest is Helper {
 
     function testUpdateWhiteListedRewardTokens() public {
         vm.expectEmit();
-        emit Infrared.WhiteListedRewardTokensUpdated(
+        emit IInfrared.WhiteListedRewardTokensUpdated(
             address(this), address(12345), false, true
         );
         // Update the whitelist
@@ -136,7 +136,7 @@ contract InfraredInitializationTest is Helper {
 
     function testUpdateRewardsDuration() public {
         vm.expectEmit();
-        emit Infrared.RewardsDurationUpdated(
+        emit IInfrared.RewardsDurationUpdated(
             address(this), infrared.rewardsDuration(), 123
         );
         // Update the rewards duration

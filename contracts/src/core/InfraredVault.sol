@@ -139,6 +139,7 @@ contract InfraredVault is MultiRewards, IInfraredVault {
         _setOperator(infrared);
 
         // stake total supply for berachain proof of liquidity rewards
+        stakingToken.safeIncreaseAllowance(_rewardsVaultAddress, _totalSupply);
         rewardsVault.stake(_totalSupply);
     }
 

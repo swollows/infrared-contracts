@@ -27,7 +27,7 @@ contract MockBeaconDepositContract is IBeaconDepositContract {
             validator.withdrawalCredentials = stakingCredentials;
         }
 
-        emit Deposit(validatorPubKey, stakingCredentials, amount, signature);
+        emit Deposit(validatorPubKey, stakingCredentials, amount, signature, 0);
     }
 
     function redirect(
@@ -46,7 +46,7 @@ contract MockBeaconDepositContract is IBeaconDepositContract {
         toValidator.totalStake += amount;
 
         emit Redirect(
-            fromPubKey, toPubKey, fromValidator.withdrawalCredentials, amount
+            fromPubKey, toPubKey, fromValidator.withdrawalCredentials, amount, 0
         );
     }
 
@@ -68,7 +68,13 @@ contract MockBeaconDepositContract is IBeaconDepositContract {
 
         validator.totalStake -= amount;
 
-        emit Withdraw(validatorPubKey, withdrawalCredentials, amount);
+        emit Withdrawal(
+            validatorPubKey,
+            withdrawalCredentials,
+            withdrawalCredentials,
+            amount,
+            0
+        );
     }
 
     function getValidatorTotalStake(bytes calldata validatorPubKey)
