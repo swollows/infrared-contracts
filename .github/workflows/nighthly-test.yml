@@ -1,16 +1,15 @@
-name: pipeline
+name: nighthly-test
 
 on:
-  pull_request:
-  push:
-    branches:
-      - main
+  schedule:
+    - cron: '0 0 * * *'
 
 env:
   FOUNDRY_PROFILE: ci
 
 jobs:
   all:
+    if: github.ref == 'refs/heads/main'
     strategy:
       fail-fast: true
 
@@ -37,5 +36,5 @@ jobs:
 
       - name: Run Forge tests
         run: |
-          FOUNDRY_PROFILE=ci forge test --fuzz-runs 256 -vvv --root ./contracts 
+          FOUNDRY_PROFILE=ci forge test --fuzz-runs 10000 -vvv --root ./contracts 
         id: test
