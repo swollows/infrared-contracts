@@ -273,10 +273,16 @@ abstract contract MultiRewards is ReentrancyGuard, Pausable, IMultiRewards {
     }
 
     /**
+     * @notice Hook called in getRewardForUser function after updating rewards
+     */
+    function onReward() internal virtual;
+
+    /**
      * @notice Claims all pending rewards for msg sender.
      * @dev Change from forked MultiRewards.sol to allow for claim of reward for any user to their address
      */
     function getReward() public {
+        onReward();
         getRewardForUser(msg.sender);
     }
 

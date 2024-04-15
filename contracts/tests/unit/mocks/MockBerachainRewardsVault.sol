@@ -115,4 +115,6 @@ contract MockBerachainRewardsVault is MultiRewards {
     function onStake(uint256 amount) internal override {}
 
     function onWithdraw(uint256 amount) internal override {}
+
+    function onReward() internal override {}
 }

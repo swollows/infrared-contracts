@@ -277,10 +277,12 @@ contract Infrared is InfraredUpgradeable, IInfrared {
     //////////////////////////////////////////////////////////////*/
 
     /// @inheritdoc IInfrared
-    function harvestVault(address _asset) external onlyKeeper whenInitialized {
+    function harvestVault(address _asset) external whenInitialized {
         IInfraredVault vault = vaultRegistry[_asset];
         if (vault == IInfraredVault(address(0))) {
             revert Errors.VaultNotSupported();
+        } else if (!vault.stakedInRewardsVault()) {
+            revert Errors.VaultNotStaked();
         }
 
         uint256 balanceBefore = getBGTBalance();

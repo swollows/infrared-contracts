@@ -16,14 +16,15 @@ contract InfraredRewardsTest is Helper {
         stakeInVault(address(infraredVault), stakingAsset, user, 100 ether);
 
         vm.warp(10 days);
-        vm.startPrank(keeper);
         uint256 vaultBalanceBefore = ibgt.balanceOf(address(infraredVault));
         vm.expectEmit();
         emit IInfrared.VaultHarvested(
-            keeper, stakingAsset, address(infraredVault), 1099999999999999958400
+            address(this),
+            stakingAsset,
+            address(infraredVault),
+            1099999999999999958400
         );
         infrared.harvestVault(stakingAsset);
-        vm.stopPrank();
 
         uint256 vaultBalanceAfter = ibgt.balanceOf(address(infraredVault));
         assertEq(vaultBalanceAfter, vaultBalanceBefore + 1099999999999999958400); // adjust for rounding error
@@ -74,45 +75,51 @@ contract InfraredRewardsTest is Helper {
         stakeInVault(address(infraredVault), stakingAsset, user, 100 ether);
 
         vm.warp(10 days);
-        vm.startPrank(keeper);
         infrared.harvestVault(address(123));
         vm.expectRevert(Errors.VaultNotSupported.selector);
-        vm.stopPrank();
     }
 
-    function testFailHarvestVaultUnauthorized() public {
+    function testHarvestVaultPremissionless() public {
         rewardsFactory.increaseRewardsForVault(stakingAsset, 100 ether);
         address user = address(123);
         stakeInVault(address(infraredVault), stakingAsset, user, 100 ether);
 
-        vm.warp(10 days);
+        vm.warp(1 days);
         vm.startPrank(address(1234));
+        infrared.harvestVault(stakingAsset);
 
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                IAccessControl.AccessControlUnauthorizedAccount.selector,
-                address(1234),
-                infrared.KEEPER_ROLE()
-            )
-        );
-        try infrared.harvestVault(stakingAsset) {
-            fail();
-        } catch Error(string memory reason) {
-            assertTrue(
-                isStringSame(
-                    reason,
-                    string(
-                        abi.encodeWithSelector(
-                            IAccessControl
-                                .AccessControlUnauthorizedAccount
-                                .selector,
-                            address(1234),
-                            infrared.KEEPER_ROLE()
-                        )
-                    )
-                )
-            );
-        }
+        vm.warp(1 days);
+        vm.startPrank(address(12345));
+        infrared.harvestVault(stakingAsset);
+
+        vm.warp(1 days);
+        vm.startPrank(address(123456));
+    }
+
+    function testGetRewardsCallbackIntoHarvestVault() public {
+        rewardsFactory.increaseRewardsForVault(stakingAsset, 100 ether);
+        address user = address(123);
+        stakeInVault(address(infraredVault), stakingAsset, user, 100 ether);
+
+        vm.warp(10 hours);
+        uint256 vaultBalanceBefore = ibgt.balanceOf(address(infraredVault));
+        infrared.harvestVault(stakingAsset);
+
+        uint256 vaultBalanceAfter = ibgt.balanceOf(address(infraredVault));
+        // assert that bgt balance and IBGT balance are equal
+        assertEq(ibgt.totalSupply(), bgt.balanceOf(address(infrared)));
+
+        vm.warp(1 days);
+        // get user rewards
+        (,,, uint256 rewardRateBefore,,) =
+            infraredVault.rewardData(address(ibgt));
+        vm.startPrank(user);
+        infraredVault.getReward();
+        vm.stopPrank();
+        (,,, uint256 rewardRateAfter,,) =
+            infraredVault.rewardData(address(ibgt));
+        assertGt(rewardRateAfter, rewardRateBefore);
+        assertGt(ibgt.totalSupply(), vaultBalanceAfter); // totalSupply > last harvestVault
     }
 
     /*//////////////////////////////////////////////////////////////

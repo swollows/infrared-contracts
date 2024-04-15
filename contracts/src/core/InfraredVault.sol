@@ -103,7 +103,7 @@ contract InfraredVault is MultiRewards, IInfraredVault {
     }
 
     /*//////////////////////////////////////////////////////////////
-                            STAKE/WITHDRAW
+                            STAKE/WITHDRAW/CLAIM
     //////////////////////////////////////////////////////////////*/
 
     /**
@@ -123,6 +123,14 @@ contract InfraredVault is MultiRewards, IInfraredVault {
     function onWithdraw(uint256 amount) internal override {
         if (!stakedInRewardsVault()) return;
         rewardsVault.withdraw(amount);
+    }
+
+    /**
+     * @notice hook called after the reward is claimed to harvest the rewards from the berachain rewards vault
+     */
+    function onReward() internal override {
+        if (!stakedInRewardsVault()) return;
+        IInfrared(infrared).harvestVault(address(stakingToken));
     }
 
     /// @inheritdoc IInfraredVault

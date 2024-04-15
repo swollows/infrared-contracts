@@ -30,6 +30,7 @@ library Errors {
 
     // Infrared errors.
     error VaultNotSupported();
+    error VaultNotStaked();
     error ClaimDistrRewardsFailed();
     error DuplicateAssetAddress();
     error VaultDeploymentFailed();

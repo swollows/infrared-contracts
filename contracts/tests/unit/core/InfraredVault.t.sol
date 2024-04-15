@@ -63,12 +63,6 @@ contract InfraredVaultTest is Test {
         rewardTokens = new address[](1);
         rewardTokens[0] = address(ibgt);
 
-        infrared =
-            address(new MockInfrared(address(ibgt), address(rewardsFactory)));
-
-        rewardTokens = new address[](1);
-        rewardTokens[0] = address(ibgt);
-
         // Deploy the InfraredVault contract
         vm.prank(infrared);
         infraredVault = new InfraredVault(
@@ -175,11 +169,25 @@ contract InfraredVaultTest is Test {
             "Total supply should be updated"
         );
 
+        // test getReward without callback into infrared harvestVault (onRewards should return null)
+        vm.warp(1 days);
+        vm.startPrank(user);
+        (,,, uint256 rewardRateBefore,,) =
+            infraredVault.rewardData(address(ibgt));
+
+        infraredVault.getReward();
+
+        (,,, uint256 rewardRateAfter,,) =
+            infraredVault.rewardData(address(ibgt));
+        vm.stopPrank();
+        assertEq(rewardRateAfter, rewardRateBefore);
+
         // deploy a berachain rewards vault for staking token
         address beraVault = rewardsFactory.createRewardsVault(address(ibgt));
         // migrate to new rewards vault
         vm.startPrank(infrared);
         infraredVault.migrate();
+        vm.stopPrank();
 
         // check that rewardsVault is now set
         assertTrue(
@@ -200,6 +208,13 @@ contract InfraredVaultTest is Test {
         vm.startPrank(user);
         ibgt.approve(address(infraredVault), 1000 ether);
         infraredVault.stake(1000 ether);
+
+        vm.warp(1 days);
+        // test getReward with callback into infrared harvestVault (onRewards should call into infrared)
+        vm.expectEmit();
+        emit MockInfrared.VaultHarvested(address(infraredVault.stakingToken()));
+
+        infraredVault.getReward();
         vm.stopPrank();
 
         assertTrue(
