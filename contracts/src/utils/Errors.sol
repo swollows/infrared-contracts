@@ -37,4 +37,6 @@ library Errors {
     error BGTBalanceMismatch();
     error NotInfrared();
     error NotInitialized();
+    error InvalidProtocolFeeRate();
+    error MaxProtocolFeeAmount();
 }

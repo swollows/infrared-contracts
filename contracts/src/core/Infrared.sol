@@ -3,6 +3,7 @@ pragma solidity 0.8.22;
 
 // External dependencies.
 import {Address} from "@openzeppelin/utils/Address.sol";
+import {Math} from "@openzeppelin/utils/math/Math.sol";
 import {SafeERC20} from "@openzeppelin/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
 import {EnumerableSet} from "@openzeppelin/utils/structs/EnumerableSet.sol";
@@ -23,6 +24,7 @@ import {ValidatorUtils} from "@utils/ValidatorUtils.sol";
 
 import {DataTypes} from "@utils/DataTypes.sol";
 import {Errors} from "@utils/Errors.sol";
+import {InfraredVaultDeployer} from "@utils/InfraredVaultDeployer.sol";
 
 import {IIBGT} from "@interfaces/IIBGT.sol";
 import {IInfraredVault} from "@interfaces/IInfraredVault.sol";
@@ -81,6 +83,15 @@ contract Infrared is InfraredUpgradeable, IInfrared {
 
     /// @inheritdoc IInfrared
     IInfraredVault public ibgtVault;
+
+    /// @inheritdoc IInfrared
+    mapping(address => uint256) public protocolFeeRates;
+
+    /// @inheritdoc IInfrared
+    mapping(address => uint256) public protocolFeeAmounts;
+
+    /// @notice Protocol fee rate in hundredths of 1 bip
+    uint256 internal constant FEE_UNIT = 1e6;
 
     /*//////////////////////////////////////////////////////////////
                 INITIALIZATION LOGIC
@@ -154,7 +165,7 @@ contract Infrared is InfraredUpgradeable, IInfrared {
         }
 
         _new =
-            address(new InfraredVault(_asset, _rewardTokens, rewardsDuration));
+            InfraredVaultDeployer.deploy(_asset, _rewardTokens, rewardsDuration);
         vaultRegistry[_asset] = IInfraredVault(_new);
         emit NewVault(msg.sender, _asset, _new, _rewardTokens);
     }
@@ -233,6 +244,34 @@ contract Infrared is InfraredUpgradeable, IInfrared {
         emit Recovered(msg.sender, _token, _amount);
     }
 
+    /// @inheritdoc IInfrared
+    function updateProtocolFeeRate(address _token, uint256 _feeRate)
+        external
+        onlyGovernor
+        whenInitialized
+    {
+        uint256 _protocolFeeRate = protocolFeeRates[_token];
+        if (_feeRate >= FEE_UNIT) revert Errors.InvalidProtocolFeeRate();
+        emit ProtocolFeeRateUpdated(
+            msg.sender, _token, _protocolFeeRate, _feeRate
+        );
+        protocolFeeRates[_token] = _feeRate;
+    }
+
+    /// @inheritdoc IInfrared
+    function claimProtocolFees(address _to, address _token, uint256 _amount)
+        external
+        onlyGovernor
+        whenInitialized
+    {
+        if (_amount > protocolFeeAmounts[_token]) {
+            revert Errors.MaxProtocolFeeAmount();
+        }
+        protocolFeeAmounts[_token] -= _amount;
+        IERC20(_token).safeTransfer(_to, _amount);
+        emit ProtocolFeesClaimed(msg.sender, _to, _token, _amount);
+    }
+
     /*//////////////////////////////////////////////////////////////
                             REWARDS
     //////////////////////////////////////////////////////////////*/
@@ -283,14 +322,23 @@ contract Infrared is InfraredUpgradeable, IInfrared {
             return; // skip non-whitelisted tokens
         }
 
-        // amount to forward is balance of this address
-        uint256 _amount = IERC20(_token).balanceOf(address(this));
+        // amount to forward is balance of this address less existing protocol fees
+        uint256 _amount =
+            IERC20(_token).balanceOf(address(this)) - protocolFeeAmounts[_token];
         if (_amount == 0) return;
 
         // add reward if not already added
         (, uint256 _vaultRewardsDuration,,,,) = _vault.rewardData(_token);
         if (_vaultRewardsDuration == 0) {
             _vault.addReward(_token, rewardsDuration);
+        }
+
+        // take protocol fee
+        uint256 _protocolFeeRate = protocolFeeRates[_token];
+        if (_protocolFeeRate > 0) {
+            uint256 _feeAmt = Math.mulDiv(_amount, _protocolFeeRate, FEE_UNIT);
+            protocolFeeAmounts[_token] += _feeAmt;
+            _amount -= _feeAmt;
         }
 
         // increase allowance then notify vault of new rewards
@@ -313,6 +361,16 @@ contract Infrared is InfraredUpgradeable, IInfrared {
 
         // handle bgt rewards by minting and supplying IBGT to vault
         ibgt.mint(address(this), _bgtAmt);
+
+        // take protocol fee
+        uint256 _protocolFeeRate = protocolFeeRates[address(ibgt)];
+        if (_protocolFeeRate > 0) {
+            uint256 _feeAmt = Math.mulDiv(_bgtAmt, _protocolFeeRate, FEE_UNIT);
+            protocolFeeAmounts[address(ibgt)] += _feeAmt;
+            _bgtAmt -= _feeAmt;
+        }
+
+        // send bgt rewards less fee to vault
         ibgt.safeIncreaseAllowance(address(_vault), _bgtAmt);
         _vault.notifyRewardAmount(address(ibgt), _bgtAmt);
 

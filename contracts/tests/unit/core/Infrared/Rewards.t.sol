@@ -31,6 +31,43 @@ contract InfraredRewardsTest is Helper {
         assertEq(ibgt.totalSupply(), bgt.balanceOf(address(infrared)));
     }
 
+    function testHarvestVaultWithProtocolFees() public {
+        rewardsFactory.increaseRewardsForVault(stakingAsset, 100 ether);
+        address user = address(123);
+        stakeInVault(address(infraredVault), stakingAsset, user, 100 ether);
+
+        vm.startPrank(governance);
+        infrared.updateProtocolFeeRate(address(ibgt), 3e5);
+        vm.stopPrank();
+
+        vm.warp(10 days);
+        vm.startPrank(keeper);
+        uint256 vaultBalanceBefore = ibgt.balanceOf(address(infraredVault));
+        uint256 protocolFeeAmountBefore =
+            infrared.protocolFeeAmounts(address(ibgt));
+
+        uint256 amt = 1099999999999999958400;
+        uint256 protocolFees = (amt * 3e5) / 1e6;
+        uint256 bgtAmt = amt - protocolFees;
+
+        vm.expectEmit();
+        emit IInfrared.VaultHarvested(
+            keeper, stakingAsset, address(infraredVault), amt
+        );
+        emit IInfrared.IBGTSupplied(address(infraredVault), bgtAmt);
+        infrared.harvestVault(stakingAsset);
+        vm.stopPrank();
+
+        uint256 vaultBalanceAfter = ibgt.balanceOf(address(infraredVault));
+        assertEq(vaultBalanceAfter, vaultBalanceBefore + bgtAmt); // adjust for rounding error
+        // assert that bgt balance and IBGT balance are equal
+        assertEq(ibgt.totalSupply(), bgt.balanceOf(address(infrared)));
+        assertEq(
+            infrared.protocolFeeAmounts(address(ibgt)),
+            protocolFeeAmountBefore + protocolFees
+        );
+    }
+
     function testFailHarvestVaultInvalidPool() public {
         rewardsFactory.increaseRewardsForVault(stakingAsset, 100 ether);
         address user = address(123);

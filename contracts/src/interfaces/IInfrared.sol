@@ -37,6 +37,18 @@ interface IInfrared {
     /// @notice The IBGT vault
     function ibgtVault() external view returns (IInfraredVault);
 
+    /// @notice The Infrared protocol fee rates for a given token
+    /// @dev In units of 1e6 or hundredths of 1 bip
+    /// @param token address The token address to charge the protocol fee rate
+    function protocolFeeRates(address token) external view returns (uint256);
+
+    /// @notice The unclaimed Infrared protocol fees of token accumulated by contract
+    /// @param token address The token address for the accumulated fees
+    function protocolFeeAmounts(address token)
+        external
+        view
+        returns (uint256);
+
     /// @notice Wrapped bera
     function wbera() external view returns (IWBERA);
 
@@ -83,6 +95,23 @@ interface IInfrared {
      * @param _amount uint256 The amount of the token to recover.
      */
     function recoverERC20(address _to, address _token, uint256 _amount)
+        external;
+
+    /**
+     * @notice Updates the protocol fee rate charged on harvest
+     * @dev Fee rate in units of 1e6 or hundredths of 1 bip
+     * @param _token   address The address of the token for the protocol fee rate
+     * @param _feeRate uint256 The protocol fee rate to update to
+     */
+    function updateProtocolFeeRate(address _token, uint256 _feeRate) external;
+
+    /**
+     * @notice Claims accumulated protocol fees in contract
+     * @param _to     address The recipient of the fees
+     * @param _token  address The token to claim fees in
+     * @param _amount uint256 The amount of accumulated fees to claim
+     */
+    function claimProtocolFees(address _to, address _token, uint256 _amount)
         external;
 
     /**
@@ -266,6 +295,31 @@ interface IInfrared {
      */
     event RewardsDurationUpdated(
         address _sender, uint256 _oldDuration, uint256 _newDuration
+    );
+
+    /**
+     * @notice Emitted when protocol fee rate is updated.
+     * @param _sender The address that initiated the update.
+     * @param _token The address of the token for the protocol fee rate.
+     * @param _oldFeeRate The old protocol fee rate.
+     * @param _newFeeRate The new protocol fee rate.
+     */
+    event ProtocolFeeRateUpdated(
+        address _sender,
+        address _token,
+        uint256 _oldFeeRate,
+        uint256 _newFeeRate
+    );
+
+    /**
+     * @notice Emitted when protocol fees claimed.
+     * @param _sender The address that initiated the claim.
+     * @param _to The address to send protocol fees to.
+     * @param _token The address of the token protocol fees in.
+     * @param _amount The amount of protocol fees claimed.
+     */
+    event ProtocolFeesClaimed(
+        address _sender, address _to, address _token, uint256 _amount
     );
 
     /**
