@@ -30,9 +30,6 @@ contract InfraredVault is MultiRewards, IInfraredVault {
     // The address of the berachain rewards vault
     IBerachainRewardsVault public rewardsVault;
 
-    // events
-    event UpdateOperator(address _sender, address _to);
-
     /// Modifier to check that the caller is infrared contract
     modifier onlyInfrared() {
         if (msg.sender != infrared) revert Errors.Unauthorized(msg.sender);
@@ -53,11 +50,9 @@ contract InfraredVault is MultiRewards, IInfraredVault {
             revert Errors.MaxNumberOfRewards();
         }
 
-        // set the berachain rewards vault and operator as infrared if rewards vault exists
-        address _rewardsVaultAddress =
-            getRewardsVaultAddress(infrared, _stakingToken);
-        rewardsVault = IBerachainRewardsVault(_rewardsVaultAddress);
-        if (_rewardsVaultAddress != address(0)) _setOperator(infrared);
+        // set the berachain rewards vault and operator as infrared
+        rewardsVault = _createRewardsVaultIfNecessary(infrared, _stakingToken);
+        rewardsVault.setOperator(infrared);
 
         // add initial rewardToken
         bool hasIBGT;
@@ -73,33 +68,23 @@ contract InfraredVault is MultiRewards, IInfraredVault {
     }
 
     /**
-     * @notice Gets the berachain rewards vault address for given staking token
+     * @notice Gets or creates the berachain rewards vault for given staking token
      * @param _infrared The address of Infrared
      * @param _stakingToken The address of the staking token for this vault
      * @return The address of the berachain rewards vault
      */
-    function getRewardsVaultAddress(address _infrared, address _stakingToken)
-        internal
-        view
-        returns (address)
-    {
+    function _createRewardsVaultIfNecessary(
+        address _infrared,
+        address _stakingToken
+    ) private returns (IBerachainRewardsVault) {
         IBerachainRewardsVaultFactory rewardsFactory =
             IInfrared(_infrared).rewardsFactory();
-        return rewardsFactory.getVault(_stakingToken);
-    }
-
-    /**
-     * @notice Sets operator address of rewards for harvesting vault.
-     * @param to The operator address to manager rewards for this vault.
-     */
-    function _setOperator(address to) private {
-        rewardsVault.setOperator(to);
-        emit UpdateOperator(msg.sender, to);
-    }
-
-    /// @inheritdoc IInfraredVault
-    function stakedInRewardsVault() public view returns (bool) {
-        return (rewardsVault != IBerachainRewardsVault(address(0)));
+        address rewardsVaultAddress = rewardsFactory.getVault(_stakingToken);
+        if (rewardsVaultAddress == address(0)) {
+            rewardsVaultAddress =
+                rewardsFactory.createRewardsVault(_stakingToken);
+        }
+        return IBerachainRewardsVault(rewardsVaultAddress);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -111,7 +96,6 @@ contract InfraredVault is MultiRewards, IInfraredVault {
      * @param amount The amount of staking token transferred in to the contract
      */
     function onStake(uint256 amount) internal override {
-        if (!stakedInRewardsVault()) return;
         stakingToken.safeIncreaseAllowance(address(rewardsVault), amount);
         rewardsVault.stake(amount);
     }
@@ -121,7 +105,6 @@ contract InfraredVault is MultiRewards, IInfraredVault {
      * @param amount The amount of staking token transferred out of the contract
      */
     function onWithdraw(uint256 amount) internal override {
-        if (!stakedInRewardsVault()) return;
         rewardsVault.withdraw(amount);
     }
 
@@ -129,26 +112,7 @@ contract InfraredVault is MultiRewards, IInfraredVault {
      * @notice hook called after the reward is claimed to harvest the rewards from the berachain rewards vault
      */
     function onReward() internal override {
-        if (!stakedInRewardsVault()) return;
         IInfrared(infrared).harvestVault(address(stakingToken));
-    }
-
-    /// @inheritdoc IInfraredVault
-    function migrate() external {
-        if (stakedInRewardsVault()) revert Errors.StakedInRewardsVault();
-
-        // set berachain rewards vault and set operator on vault as infrared
-        address _rewardsVaultAddress =
-            getRewardsVaultAddress(infrared, address(stakingToken));
-        if (_rewardsVaultAddress == address(0)) {
-            revert Errors.NoRewardsVault();
-        }
-        rewardsVault = IBerachainRewardsVault(_rewardsVaultAddress);
-        _setOperator(infrared);
-
-        // stake total supply for berachain proof of liquidity rewards
-        stakingToken.safeIncreaseAllowance(_rewardsVaultAddress, _totalSupply);
-        rewardsVault.stake(_totalSupply);
     }
 
     /*//////////////////////////////////////////////////////////////

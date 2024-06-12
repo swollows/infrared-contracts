@@ -13,17 +13,6 @@ interface IInfraredVault is IMultiRewards {
     function rewardsVault() external view returns (IBerachainRewardsVault);
 
     /**
-     * @notice Returns whether staking asset in a Proof of Liquidity berachain rewards
-     * @return Whether staked in Proof of Liquidity
-     */
-    function stakedInRewardsVault() external view returns (bool);
-
-    /**
-     * @notice Migrates any staked tokens in the vault to berachain rewards vault contract for staking token
-     */
-    function migrate() external;
-
-    /**
      * @notice Update the rewards duration for a specific rewards token.
      * @dev    The token must be a valid rewards token and have a non-zero duration.
      * @param _rewardsToken    address The address of the rewards token.

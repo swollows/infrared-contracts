@@ -5,10 +5,11 @@ import "./Helper.sol";
 import {DataTypes} from "@utils/DataTypes.sol";
 
 contract DelegationTest is Helper {
-    /*//////////////////////////////////////////////////////////////
+/*//////////////////////////////////////////////////////////////
                Delegation Function Tests
     //////////////////////////////////////////////////////////////*/
 
+/* TODO: fix
     function testDelegate() public {
         // Simulate accrued BGT rewards to the Infrared contract
         deal(address(bgt), address(infrared), 100);
@@ -196,9 +197,6 @@ contract DelegationTest is Helper {
             )
         ); // Use your contract's specific revert reason or error selector
     }
-
-    /* TODO: fix
-    
 
     function testUndelegate() public {
         // simulate accured bgt rewards

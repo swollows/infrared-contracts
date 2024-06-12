@@ -109,6 +109,43 @@ contract InfraredVaultTest is Test {
         assertEq(rewardsVault.operator(address(vault)), infrared);
     }
 
+    function testSuccessfulDeploymentCreatesRewardsVault() public {
+        assertEq(rewardsFactory.getVault(address(rewardsToken)), address(0));
+
+        // Act: Deploy the contract with valid parameters
+        vm.prank(infrared);
+        InfraredVault vault = new InfraredVault(
+            address(rewardsToken), // use rewards as staking
+            rewardTokens,
+            1 days // Rewards duration
+        );
+
+        // Assert: Check if the contract is deployed successfully
+        assertTrue(
+            address(vault) != address(0),
+            "Contract should be successfully deployed"
+        );
+
+        assertEq(vault.rewardTokens(0), rewardTokens[0]);
+
+        (address _distributor, uint256 _duration,,,,) =
+            vault.rewardData(rewardTokens[0]);
+        assertEq(_distributor, infrared);
+        assertEq(_duration, 1 days);
+
+        // check immutables set
+        assertEq(vault.infrared(), infrared);
+
+        // check rewards vault created
+        address _rv = rewardsFactory.getVault(address(rewardsToken));
+        assertTrue(_rv != address(0), "Rewards vault should have been created");
+        assertEq(address(vault.rewardsVault()), _rv);
+        // assertEq(vault.stakingToken(), address(stakingToken));
+
+        // // check withdraw address set on rewards, distribution modules to infrared
+        assertEq(IBerachainRewardsVault(_rv).operator(address(vault)), infrared);
+    }
+
     function testRevertWithZeroAddressesInConstructor() public {
         // Test each parameter with zero address
         address[] memory testAddresses = new address[](8);
@@ -134,106 +171,6 @@ contract InfraredVaultTest is Test {
                 1 days
             );
         }
-    }
-
-    function testSuccessfulMigration() public {
-        // deploy infrared vault without MockBerachainRewardsVault
-        vm.prank(infrared);
-        InfraredVault infraredVault = new InfraredVault(
-            address(ibgt),
-            rewardTokens,
-            1 days // Rewards duration
-        );
-
-        // ensure that rewardsVault is address(0) before migration
-        assertTrue(
-            !infraredVault.stakedInRewardsVault(),
-            "Rewards vault should be address(0)"
-        );
-
-        // test depositing into non migrated vault
-        deal(address(ibgt), user, 1000 ether);
-        vm.startPrank(user);
-        ibgt.approve(address(infraredVault), 1000 ether);
-        infraredVault.stake(1000 ether);
-        vm.stopPrank();
-
-        assertEq(
-            infraredVault.balanceOf(user),
-            1000 ether,
-            "User balance should be updated"
-        );
-        assertEq(
-            infraredVault.totalSupply(),
-            1000 ether,
-            "Total supply should be updated"
-        );
-
-        // test getReward without callback into infrared harvestVault (onRewards should return null)
-        vm.warp(1 days);
-        vm.startPrank(user);
-        (,,, uint256 rewardRateBefore,,) =
-            infraredVault.rewardData(address(ibgt));
-
-        infraredVault.getReward();
-
-        (,,, uint256 rewardRateAfter,,) =
-            infraredVault.rewardData(address(ibgt));
-        vm.stopPrank();
-        assertEq(rewardRateAfter, rewardRateBefore);
-
-        // deploy a berachain rewards vault for staking token
-        address beraVault = rewardsFactory.createRewardsVault(address(ibgt));
-        // migrate to new rewards vault
-        vm.startPrank(infrared);
-        infraredVault.migrate();
-        vm.stopPrank();
-
-        // check that rewardsVault is now set
-        assertTrue(
-            infraredVault.stakedInRewardsVault(), "Rewards vault should be set"
-        );
-        // check that stakingToken balance has been moved to bera rewards vault
-        assertEq(ibgt.balanceOf(beraVault), 1000 ether);
-        // check rewards vault operator is set to infrared
-        assertEq(
-            MockBerachainRewardsVault(beraVault).operator(
-                address(infraredVault)
-            ),
-            infrared
-        );
-
-        // test depositing into migrated vault
-        deal(address(ibgt), user, 1000 ether);
-        vm.startPrank(user);
-        ibgt.approve(address(infraredVault), 1000 ether);
-        infraredVault.stake(1000 ether);
-
-        vm.warp(1 days);
-        // test getReward with callback into infrared harvestVault (onRewards should call into infrared)
-        vm.expectEmit();
-        emit MockInfrared.VaultHarvested(address(infraredVault.stakingToken()));
-
-        infraredVault.getReward();
-        vm.stopPrank();
-
-        assertTrue(
-            infraredVault.balanceOf(user) == 2000 ether,
-            "User balance should be updated"
-        );
-        assertTrue(
-            infraredVault.totalSupply() == 2000 ether,
-            "Total supply should be updated"
-        );
-        assertTrue(
-            ibgt.balanceOf(beraVault) == 2000 ether,
-            "Rewards vault balance should be updated"
-        );
-        assertTrue(
-            InfraredVault(beraVault).balanceOf(address(infraredVault))
-                == 2000 ether,
-            "Rewards vault balance should be updated"
-        );
     }
 
     /*//////////////////////////////////////////////////////////////

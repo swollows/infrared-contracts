@@ -11,6 +11,7 @@ import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol"
 
 // internal
 import "@core/Infrared.sol";
+import "@core/InfraredBribes.sol";
 import "@core/IBGT.sol";
 import "@core/InfraredVault.sol";
 import "@utils/DataTypes.sol";
@@ -103,7 +104,12 @@ contract Helper is Test {
         );
         address infraredProxy = address(new ERC1967Proxy(implementation, ""));
         infrared = Infrared(infraredProxy);
-        infrared.initialize(address(this), 1 days); // make helper contract the admin
+
+        // TODO: actually deploy collector, bribes
+        address collector = makeAddr("collector");
+        address bribes = makeAddr("bribes");
+
+        infrared.initialize(address(this), collector, bribes, 1 days); // make helper contract the admin
 
         // set access control
         infrared.grantRole(infrared.KEEPER_ROLE(), keeper);
