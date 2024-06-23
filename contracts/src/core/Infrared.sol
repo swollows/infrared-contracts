@@ -9,8 +9,6 @@ import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
 import {EnumerableSet} from "@openzeppelin/utils/structs/EnumerableSet.sol";
 import {Strings} from "@openzeppelin/utils/Strings.sol";
 
-import {IBeaconDepositContract} from
-    "@berachain/interfaces/IBeaconDepositContract.sol";
 import {IBeraChef} from "@berachain/interfaces/IBeraChef.sol";
 import {IBerachainRewardsVault} from
     "@berachain/interfaces/IBerachainRewardsVault.sol";
@@ -74,9 +72,6 @@ contract Infrared is InfraredUpgradeable, IInfrared {
     /// @inheritdoc IInfrared
     IBerachainRewardsVaultFactory public immutable rewardsFactory;
 
-    /// @inheritdoc IInfrared
-    IBeaconDepositContract public immutable depositor;
-
     /// inheritdoc IInfrared
     IBeraChef public immutable chef;
 
@@ -114,14 +109,12 @@ contract Infrared is InfraredUpgradeable, IInfrared {
     constructor(
         address _ibgt,
         address _rewardsFactory,
-        address _depositor,
         address _chef,
         address _wbera,
         address _ired
     ) {
         wbera = IWBERA(_wbera);
         rewardsFactory = IBerachainRewardsVaultFactory(_rewardsFactory);
-        depositor = IBeaconDepositContract(_depositor);
         chef = IBeraChef(_chef);
 
         ibgt = IIBGT(_ibgt);

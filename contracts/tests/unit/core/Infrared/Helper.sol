@@ -24,7 +24,7 @@ import "@mocks/MockERC20.sol";
 import "@mocks/MockWbera.sol";
 import "@mocks/MockBerachainRewardsVaultFactory.sol";
 import "@mocks/MockBeaconDepositContract.sol";
-import "@mocks/MockBerachef.sol";
+// TODO: fix import "@mocks/MockBerachef.sol";
 
 contract Helper is Test {
     Infrared public infrared;
@@ -40,8 +40,8 @@ contract Helper is Test {
 
     MockERC20 public mockPool;
     MockBerachainRewardsVaultFactory public rewardsFactory;
-    MockBeaconDepositContract public depositor;
-    MockBeraChef public chef;
+    // MockBeraChef public chef; // TODO: fix for chef
+    address public chef = makeAddr("chef");
 
     string vaultName;
     string vaultSymbol;
@@ -85,18 +85,15 @@ contract Helper is Test {
         address beraVault = rewardsFactory.createRewardsVault(stakingAsset);
         rewardsFactory.increaseRewardsForVault(stakingAsset, 1000 ether);
 
-        // Set up the depositor
-        depositor = new MockBeaconDepositContract();
-
         // Set up the chef
-        chef = new MockBeraChef();
+        // TODO: fix mock chef
+        // chef = new MockBeraChef();
 
         // initialize Infrared contracts
         address implementation = address(
             new Infrared(
                 address(ibgt),
                 address(rewardsFactory),
-                address(depositor),
                 address(chef),
                 address(mockWbera),
                 address(ired)
@@ -139,7 +136,6 @@ contract Helper is Test {
         vm.label(stakingAsset, "stakingAsset");
         vm.label(governance, "governance");
         vm.label(address(rewardsFactory), "rewardsFactory");
-        vm.label(address(depositor), "depositor");
         vm.label(address(chef), "chef");
         vm.label(address(ibgtVault), "ibgtVault");
     }

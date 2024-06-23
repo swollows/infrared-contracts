@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.4;
 
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
 import {IPOLErrors} from "./IPOLErrors.sol";
 
+/// @notice Interface of staking rewards
 interface IStakingRewards is IPOLErrors {
     /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
     /*                           EVENTS                           */
@@ -37,18 +38,29 @@ interface IStakingRewards is IPOLErrors {
     /*                          GETTERS                           */
     /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
 
-    /// @notice Get the staking token for the staking rewards contract
-    /// @return The staking token
+    /// @notice Returns the stake token for the staking rewards contract.
     function STAKE_TOKEN() external view returns (IERC20);
 
-    /// @notice Get the reward token for the staking rewards contract
-    /// @return The reward token
+    /// @notice Returns the reward token for the staking rewards contract.
     function REWARD_TOKEN() external view returns (IERC20);
 
     /// @notice Get the balance of the staked tokens for an account.
     /// @param account The account to get the balance for.
     /// @return The balance of the staked tokens.
     function balanceOf(address account) external view returns (uint256);
+
+    /// @notice Get the reward balance for a specific account.
+    /// @param account The account to retrieve the reward balance for.
+    /// @return The current reward balance of the specified account.
+    function rewards(address account) external view returns (uint256);
+
+    /// @notice Get the user reward per token paid.
+    /// @param account The account to retrieve the reward for.
+    /// @return The current reward balance of the specified account.
+    function userRewardPerTokenPaid(address account)
+        external
+        view
+        returns (uint256);
 
     /// @notice Retrieves the amount of reward earned by a specific account.
     /// @param account The account to calculate the reward for.
@@ -74,4 +86,28 @@ interface IStakingRewards is IPOLErrors {
     /// @notice Get the total supply of the staked tokens in the vault.
     /// @return The total supply of the staked tokens in the vault.
     function totalSupply() external view returns (uint256);
+
+    /// @notice Get the end of the current reward period.
+    /// @return The end of the current reward period.
+    function periodFinish() external view returns (uint256);
+
+    /// @notice Get the reward rate for the current reward period.
+    /// @return The reward rate.
+    function rewardRate() external view returns (uint256);
+
+    /// @notice Get the time over which the rewards will be distributed.
+    /// @return The duration of the rewards cycle.
+    function rewardsDuration() external view returns (uint256);
+
+    /// @notice Get the last time the rewards were updated.
+    /// @return The last time the rewards were updated.
+    function lastUpdateTime() external view returns (uint256);
+
+    /// @notice Get the amount of undistributed rewards.
+    /// @return The amount of undistributed rewards.
+    function undistributedRewards() external view returns (uint256);
+
+    /// @notice Get the last updated reward per token scaled.
+    /// @return The last updated reward per token.
+    function rewardPerTokenStored() external view returns (uint256);
 }

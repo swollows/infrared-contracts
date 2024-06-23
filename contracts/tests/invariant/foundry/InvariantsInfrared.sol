@@ -20,7 +20,7 @@ import "@mocks/MockERC20.sol";
 import "@mocks/MockWbera.sol";
 import "@mocks/MockBerachainRewardsVaultFactory.sol";
 import "@mocks/MockBeaconDepositContract.sol";
-import "@mocks/MockBerachef.sol";
+// TODO: fix import "@mocks/MockBerachef.sol";
 
 import "./handlers/Governance.sol";
 import "./handlers/Keeper.sol";
@@ -46,8 +46,7 @@ contract InvariantsInfrared is Test {
 
     MockERC20 public mockPool;
     MockBerachainRewardsVaultFactory public rewardsFactory;
-    MockBeaconDepositContract public depositor;
-    MockBeraChef public chef;
+    address public chef = makeAddr("chef"); // TODO: fix with mock chef
 
     string vaultName;
     string vaultSymbol;
@@ -78,18 +77,14 @@ contract InvariantsInfrared is Test {
         // deploy a rewards vault for IBGT
         rewardsFactory = new MockBerachainRewardsVaultFactory(address(bgt));
 
-        // Set up the depositor
-        depositor = new MockBeaconDepositContract();
-
         // Set up the chef
-        chef = new MockBeraChef();
+        // TODO: fix chef
 
         // initialize Infrared contracts
         address implementation = address(
             new Infrared(
                 address(ibgt),
                 address(rewardsFactory),
-                address(depositor),
                 address(chef),
                 address(mockWbera),
                 address(ired)

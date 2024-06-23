@@ -30,9 +30,6 @@ interface IInfrared {
         view
         returns (IBerachainRewardsVaultFactory);
 
-    /// @notice The Berachain deposit contract for staking to validators
-    function depositor() external view returns (IBeaconDepositContract);
-
     /// @notice The Berachain chef contract for distributing validator rewards
     function chef() external view returns (IBeraChef);
 

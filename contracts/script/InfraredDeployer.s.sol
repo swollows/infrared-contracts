@@ -25,7 +25,6 @@ contract InfraredDeployer is Script {
         address _admin,
         address _bgt,
         address _berachainRewardsFactory,
-        address _beaconDepositContract,
         address _beraChef,
         address _wbera,
         uint256 _rewardsDuration,
@@ -45,7 +44,6 @@ contract InfraredDeployer is Script {
                     new Infrared(
                         address(ibgt),
                         _berachainRewardsFactory,
-                        _beaconDepositContract,
                         _beraChef,
                         _wbera,
                         address(ired)
@@ -63,6 +61,9 @@ contract InfraredDeployer is Script {
         infrared.initialize(
             _admin, address(collector), address(bribes), _rewardsDuration
         );
+
+        // grant infrared ibgt minter role
+        ibgt.grantRole(ibgt.MINTER_ROLE(), address(infrared));
 
         vm.stopBroadcast();
     }

@@ -2,6 +2,8 @@
 pragma solidity ^0.8.0;
 
 interface IMultiRewards {
+    function totalSupply() external view returns (uint256);
+
     // Reward data for a particular reward token.
     struct Reward {
         address rewardsDistributor;
@@ -26,4 +28,12 @@ interface IMultiRewards {
             uint256 lastUpdateTime,
             uint256 rewardPerTokenStored
         );
+
+    function stake(uint256 amount) external;
+
+    function withdraw(uint256 amount) external;
+
+    function getReward() external;
+
+    function exit() external;
 }

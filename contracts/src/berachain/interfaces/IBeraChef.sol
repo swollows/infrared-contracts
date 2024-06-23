@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.4;
 
+import {IPOLErrors} from "./IPOLErrors.sol";
+
 /// @notice Interface of the BeraChef module
-interface IBeraChef {
+interface IBeraChef is IPOLErrors {
     /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
     /*                          STRUCTS                           */
     /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
 
     /// @notice Represents a CuttingBoard entry
     struct CuttingBoard {
-        // The consensus public key corresponding to the validator of this cutting board.
-        // bytes32 valPub;
         // The block this cutting board goes into effect.
         uint64 startBlock;
         // The weights of the cutting board.
@@ -28,9 +28,27 @@ interface IBeraChef {
         uint96 percentageNumerator;
     }
 
+    /// @notice Returns the cutting board block delay parameter
+    function cuttingBoardBlockDelay() external view returns (uint64);
+
     /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
     /*                           EVENTS                           */
     /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
+
+    /// @notice Emitted when the maximum number of weights per cutting board has been set.
+    /// @param maxNumWeightsPerCuttingBoard The maximum number of weights per cutting board.
+    event MaxNumWeightsPerCuttingBoardSet(uint8 maxNumWeightsPerCuttingBoard);
+
+    /// @notice Emitted when the delay in blocks before a new cutting board can go into effect has been set.
+    /// @param cuttingBoardBlockDelay The delay in blocks before a new cutting board can go into effect.
+    event CuttingBoardBlockDelaySet(uint64 cuttingBoardBlockDelay);
+
+    /// @notice Emitted when the friends of the chef have been updated.
+    /// @param receiver The address to remove or add as a friend of the chef.
+    /// @param isFriend The whitelist status; true if the receiver is being whitelisted, false otherwise.
+    event FriendsOfTheChefUpdated(
+        address indexed receiver, bool indexed isFriend
+    );
 
     /**
      * @notice Emitted when a new cutting board has been queued.
@@ -53,22 +71,19 @@ interface IBeraChef {
     );
 
     /**
-     * @notice Emitted when a delegation address has been set for a validator.
+     * @notice Emitted when a operator address has been set for a validator.
      * @param valCoinbase The validator's coinbase address.
-     * @param delegationAddress The delegation address.
+     * @param operatorAddress The operator address.
      */
-    event SetDelegation(
-        address indexed valCoinbase, address indexed delegationAddress
+    event SetOperator(
+        address indexed valCoinbase, address indexed operatorAddress
     );
 
     /**
      * @notice Emitted when the governance module has set a new default cutting board.
-     * @param blockNumber The block number of the transaction.
      * @param cuttingBoard The default cutting board.
      */
-    event SetDefaultCuttingBoard(
-        uint256 indexed blockNumber, CuttingBoard cuttingBoard
-    );
+    event SetDefaultCuttingBoard(CuttingBoard cuttingBoard);
 
     /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
     /*                          GETTERS                           */
@@ -95,14 +110,11 @@ interface IBeraChef {
         returns (CuttingBoard memory);
 
     /**
-     * @notice Returns the delegation address for a validator.
+     * @notice Returns the operator address for a validator.
      * @param valCoinbase The coinbase address of the validator.
-     * @return delegationAddress the delegation address.
+     * @return operatorAddress the operator address.
      */
-    function getDelegation(address valCoinbase)
-        external
-        view
-        returns (address);
+    function getOperator(address valCoinbase) external view returns (address);
 
     /**
      * @notice Returns the default cutting board for validators that do not have a cutting board.
@@ -116,9 +128,10 @@ interface IBeraChef {
     /**
      * @notice Returns the status of whether a queued cutting board is ready to be activated.
      * @param valCoinbase The coinbase address of the validator.
+     * @param blockNumber The block number to be queried.
      * @return isReady True if the queued cutting board is ready to be activated, false otherwise.
      */
-    function isQueuedCuttingBoardReady(address valCoinbase)
+    function isQueuedCuttingBoardReady(address valCoinbase, uint256 blockNumber)
         external
         view
         returns (bool);
@@ -148,10 +161,9 @@ interface IBeraChef {
      * @notice Updates the friends of the chef, the status of whether a receiver is whitelisted or not.
      * @notice The caller of this function must be the governance module account.
      * @param receiver The address to remove or add as a friend of the chef.
-     * @param isFriendOfTheChef The whitelist status; true if the pool is being whitelisted, false otherwise.
+     * @param isFriend The whitelist status; true if the receiver is being whitelisted, false otherwise.
      */
-    function updateFriendsOfTheChef(address receiver, bool isFriendOfTheChef)
-        external;
+    function updateFriendsOfTheChef(address receiver, bool isFriend) external;
 
     /**
      * @notice Sets the default cutting board for validators that do not have a cutting board.
@@ -181,9 +193,13 @@ interface IBeraChef {
     /// @notice Activates the queued cutting board for a validator.
     /// @dev Should be called by the distribution contract.
     /// @param valCoinbase The coinbase address of the validator.
-    function activateQueuedCuttingBoard(address valCoinbase) external;
+    /// @param blockNumber The block number being processed.
+    function activateQueuedCuttingBoard(
+        address valCoinbase,
+        uint256 blockNumber
+    ) external;
 
     /// @notice Sets an address that can set cutting boards on a validator's behalf.
-    /// @param delegationAddress The address that can set cutting boards on a validator's behalf.
-    function setDelegation(address delegationAddress) external; // TODO: RENAME TO SET OPERATOR.
+    /// @param operatorAddress The address that can set cutting boards on a validator's behalf.
+    function setOperator(address operatorAddress) external;
 }
