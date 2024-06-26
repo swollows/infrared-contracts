@@ -7,6 +7,7 @@ library Errors {
     error ZeroAmount();
     error ZeroBytes();
     error OverFlow();
+    error UnderFlow();
     error InvalidArrayLength();
 
     // ValidatorSet errors.
@@ -41,5 +42,6 @@ library Errors {
     error NotInitialized();
     error InvalidProtocolFeeRate();
     error InvalidCommissionRate();
+    error InvalidDelegatee();
     error MaxProtocolFeeAmount();
 }

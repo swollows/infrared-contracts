@@ -4,11 +4,13 @@ pragma solidity ^0.8.20;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC20Metadata} from
     "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import {IVotes} from "@openzeppelin/contracts/governance/utils/IVotes.sol";
+
 import {IBGTStaker} from "./IBGTStaker.sol";
 import {IBeraChef} from "./IBeraChef.sol";
 import {IPOLErrors} from "./IPOLErrors.sol";
 
-interface IBGT is IPOLErrors, IERC20, IERC20Metadata {
+interface IBGT is IPOLErrors, IERC20, IERC20Metadata, IVotes {
     /**
      * @notice Emitted when the minter address is changed.
      * @param previous The address of the previous minter.

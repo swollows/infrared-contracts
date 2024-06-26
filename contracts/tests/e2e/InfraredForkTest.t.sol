@@ -27,6 +27,7 @@ contract InfraredForkTest is HelperForkTest {
 
     IBGT public ibgt;
     ERC20PresetMinterPauser public ired;
+    ERC20PresetMinterPauser public wibera;
     ERC20PresetMinterPauser public stakingToken;
 
     BribeCollector public collector;
@@ -40,6 +41,8 @@ contract InfraredForkTest is HelperForkTest {
 
         ibgt = new IBGT(address(bgt));
         ired = new ERC20PresetMinterPauser("Infrared Token", "iRED");
+        wibera = new ERC20PresetMinterPauser("Wrapped Infrared Bera", "wiBERA");
+
         stakingToken = new ERC20PresetMinterPauser("Staking Token", "STAKE");
 
         // mint and deal lp and staking tokens
@@ -56,7 +59,8 @@ contract InfraredForkTest is HelperForkTest {
                         address(rewardsFactory),
                         address(beraChef),
                         address(wbera),
-                        address(ired)
+                        address(ired),
+                        address(wibera)
                     )
                 )
             )
@@ -111,6 +115,11 @@ contract InfraredForkTest is HelperForkTest {
         assertTrue(address(_ibgtVault) != address(0));
         assertEq(address(_ibgtVault), address(infrared.ibgtVault()));
         assertEq(address(_ibgtVault.infrared()), address(infrared));
+
+        IInfraredVault _wiberaVault = infrared.vaultRegistry(address(wibera));
+        assertTrue(address(_wiberaVault) != address(0));
+        assertEq(address(_wiberaVault), address(infrared.wiberaVault()));
+        assertEq(address(_wiberaVault.infrared()), address(infrared));
 
         assertTrue(infrared.hasRole(infrared.DEFAULT_ADMIN_ROLE(), admin));
         assertTrue(infrared.hasRole(infrared.KEEPER_ROLE(), admin));

@@ -16,6 +16,7 @@ import {BribeCollector} from "@core/BribeCollector.sol";
 contract InfraredDeployer is Script {
     IBGT public ibgt;
     ERC20PresetMinterPauser public ired;
+    ERC20PresetMinterPauser ibera;
 
     BribeCollector public collector;
     InfraredBribes public bribes;
@@ -35,6 +36,7 @@ contract InfraredDeployer is Script {
 
         ibgt = new IBGT(_bgt);
         ired = new ERC20PresetMinterPauser("Infrared Token", "iRED"); // TODO: fix for actual IRED implementation
+        ibera = new ERC20PresetMinterPauser("Infrared Bera", "iBERA"); // TODO: fix for actual IBERA implementation
 
         collector = BribeCollector(setupProxy(address(new BribeCollector())));
         bribes = InfraredBribes(setupProxy(address(new InfraredBribes())));
@@ -46,7 +48,8 @@ contract InfraredDeployer is Script {
                         _berachainRewardsFactory,
                         _beraChef,
                         _wbera,
-                        address(ired)
+                        address(ired),
+                        address(ibera)
                     )
                 )
             )

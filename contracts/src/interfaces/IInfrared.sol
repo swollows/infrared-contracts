@@ -24,6 +24,9 @@ interface IInfrared {
     /// @notice The Infrared governance token
     function ired() external view returns (IERC20);
 
+    /// @notice The wrapped Infrared bera token
+    function wibera() external view returns (IERC20);
+
     /// @notice The Berachain rewards vault factory address
     function rewardsFactory()
         external
@@ -35,6 +38,9 @@ interface IInfrared {
 
     /// @notice The IBGT vault
     function ibgtVault() external view returns (IInfraredVault);
+
+    /// @notice The wrapped IBERA vault
+    function wiberaVault() external view returns (IInfraredVault);
 
     /// @notice The Infrared protocol fee rates for a given token
     /// @dev In units of 1e6 or hundredths of 1 bip
@@ -108,6 +114,12 @@ interface IInfrared {
         external;
 
     /**
+     * @notice Delegates BGT votes to `_delegatee` address.
+     * @param _delegatee  address The address to delegate votes to
+     */
+    function delegateBGT(address _delegatee) external;
+
+    /**
      * @notice Updates the protocol fee rate charged on harvest
      * @dev Fee rate in units of 1e6 or hundredths of 1 bip
      * @param _token   address The address of the token for the protocol fee rate
@@ -123,6 +135,11 @@ interface IInfrared {
      */
     function claimProtocolFees(address _to, address _token, uint256 _amount)
         external;
+
+    /**
+     * @notice Claims all the BGT base and commission rewards minted to this contract for validators.
+     */
+    function harvestBase() external;
 
     /**
      * @notice Claims all the BGT rewards for the vault associated with the given staking token.
@@ -369,6 +386,13 @@ interface IInfrared {
     event ProtocolFeesClaimed(
         address _sender, address _to, address _token, uint256 _amount
     );
+
+    /**
+     * @notice Emitted when base + commission rewards are harvested.
+     * @param _sender The address that initiated the harvest.
+     * @param _bgtAmt The amount of BGT harvested.
+     */
+    event BaseHarvested(address _sender, uint256 _bgtAmt);
 
     /**
      * @notice Emitted when a vault harvests its rewards.

@@ -70,6 +70,9 @@ contract Infrared is InfraredUpgradeable, IInfrared {
     IERC20 public immutable ired;
 
     /// @inheritdoc IInfrared
+    IERC20 public immutable wibera;
+
+    /// @inheritdoc IInfrared
     IBerachainRewardsVaultFactory public immutable rewardsFactory;
 
     /// inheritdoc IInfrared
@@ -89,6 +92,9 @@ contract Infrared is InfraredUpgradeable, IInfrared {
 
     /// @inheritdoc IInfrared
     IInfraredVault public ibgtVault;
+
+    /// @inheritdoc IInfrared
+    IInfraredVault public wiberaVault;
 
     /// @inheritdoc IInfrared
     mapping(address => uint256) public protocolFeeRates;
@@ -111,7 +117,8 @@ contract Infrared is InfraredUpgradeable, IInfrared {
         address _rewardsFactory,
         address _chef,
         address _wbera,
-        address _ired
+        address _ired,
+        address _wibera
     ) {
         wbera = IWBERA(_wbera);
         rewardsFactory = IBerachainRewardsVaultFactory(_rewardsFactory);
@@ -120,6 +127,7 @@ contract Infrared is InfraredUpgradeable, IInfrared {
         ibgt = IIBGT(_ibgt);
         _bgt = IBerachainBGT(ibgt.bgt());
         ired = IERC20(_ired);
+        wibera = IERC20(_wibera);
     }
 
     function initialize(
@@ -153,8 +161,13 @@ contract Infrared is InfraredUpgradeable, IInfrared {
         address[] memory rewardTokens = new address[](2);
         rewardTokens[0] = address(ibgt);
         rewardTokens[1] = address(ired);
-        address vault = _registerVault(address(ibgt), rewardTokens);
-        ibgtVault = IInfraredVault(vault);
+        address _ibgtVaultAddress = _registerVault(address(ibgt), rewardTokens);
+        ibgtVault = IInfraredVault(_ibgtVaultAddress);
+
+        // register wibera vault which can have ibgt and ired rewards
+        address _wiberaVaultAddress =
+            _registerVault(address(wibera), rewardTokens);
+        wiberaVault = IInfraredVault(_wiberaVaultAddress);
 
         // init upgradeable components
         __InfraredUpgradeable_init();
@@ -261,6 +274,17 @@ contract Infrared is InfraredUpgradeable, IInfrared {
     }
 
     /// @inheritdoc IInfrared
+    function delegateBGT(address _delegatee)
+        external
+        onlyGovernor
+        whenInitialized
+    {
+        if (_delegatee == address(0)) revert Errors.ZeroAddress();
+        if (_delegatee == address(this)) revert Errors.InvalidDelegatee();
+        _bgt.delegate(_delegatee);
+    }
+
+    /// @inheritdoc IInfrared
     function updateProtocolFeeRate(address _token, uint256 _feeRate)
         external
         onlyGovernor
@@ -291,6 +315,19 @@ contract Infrared is InfraredUpgradeable, IInfrared {
     /*//////////////////////////////////////////////////////////////
                             REWARDS
     //////////////////////////////////////////////////////////////*/
+
+    /// @inheritdoc IInfrared
+    function harvestBase() external whenInitialized {
+        uint256 minted = ibgt.totalSupply();
+        uint256 bgtBalance = getBGTBalance();
+        // @dev should never happen but check in case
+        if (bgtBalance <= minted) revert Errors.UnderFlow();
+
+        uint256 bgtAmt = bgtBalance - minted;
+        _handleBGTRewardsForVault(wiberaVault, bgtAmt);
+
+        emit BaseHarvested(msg.sender, bgtAmt);
+    }
 
     /// @inheritdoc IInfrared
     function harvestVault(address _asset) external whenInitialized {
