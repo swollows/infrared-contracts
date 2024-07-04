@@ -1,0 +1,32 @@
+name: harvest
+
+on:
+  pull_request:
+  push:
+    branches:
+      - bartio-testnet
+  schedule:
+    - cron: '0 * * * *'  # Runs every hour
+
+env:
+  FOUNDRY_PROFILE: ci
+
+jobs:
+  harvest_vault:
+    strategy:
+      fail-fast: true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Run InfraredKeeperScript script
+        run: |
+          forge script InfraredKeeperScript --root ./contracts --rpc-url https://bartio.rpc.berachain.com/ --private-key ${{ secrets.TESTNET_KEEPER }} --legacy --broadcast -vvvvv
+    if: github.ref == 'refs/heads/bartio-testnet'
