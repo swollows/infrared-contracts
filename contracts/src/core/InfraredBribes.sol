@@ -42,6 +42,8 @@ contract InfraredBribes is InfraredUpgradeable, IInfraredBribes {
         _;
     }
 
+    constructor() InfraredUpgradeable() {}
+
     function initialize(address _admin, address _infrared, address _collector)
         external
         initializer

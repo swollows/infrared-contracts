@@ -9,6 +9,10 @@ import {IDistributor as IBerachainDistributor} from
 import {IBerachainRewardsVaultFactory} from
     "@berachain/interfaces/IBerachainRewardsVaultFactory.sol";
 import {IBGT as IBerachainBGT} from "@berachain/interfaces/IBGT.sol";
+import {IBGTStaker as IBerachainBGTStaker} from
+    "@berachain/interfaces/IBGTStaker.sol";
+import {IFeeCollector as IBerachainFeeCollector} from
+    "@berachain/interfaces/IFeeCollector.sol";
 import {IWBERA} from "@berachain/interfaces/IWBERA.sol";
 
 import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
@@ -23,7 +27,11 @@ contract HelperForkTest is Test {
     IBerachainBGT public bgt;
     IBerachainRewardsVaultFactory public rewardsFactory;
     IBeraChef public beraChef;
+    IBerachainFeeCollector public feeCollector;
+    IBerachainBGTStaker public bgtStaker;
+
     IWBERA public wbera;
+    IERC20 public honey;
     IERC20 public lpToken;
     IERC20 public vdHoneyToken;
     IBerachainDistributor public distributor;
@@ -49,7 +57,13 @@ contract HelperForkTest is Test {
             0x2B6e40f65D82A0cB98795bC7587a71bfa49fBB2B
         );
         beraChef = IBeraChef(0xfb81E39E3970076ab2693fA5C45A07Cc724C93c2);
+        feeCollector =
+            IBerachainFeeCollector(0x9B6F83a371Db1d6eB2eA9B33E84f3b6CB4cDe1bE);
+        bgtStaker =
+            IBerachainBGTStaker(0x791fb53432eED7e2fbE4cf8526ab6feeA604Eb6d);
+
         wbera = IWBERA(0x7507c1dc16935B82698e4C63f2746A2fCf994dF8);
+        honey = IERC20(0x0E4aaF1351de4c0264C5c7056Ef3777b41BD8e03);
         lpToken = IERC20(0xd28d852cbcc68DCEC922f6d5C7a8185dBaa104B7);
         vdHoneyToken = IERC20(0x1339503343be5626B40Ee3Aee12a4DF50Aa4C0B9);
         distributor =

@@ -57,6 +57,9 @@ interface IInfrared {
     /// @notice Wrapped bera
     function wbera() external view returns (IWBERA);
 
+    /// @notice Honey ERC20 token
+    function honey() external view returns (IERC20);
+
     /// @notice bribe collector contract
     function collector() external view returns (IBribeCollector);
 

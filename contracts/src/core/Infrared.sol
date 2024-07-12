@@ -82,6 +82,9 @@ contract Infrared is InfraredUpgradeable, IInfrared {
     IWBERA public immutable wbera;
 
     /// @inheritdoc IInfrared
+    IERC20 public immutable honey;
+
+    /// @inheritdoc IInfrared
     IBribeCollector public collector;
 
     /// @inheritdoc IInfrared
@@ -117,10 +120,12 @@ contract Infrared is InfraredUpgradeable, IInfrared {
         address _rewardsFactory,
         address _chef,
         address _wbera,
+        address _honey,
         address _ired,
         address _wibera
-    ) {
+    ) InfraredUpgradeable() {
         wbera = IWBERA(_wbera);
+        honey = IERC20(_honey);
         rewardsFactory = IBerachainRewardsVaultFactory(_rewardsFactory);
         chef = IBeraChef(_chef);
 
@@ -144,6 +149,7 @@ contract Infrared is InfraredUpgradeable, IInfrared {
         _updateWhiteListedRewardTokens(address(wbera), true);
         _updateWhiteListedRewardTokens(address(ibgt), true);
         _updateWhiteListedRewardTokens(address(ired), true);
+        _updateWhiteListedRewardTokens(address(honey), true);
 
         // grant admin access roles
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
@@ -158,9 +164,10 @@ contract Infrared is InfraredUpgradeable, IInfrared {
         rewardsDuration = _rewardsDuration;
 
         // register ibgt vault which can have ibgt and ired rewards
-        address[] memory rewardTokens = new address[](2);
+        address[] memory rewardTokens = new address[](3);
         rewardTokens[0] = address(ibgt);
         rewardTokens[1] = address(ired);
+        rewardTokens[2] = address(honey);
         address _ibgtVaultAddress = _registerVault(address(ibgt), rewardTokens);
         ibgtVault = IInfraredVault(_ibgtVaultAddress);
 
@@ -563,6 +570,20 @@ contract Infrared is InfraredUpgradeable, IInfrared {
     }
 
     /// @inheritdoc IInfrared
+    function queueNewCuttingBoard(
+        address _validator,
+        uint64 _startBlock,
+        IBeraChef.Weight[] calldata _weights
+    ) external onlyKeeper {
+        if (!isInfraredValidator(_validator)) revert Errors.InvalidValidator();
+        chef.queueNewCuttingBoard(_validator, _startBlock, _weights);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                            BOOSTS
+    //////////////////////////////////////////////////////////////*/
+
+    /// @inheritdoc IInfrared
     function queueBoosts(address[] memory _validators, uint128[] memory _amts)
         external
         onlyKeeper
@@ -625,16 +646,6 @@ contract Infrared is InfraredUpgradeable, IInfrared {
             _bgt.dropBoost(_validators[i], _amts[i]);
         }
         emit DroppedBoosts(msg.sender, _validators, _amts);
-    }
-
-    /// @inheritdoc IInfrared
-    function queueNewCuttingBoard(
-        address _validator,
-        uint64 _startBlock,
-        IBeraChef.Weight[] calldata _weights
-    ) external onlyKeeper {
-        if (!isInfraredValidator(_validator)) revert Errors.InvalidValidator();
-        chef.queueNewCuttingBoard(_validator, _startBlock, _weights);
     }
 
     /*//////////////////////////////////////////////////////////////

@@ -29,6 +29,8 @@ contract BribeCollector is InfraredUpgradeable, IBribeCollector {
     /// @inheritdoc IBribeCollector
     address public rewardReceiver;
 
+    constructor() InfraredUpgradeable() {}
+
     function initialize(
         address _admin,
         address _payoutToken,

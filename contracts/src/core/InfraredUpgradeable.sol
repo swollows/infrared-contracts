@@ -39,6 +39,11 @@ abstract contract InfraredUpgradeable is
         _;
     }
 
+    constructor() {
+        //. prevents implementation contracts from being used
+        _disableInitializers();
+    }
+
     function __InfraredUpgradeable_init() internal onlyInitializing {
         __UUPSUpgradeable_init();
         __AccessControl_init();

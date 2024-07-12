@@ -37,6 +37,7 @@ contract Helper is Test {
     MockERC20 public bgt;
     MockERC20 public ired;
     MockERC20 public wibera;
+    MockERC20 public honey;
     MockWbera public mockWbera;
 
     MockERC20 public mockPool;
@@ -67,6 +68,7 @@ contract Helper is Test {
         ibgt = new IBGT(address(bgt));
         ired = new MockERC20("IRED", "IRED", 18);
         wibera = new MockERC20("WIBERA", "WIBERA", 18);
+        honey = new MockERC20("HONEY", "HONEY", 18);
         mockWbera = new MockWbera();
 
         // Set up addresses for roles
@@ -98,6 +100,7 @@ contract Helper is Test {
                 address(rewardsFactory),
                 address(chef),
                 address(mockWbera),
+                address(honey),
                 address(ired),
                 address(wibera)
             )

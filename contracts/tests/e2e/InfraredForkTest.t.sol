@@ -3,6 +3,9 @@ pragma solidity 0.8.22;
 
 import {ERC1967Proxy} from
     "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+import {Initializable} from
+    "@openzeppelin-upgradeable/proxy/utils/Initializable.sol";
+
 import {ERC20PresetMinterPauser} from
     "../../src/vendors/ERC20PresetMinterPauser.sol";
 
@@ -36,6 +39,9 @@ contract InfraredForkTest is HelperForkTest {
 
     IInfraredVault public lpVault;
 
+    uint256 internal constant FEE_UNIT = 1e6;
+    uint256 internal constant COMMISSION_MAX = 1e3;
+
     function setUp() public virtual override {
         super.setUp();
 
@@ -59,6 +65,7 @@ contract InfraredForkTest is HelperForkTest {
                         address(rewardsFactory),
                         address(beraChef),
                         address(wbera),
+                        address(honey),
                         address(ired),
                         address(wibera)
                     )
@@ -83,9 +90,10 @@ contract InfraredForkTest is HelperForkTest {
         ibgt.grantRole(ibgt.MINTER_ROLE(), address(infrared));
 
         // deploy an infrared vault for berachain whitelisted lp token
-        address[] memory _rewardTokens = new address[](2);
+        address[] memory _rewardTokens = new address[](3);
         _rewardTokens[0] = address(ibgt);
         _rewardTokens[1] = address(ired);
+        _rewardTokens[2] = address(honey);
 
         vm.prank(admin);
         lpVault = infrared.registerVault(address(lpToken), _rewardTokens);
@@ -121,6 +129,24 @@ contract InfraredForkTest is HelperForkTest {
         assertEq(address(_wiberaVault), address(infrared.wiberaVault()));
         assertEq(address(_wiberaVault.infrared()), address(infrared));
 
+        address[] memory _rewardTokens = new address[](3);
+        _rewardTokens[0] = address(ibgt);
+        _rewardTokens[1] = address(ired);
+        _rewardTokens[2] = address(honey);
+
+        for (uint256 i = 0; i < _rewardTokens.length; i++) {
+            address rewardToken = _rewardTokens[i];
+            assertTrue(infrared.whitelistedRewardTokens(rewardToken));
+
+            (, uint256 rewardDurationIbgt,,,,) =
+                IMultiRewards(address(_ibgtVault)).rewardData(rewardToken);
+            assertTrue(rewardDurationIbgt > 0);
+
+            (, uint256 rewardDurationWibera,,,,) =
+                IMultiRewards(address(_wiberaVault)).rewardData(rewardToken);
+            assertTrue(rewardDurationWibera > 0);
+        }
+
         assertTrue(infrared.hasRole(infrared.DEFAULT_ADMIN_ROLE(), admin));
         assertTrue(infrared.hasRole(infrared.KEEPER_ROLE(), admin));
         assertTrue(infrared.hasRole(infrared.GOVERNANCE_ROLE(), admin));
@@ -133,5 +159,27 @@ contract InfraredForkTest is HelperForkTest {
             rewardsFactory.getVault(address(lpToken))
         );
         assertEq(beraChef.getOperator(infraredValidator), address(infrared));
+
+        // test implementations disabled
+        address collectorImplementation = collector.currentImplementation();
+        vm.expectRevert(Initializable.InvalidInitialization.selector);
+        BribeCollector(collectorImplementation).initialize(
+            admin,
+            address(wbera),
+            address(collector),
+            bribeCollectorPayoutAmount
+        );
+
+        address bribesImplementation = bribes.currentImplementation();
+        vm.expectRevert(Initializable.InvalidInitialization.selector);
+        InfraredBribes(bribesImplementation).initialize(
+            admin, address(infrared), address(collector)
+        );
+
+        address infraredImplementation = infrared.currentImplementation();
+        vm.expectRevert(Initializable.InvalidInitialization.selector);
+        Infrared(infraredImplementation).initialize(
+            admin, address(collector), address(bribes), rewardsDuration
+        );
     }
 }

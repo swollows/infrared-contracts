@@ -28,6 +28,7 @@ contract InfraredDeployer is Script {
         address _berachainRewardsFactory,
         address _beraChef,
         address _wbera,
+        address _honey,
         uint256 _rewardsDuration,
         uint256 _bribeCollectorPayoutAmount
     ) external {
@@ -48,6 +49,7 @@ contract InfraredDeployer is Script {
                         _berachainRewardsFactory,
                         _beraChef,
                         _wbera,
+                        _honey,
                         address(ired),
                         address(ibera)
                     )

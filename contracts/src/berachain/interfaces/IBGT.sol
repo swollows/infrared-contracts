@@ -252,4 +252,13 @@ interface IBGT is IPOLErrors, IERC20, IERC20Metadata, IVotes {
      * @param amount The amount of BGT to redeem.
      */
     function redeem(address receiver, uint256 amount) external;
+
+    /**
+     * @notice Returns the unboosted balance of an account.
+     * @param account The address of the account.
+     */
+    function unboostedBalanceOf(address account)
+        external
+        view
+        returns (uint256);
 }
