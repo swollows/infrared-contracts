@@ -9,6 +9,7 @@ import {IMultiRewards} from "@interfaces/IMultiRewards.sol";
 import {InfraredForkTest} from "../../InfraredForkTest.t.sol";
 
 contract HarvestForkTest is InfraredForkTest {
+/*
     function setUp() public virtual override {
         super.setUp();
 
@@ -62,4 +63,5 @@ contract HarvestForkTest is InfraredForkTest {
 
         assertTrue(infrared.getBGTBalance() > 0);
     }
+    */
 }

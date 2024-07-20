@@ -12,8 +12,9 @@ contract InfraredTest is Helper {
         MockERC20 mockAsset = new MockERC20("MockAsset", "MCK", 18);
         rewardsFactory.createRewardsVault(address(mockAsset));
 
-        address[] memory rewardTokens = new address[](1);
+        address[] memory rewardTokens = new address[](2);
         rewardTokens[0] = address(ibgt);
+        rewardTokens[1] = address(ired);
 
         // Step 1: Vault Registration
         infrared.grantRole(infrared.KEEPER_ROLE(), address(this));

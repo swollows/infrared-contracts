@@ -43,8 +43,9 @@ contract InfraredKeeperScript is Script {
         }
 
         // checl unallocated bgt balance and queue boosts
-        address[] memory validators = new address[](1);
-        validators[0] = 0x2D764DFeaAc00390c69985631aAA7Cc3fcfaFAfF;
+        // TODO: fix
+        bytes[] memory validators = new bytes[](1);
+        // validators[0] = 0x2D764DFeaAc00390c69985631aAA7Cc3fcfaFAfF;
 
         uint128[] memory amounts = new uint128[](1);
         amounts[0] = uint128(bgt.balanceOf(address(infrared)))

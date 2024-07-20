@@ -4,6 +4,8 @@ pragma solidity 0.8.22;
 import "forge-std/Test.sol";
 
 import {IBeraChef} from "@berachain/interfaces/IBeraChef.sol";
+import {IBeaconDeposit as IBerachainBeaconDeposit} from
+    "@berachain/interfaces/IBeaconDeposit.sol";
 import {IDistributor as IBerachainDistributor} from
     "@berachain/interfaces/IDistributor.sol";
 import {IBerachainRewardsVaultFactory} from
@@ -29,12 +31,13 @@ contract HelperForkTest is Test {
     IBeraChef public beraChef;
     IBerachainFeeCollector public feeCollector;
     IBerachainBGTStaker public bgtStaker;
+    IBerachainBeaconDeposit public beaconDeposit;
 
     IWBERA public wbera;
     IERC20 public honey;
     IERC20 public lpToken;
     IERC20 public vdHoneyToken;
-    IBerachainDistributor public distributor;
+    IBerachainDistributor public berachainDistributor;
 
     // berachain constants
     uint32 public constant HISTORY_BUFFER_LENGTH = 8191;
@@ -61,12 +64,13 @@ contract HelperForkTest is Test {
             IBerachainFeeCollector(0x9B6F83a371Db1d6eB2eA9B33E84f3b6CB4cDe1bE);
         bgtStaker =
             IBerachainBGTStaker(0x791fb53432eED7e2fbE4cf8526ab6feeA604Eb6d);
+        beaconDeposit = IBerachainBeaconDeposit(address(0)); // TODO: fix
 
         wbera = IWBERA(0x7507c1dc16935B82698e4C63f2746A2fCf994dF8);
         honey = IERC20(0x0E4aaF1351de4c0264C5c7056Ef3777b41BD8e03);
         lpToken = IERC20(0xd28d852cbcc68DCEC922f6d5C7a8185dBaa104B7);
         vdHoneyToken = IERC20(0x1339503343be5626B40Ee3Aee12a4DF50Aa4C0B9);
-        distributor =
+        berachainDistributor =
             IBerachainDistributor(0x2C1F148Ee973a4cdA4aBEce2241DF3D3337b7319);
     }
 
@@ -91,9 +95,9 @@ contract HelperForkTest is Test {
     /// @notice Simulates distribution of POL for current block.number
     /// @param coinbase address  The address of the coinbase to distribute POL for
     function distributePol(address coinbase) public {
-        uint256 blockNumber = distributor.getNextActionableBlock();
-        vm.startPrank(distributor.prover());
-        distributor.distributeFor(coinbase, blockNumber);
+        uint256 blockNumber = berachainDistributor.getNextActionableBlock();
+        vm.startPrank(berachainDistributor.prover());
+        berachainDistributor.distributeFor(coinbase, blockNumber);
         vm.stopPrank();
     }
 }

@@ -9,7 +9,7 @@ import {IInfrared} from "@interfaces/IInfrared.sol";
 contract InfraredCuttingBoard is Script {
     function run(
         address infrared,
-        address validator,
+        bytes calldata validator,
         uint64 blocksUntilStart,
         address[] memory receivers,
         uint96[] memory percentageNumerators

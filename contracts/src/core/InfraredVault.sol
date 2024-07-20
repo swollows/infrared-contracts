@@ -54,17 +54,22 @@ contract InfraredVault is MultiRewards, IInfraredVault {
         rewardsVault = _createRewardsVaultIfNecessary(infrared, _stakingToken);
         rewardsVault.setOperator(infrared);
 
-        // add initial rewardToken
-        bool hasIBGT;
+        // add initial reward tokens requiring at least IBGT and IRED
         address _ibgt = address(IInfrared(infrared).ibgt());
+        address _ired = address(IInfrared(infrared).ired());
+
+        bool hasIBGT;
+        bool hasIRED;
         for (uint256 i = 0; i < _rewardTokens.length; i++) {
             if (_rewardTokens[i] == address(0)) {
                 revert Errors.ZeroAddress();
             }
             _addReward(_rewardTokens[i], infrared, _rewardsDuration);
             if (!hasIBGT) hasIBGT = (_rewardTokens[i] == _ibgt);
+            if (!hasIRED) hasIRED = (_rewardTokens[i] == _ired);
         }
         if (!hasIBGT) revert Errors.IBGTNotRewardToken();
+        if (!hasIRED) revert Errors.IREDNotRewardToken();
     }
 
     /**

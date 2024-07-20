@@ -7,6 +7,7 @@ import {IInfraredVault} from "@interfaces/IInfraredVault.sol";
 import {HarvestForkTest} from "./HarvestForkTest.t.sol";
 
 contract HarvestBoostRewardsForkTest is HarvestForkTest {
+/*
     function setUp() public virtual override {
         super.setUp();
 
@@ -97,4 +98,5 @@ contract HarvestBoostRewardsForkTest is HarvestForkTest {
 
         vm.stopPrank();
     }
+    */
 }

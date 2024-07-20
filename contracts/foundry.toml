@@ -22,9 +22,11 @@ remappings = [
     '@interfaces/=src/interfaces/',
     '@core/=src/core/',
     '@core/=src/core/',
+    '@vendors/=src/vendors/',
     '@prb/=lib/prb-test/src/',
     '@vesting/=src/vesting/',
-    '@mocks/=tests/unit/mocks'
+    '@mocks/=tests/unit/mocks',
+    '@voting/=src/voting/'
 ]
 
 [profile.ci]
@@ -40,9 +42,11 @@ remappings = [
     '@interfaces/=src/interfaces/',
     '@core/=src/core/',
     '@core/=src/core/',
+    '@vendors/=src/vendors/',
     '@prb/=lib/prb-test/src/',
     '@vesting/=src/vesting/',
-    '@mocks/=tests/unit/mocks'
+    '@mocks/=tests/unit/mocks',
+    '@voting/=src/voting/'
 ]
 
 [rpc_endpoints]

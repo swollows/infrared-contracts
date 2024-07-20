@@ -34,9 +34,6 @@ interface IBribeCollector is IPOLErrors {
     /// get the fees.
     function payoutAmount() external view returns (uint256);
 
-    /// @notice The contract that receives the payout and is notified via method call, when dapp fees are claimed.
-    function rewardReceiver() external view returns (address);
-
     /// @notice Update the payout amount to a new value. Must be called by admin.
     /// @param _newPayoutAmount The value that will be the new payout amount.
     function setPayoutAmount(uint256 _newPayoutAmount) external;

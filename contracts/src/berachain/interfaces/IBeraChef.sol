@@ -52,31 +52,22 @@ interface IBeraChef is IPOLErrors {
 
     /**
      * @notice Emitted when a new cutting board has been queued.
-     * @param valCoinbase The validator's coinbase address.
+     * @param valPubkey The validator's pubkey.
      * @param startBlock The block that the cutting board goes into effect.
      * @param weights The weights of the cutting board.
      */
     event QueueCuttingBoard(
-        address indexed valCoinbase, uint64 startBlock, Weight[] weights
+        bytes indexed valPubkey, uint64 startBlock, Weight[] weights
     );
 
     /**
      * @notice Emitted when a new cutting board has been activated.
-     * @param valCoinbase The validator's coinbase address.
+     * @param valPubkey The validator's pubkey.
      * @param startBlock The block that the cutting board goes into effect.
      * @param weights The weights of the cutting board.
      */
     event ActivateCuttingBoard(
-        address indexed valCoinbase, uint64 startBlock, Weight[] weights
-    );
-
-    /**
-     * @notice Emitted when a operator address has been set for a validator.
-     * @param valCoinbase The validator's coinbase address.
-     * @param operatorAddress The operator address.
-     */
-    event SetOperator(
-        address indexed valCoinbase, address indexed operatorAddress
+        bytes indexed valPubkey, uint64 startBlock, Weight[] weights
     );
 
     /**
@@ -91,30 +82,23 @@ interface IBeraChef is IPOLErrors {
 
     /**
      * @notice Returns the active cutting board for validator with given coinbase address
-     * @param valCoinbase The coinbase address of the validator.
+     * @param valPubkey The validator's pubkey.
      * @return cuttingBoard The active cutting board.
      */
-    function getActiveCuttingBoard(address valCoinbase)
+    function getActiveCuttingBoard(bytes calldata valPubkey)
         external
         view
         returns (CuttingBoard memory);
 
     /**
      * @notice Returns the queued cutting board for a validator with given coinbase address
-     * @param valCoinbase The coinbase address of the validator.
+     * @param valPubkey The validator's pubkey.
      * @return cuttingBoard The queued cutting board.
      */
-    function getQueuedCuttingBoard(address valCoinbase)
+    function getQueuedCuttingBoard(bytes calldata valPubkey)
         external
         view
         returns (CuttingBoard memory);
-
-    /**
-     * @notice Returns the operator address for a validator.
-     * @param valCoinbase The coinbase address of the validator.
-     * @return operatorAddress the operator address.
-     */
-    function getOperator(address valCoinbase) external view returns (address);
 
     /**
      * @notice Returns the default cutting board for validators that do not have a cutting board.
@@ -127,14 +111,14 @@ interface IBeraChef is IPOLErrors {
 
     /**
      * @notice Returns the status of whether a queued cutting board is ready to be activated.
-     * @param valCoinbase The coinbase address of the validator.
+     * @param valPubkey The validator's pubkey.
      * @param blockNumber The block number to be queried.
      * @return isReady True if the queued cutting board is ready to be activated, false otherwise.
      */
-    function isQueuedCuttingBoardReady(address valCoinbase, uint256 blockNumber)
-        external
-        view
-        returns (bool);
+    function isQueuedCuttingBoardReady(
+        bytes calldata valPubkey,
+        uint256 blockNumber
+    ) external view returns (bool);
 
     /**
      * @notice Returns the status of whether the BeraChef contract is ready to be used.
@@ -180,26 +164,22 @@ interface IBeraChef is IPOLErrors {
     /**
      * @notice Add a new cutting board to the queue for validator with given coinbase address.
      * @dev The weights of the cutting board must add up to 100% or 1e4. Only whitelisted pools may be used as well.
-     * @param valCoinbase The coinbase address of the validator.
+     * @param valPubkey The validator's pubkey.
      * @param startBlock The block that the cutting board goes into effect.
      * @param weights The weights of the cutting board.
      */
     function queueNewCuttingBoard(
-        address valCoinbase,
+        bytes calldata valPubkey,
         uint64 startBlock,
         Weight[] calldata weights
     ) external;
 
     /// @notice Activates the queued cutting board for a validator.
     /// @dev Should be called by the distribution contract.
-    /// @param valCoinbase The coinbase address of the validator.
+    /// @param valPubkey The validator's pubkey.
     /// @param blockNumber The block number being processed.
     function activateQueuedCuttingBoard(
-        address valCoinbase,
+        bytes calldata valPubkey,
         uint256 blockNumber
     ) external;
-
-    /// @notice Sets an address that can set cutting boards on a validator's behalf.
-    /// @param operatorAddress The address that can set cutting boards on a validator's behalf.
-    function setOperator(address operatorAddress) external;
 }

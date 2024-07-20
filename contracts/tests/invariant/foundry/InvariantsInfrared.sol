@@ -8,6 +8,12 @@ import {ERC1967Proxy} from
     "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
 
+import {InfraredDistributor} from "@core/InfraredDistributor.sol";
+import {BribeCollector} from "@core/BribeCollector.sol";
+
+import {Voter} from "@voting/Voter.sol";
+import {VotingEscrow} from "@voting/VotingEscrow.sol";
+
 // internal
 import "@core/Infrared.sol";
 import "@core/IBGT.sol";
@@ -31,6 +37,12 @@ import "@core/MultiRewards.sol";
 contract InvariantsInfrared is Test {
     Infrared public infrared;
     IBGT public ibgt;
+
+    BribeCollector public collector;
+    InfraredDistributor public distributor;
+
+    Voter public voter;
+    VotingEscrow public veIRED;
 
     address public admin;
     address public keeper;
@@ -84,26 +96,47 @@ contract InvariantsInfrared is Test {
         // Set up the chef
         // TODO: fix chef
 
-        // initialize Infrared contracts
-        address implementation = address(
-            new Infrared(
-                address(ibgt),
-                address(rewardsFactory),
-                address(chef),
-                address(mockWbera),
-                address(honey),
-                address(ired),
-                address(wibera)
+        // initialize Infrared contracts;
+        infrared = Infrared(
+            setupProxy(
+                address(
+                    new Infrared(
+                        address(ibgt),
+                        address(rewardsFactory),
+                        address(chef),
+                        address(mockWbera),
+                        address(honey),
+                        address(ired),
+                        address(wibera)
+                    )
+                )
             )
         );
-        address infraredProxy = address(new ERC1967Proxy(implementation, ""));
-        infrared = Infrared(infraredProxy);
+        collector = BribeCollector(
+            setupProxy(address(new BribeCollector(address(infrared))))
+        );
+        distributor = InfraredDistributor(
+            setupProxy(address(new InfraredDistributor(address(infrared))))
+        );
 
-        // TODO: actually deploy collector, bribes
-        address collector = makeAddr("collector");
-        address bribes = makeAddr("bribes");
+        // IRED voting
+        voter = Voter(setupProxy(address(new Voter(address(infrared)))));
+        veIRED = new VotingEscrow(
+            address(this), address(ired), address(voter), address(infrared)
+        );
 
-        infrared.initialize(address(this), collector, bribes, 1 days); // make helper contract the admin
+        collector.initialize(address(this), address(mockWbera), 10 ether);
+        distributor.initialize();
+        infrared.initialize(
+            address(this),
+            address(collector),
+            address(distributor),
+            address(voter),
+            1 days
+        ); // make helper contract the admin
+
+        // @dev must initialize after infrared so address(this) has keeper role
+        voter.initialize(address(veIRED));
 
         // set access control
         infrared.grantRole(infrared.KEEPER_ROLE(), keeper);
@@ -174,6 +207,13 @@ contract InvariantsInfrared is Test {
             governanceHandler.totalDelegatedBgt(),
             ERC20(infrared.ibgt().bgt()).balanceOf(address(infrared))
         );
+    }
+
+    function setupProxy(address implementation)
+        internal
+        returns (address proxy)
+    {
+        proxy = address(new ERC1967Proxy(implementation, ""));
     }
 
     /// forge-config: default.invariant.fail-on-revert = false

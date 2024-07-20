@@ -3,26 +3,41 @@ pragma solidity ^0.8.0;
 
 import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
 
-import {IBeaconDepositContract} from
-    "@berachain/interfaces/IBeaconDepositContract.sol";
 import {IBeraChef} from "@berachain/interfaces/IBeraChef.sol";
 import {IBerachainRewardsVaultFactory} from
     "@berachain/interfaces/IBerachainRewardsVaultFactory.sol";
 import {IWBERA} from "@berachain/interfaces/IWBERA.sol";
 
+import {IVoter} from "@voting/interfaces/IVoter.sol";
+
+import {IERC20Mintable} from "@interfaces/IERC20Mintable.sol";
 import {IIBGT} from "@interfaces/IIBGT.sol";
 import {IBribeCollector} from "@interfaces/IBribeCollector.sol";
-import {IInfraredBribes} from "@interfaces/IInfraredBribes.sol";
+import {IInfraredDistributor} from "@interfaces/IInfraredDistributor.sol";
 import {IInfraredVault} from "@interfaces/IInfraredVault.sol";
 
 import {DataTypes} from "@utils/DataTypes.sol";
 
-interface IInfrared {
+import {IInfraredUpgradeable} from "./IInfraredUpgradeable.sol";
+
+interface IInfrared is IInfraredUpgradeable {
+    /// @notice Whether given token is a whitelisted reward token
+    function whitelistedRewardTokens(address _token)
+        external
+        view
+        returns (bool);
+
+    /// @notice Returns the infrared vault address for a given staking token
+    function vaultRegistry(address _asset)
+        external
+        view
+        returns (IInfraredVault);
+
     /// @notice The IBGT liquid staked token
     function ibgt() external view returns (IIBGT);
 
     /// @notice The Infrared governance token
-    function ired() external view returns (IERC20);
+    function ired() external view returns (IERC20Mintable);
 
     /// @notice The wrapped Infrared bera token
     function wibera() external view returns (IERC20);
@@ -42,17 +57,36 @@ interface IInfrared {
     /// @notice The wrapped IBERA vault
     function wiberaVault() external view returns (IInfraredVault);
 
-    /// @notice The Infrared protocol fee rates for a given token
-    /// @dev In units of 1e6 or hundredths of 1 bip
-    /// @param token address The token address to charge the protocol fee rate
-    function protocolFeeRates(address token) external view returns (uint256);
-
     /// @notice The unclaimed Infrared protocol fees of token accumulated by contract
     /// @param token address The token address for the accumulated fees
     function protocolFeeAmounts(address token)
         external
         view
         returns (uint256);
+
+    /// @notice Weight type enum for determining how much to weight reward distribution amongst recipients
+    enum WeightType {
+        HarvestBaseWiberaVault,
+        CollectBribesWiberaVault
+    }
+
+    /// @notice Weights for various harvest function distributions
+    function weights(uint256 i) external view returns (uint256);
+
+    /// @notice Fee type enum for determining rates to charge on reward distribution.
+    enum FeeType {
+        HarvestBaseFeeRate,
+        HarvestBaseProtocolRate,
+        HarvestVaultFeeRate,
+        HarvestVaultProtocolRate,
+        HarvestBribesFeeRate,
+        HarvestBribesProtocolRate,
+        HarvestBoostFeeRate,
+        HarvestBoostProtocolRate
+    }
+
+    /// @notice Protocol fee rates to charge for various harvest function distributions
+    function fees(uint256 i) external view returns (uint256);
 
     /// @notice Wrapped bera
     function wbera() external view returns (IWBERA);
@@ -63,17 +97,24 @@ interface IInfrared {
     /// @notice bribe collector contract
     function collector() external view returns (IBribeCollector);
 
-    /// @notice Infrared bribe distributor to validators
-    function bribes() external view returns (IInfraredBribes);
+    /// @notice Infrared distributor for BGT rewards to validators
+    function distributor() external view returns (IInfraredDistributor);
+
+    /// @notice IRED voter
+    function voter() external view returns (IVoter);
 
     /// @notice The rewards duration
     function rewardsDuration() external view returns (uint256);
+
+    /// @notice The mint amount of IRED rewards minted per IBGT
+    function iredMintRate() external view returns (uint256);
 
     /// @notice Initializes Infrared by whitelisting rewards tokens, granting admin access roles, and deploying the ibgt vault
     function initialize(
         address _admin,
         address _collector,
-        address _bribes,
+        address _distributor,
+        address _voter,
         uint256 _rewardsDuration
     ) external;
 
@@ -102,6 +143,12 @@ interface IInfrared {
     function updateRewardsDuration(uint256 _rewardsDuration) external;
 
     /**
+     * @notice Updates the IRED mint rate per unit of IBGT
+     * @param _iredMintRate uint256 The new IRED mint rate.
+     */
+    function updateIredMintRate(uint256 _iredMintRate) external;
+
+    /**
      * @notice Pauses staking functionality on this vault.
      * @param _asset address The address of the staking asset that the vault is for.
      */
@@ -123,12 +170,19 @@ interface IInfrared {
     function delegateBGT(address _delegatee) external;
 
     /**
-     * @notice Updates the protocol fee rate charged on harvest
-     * @dev Fee rate in units of 1e6 or hundredths of 1 bip
-     * @param _token   address The address of the token for the protocol fee rate
-     * @param _feeRate uint256 The protocol fee rate to update to
+     * @notice Updates the weight for a weight type.
+     * @param _t WeightType The weight type
+     * @param _weight uint256 The weight value
      */
-    function updateProtocolFeeRate(address _token, uint256 _feeRate) external;
+    function updateWeight(WeightType _t, uint256 _weight) external;
+
+    /**
+     * @notice Updates the fee rate charged on different harvest functions
+     * @dev Fee rate in units of 1e6 or hundredths of 1 bip
+     * @param _t   FeeType The fee type
+     * @param _fee uint256 The fee rate to update to
+     */
+    function updateFee(FeeType _t, uint256 _fee) external;
 
     /**
      * @notice Claims accumulated protocol fees in contract
@@ -157,94 +211,109 @@ interface IInfrared {
     function harvestBribes(address[] memory _tokens) external;
 
     /**
+     * @notice Collects bribes from bribe collector and distributes to wiBERA and iBGT Infrared vaults.
+     * @notice _token The payout token for the bribe collector.
+     * @notice _amount The amount of payout received from bribe collector.
+     */
+    function collectBribes(address _token, uint256 _amount) external;
+
+    /**
      * @notice Claims all the BGT staker rewards from boosting validators.
      * @dev Sends rewards to iBGT vault.
      */
     function harvestBoostRewards() external;
 
+    /// @notice Validator information for validator set
+    struct Validator {
+        /// pubkey of the validator for beacon deposit contract
+        bytes pubkey;
+        /// address of the validator for claiming infrared commission rewards
+        address addr;
+        /// commission for validator to charge at core berachain level
+        uint256 commission;
+    }
+
     /**
      * @notice Adds validators to the set of `InfraredValidators`.
-     * @param _validators address[] memory The validators to add.
-     * @param _commissions uint256[] memory The commission rates to charge for each respective validator added.
+     * @param _validators Validator[] memory The validators to add.
      */
-    function addValidators(
-        address[] memory _validators,
-        uint256[] memory _commissions
-    ) external;
+    function addValidators(Validator[] memory _validators) external;
 
     /**
      * @notice Removes validators from the set of `InfraredValidators`.
-     * @param _validators address[] memory The validators to remove.
+     * @param _pubkeys bytes[] memory The pubkeys of the validators to remove.
      */
-    function removeValidators(address[] memory _validators) external;
+    function removeValidators(bytes[] memory _pubkeys) external;
 
     /**
      * @notice Replaces a validator in the set of `InfraredValidators`.
-     * @param _current address The validator to replace.
-     * @param _new     address The new validator.
+     * @param _current bytes The pubkey of the validator to replace.
+     * @param _new     bytes The new validator pubkey.
      */
-    function replaceValidator(address _current, address _new) external;
-
-    /**
-     * @notice Updates a validator commission rate in the set of `InfraredValidators`.
-     * @param _validator  address The validator to update commission rate for.
-     * @param _commission uint256 The commission rate to update to.
-     */
-    function updateValidatorCommission(address _validator, uint256 _commission)
+    function replaceValidator(bytes calldata _current, bytes calldata _new)
         external;
 
     /**
+     * @notice Updates a validator commission rate in the set of `InfraredValidators`.
+     * @param _pubkey     bytes   The pubkey of the validator to update commission rate for.
+     * @param _commission uint256 The commission rate to update to.
+     */
+    function updateValidatorCommission(
+        bytes calldata _pubkey,
+        uint256 _commission
+    ) external;
+
+    /**
      * @notice Queue `_amts` of tokens to `_validators` for boosts.
-     * @param _validators  address[] memory The validators to queue boosts for.
+     * @param _pubkeys     bytes[] memory The pubkeys of the validators to queue boosts for.
      * @param _amts        uint128[] memory The amount of BGT to boost with.
      */
-    function queueBoosts(address[] memory _validators, uint128[] memory _amts)
+    function queueBoosts(bytes[] memory _pubkeys, uint128[] memory _amts)
         external;
 
     /**
      * @notice Removes `_amts` from previously queued boosts to `_validators`.
-     * @dev `_validators` need not be in the current validator set in case just removed but need to cancel.
-     * @param _validators  address[] memory The validators to remove boosts for.
+     * @dev `_pubkeys` need not be in the current validator set in case just removed but need to cancel.
+     * @param _pubkeys     bytes[] memory The pubkeys of the validators to remove boosts for.
      * @param _amts        uint128[] memory The amounts of BGT to remove from the queued boosts.
      */
-    function cancelBoosts(address[] memory _validators, uint128[] memory _amts)
+    function cancelBoosts(bytes[] memory _pubkeys, uint128[] memory _amts)
         external;
 
     /**
-     * @notice Activates queued boosts for `_validators`.
-     * @param _validators   address[] memory The validators to activate boosts for.
+     * @notice Activates queued boosts for `_pubkeys`.
+     * @param _pubkeys   bytes[] memory The pubkeys of the validators to activate boosts for.
      */
-    function activateBoosts(address[] memory _validators) external;
+    function activateBoosts(bytes[] memory _pubkeys) external;
 
     /**
-     * @notice Removes boost `_amt` of BGT boost from `_validator`.
-     * @param _validators  address[] memory The validator to remove boost from.
-     * @param _amts        uint128[] memory The amount of BGT to remove from the boost.
+     * @notice Removes boost `_amt` of BGT boost from `_pubkey`.
+     * @param _pubkeys     address[] memory The pubkeys of the validator to remove boost from.
+     * @param _amts        uint128[] memory The amounts of BGT to remove from the boost.
      */
-    function dropBoosts(address[] memory _validators, uint128[] memory _amts)
+    function dropBoosts(bytes[] memory _pubkeys, uint128[] memory _amts)
         external;
 
     /**
      * @notice Queues a new cutting board on BeraChef for reward weight distribution for validator
-     * @param _validator          address                       The address of the validator to queue the cutting board for
+     * @param _pubkey             bytes                         The pubkey of the validator to queue the cutting board for
      * @param _startBlock         uint64                        The start block for reward weightings
      * @param _weights            IBeraChef.Weight[] calldata   The weightings used when distributor calls chef to distribute validator rewards
      */
     function queueNewCuttingBoard(
-        address _validator,
+        bytes calldata _pubkey,
         uint64 _startBlock,
         IBeraChef.Weight[] calldata _weights
     ) external;
 
     /**
-     * @notice Gets the set of infrared validators.
-     * @return validators address[] memory The set of infrared validators.
-     * @return commissions uint256[] memory The corresponding validator commission rates.
+     * @notice Gets the set of infrared validator pubkeys.
+     * @return validators Validator[] memory The set of infrared validators.
      */
     function infraredValidators()
         external
         view
-        returns (address[] memory validators, uint256[] memory commissions);
+        returns (Validator[] memory validators);
 
     /**
      * @notice Gets the number of infrared validators in validator set.
@@ -254,10 +323,10 @@ interface IInfrared {
 
     /**
      * @notice Checks if a validator is an infrared validator.
-     * @param _validator    address    The address of the validator to check.
+     * @param _pubkey    bytes      The pubkey of the validator to check.
      * @return _isValidator bool       Whether the validator is an infrared validator.
      */
-    function isInfraredValidator(address _validator)
+    function isInfraredValidator(bytes memory _pubkey)
         external
         view
         returns (bool);
@@ -283,11 +352,21 @@ interface IInfrared {
     );
 
     /**
-     * @notice Emitted when IBGT tokens are supplied to a vault.
-     * @param _vault The address of the vault receiving the IBGT tokens.
-     * @param _amt The amount of IBGT tokens supplied.
+     * @notice Emitted when IBGT tokens are supplied to distributor.
+     * @param _distributor The address of the distributor receiving the IBGT tokens.
+     * @param _ibgtAmt The amount of IBGT tokens supplied to distributor.
      */
-    event IBGTSupplied(address indexed _vault, uint256 _amt);
+    event IBGTDistributed(address indexed _distributor, uint256 _ibgtAmt);
+
+    /**
+     * @notice Emitted when IBGT tokens are supplied to a vault.
+     * @param _vault The address of the vault receiving the IBGT and IRED tokens.
+     * @param _ibgtAmt The amount of IBGT tokens supplied to vault.
+     * @param _iredAmt The amount of IRED tokens supplied to vault as additional reward from protocol.
+     */
+    event IBGTSupplied(
+        address indexed _vault, uint256 _ibgtAmt, uint256 _iredAmt
+    );
 
     /**
      * @notice Emitted when rewards are supplied to a vault.
@@ -366,15 +445,39 @@ interface IInfrared {
     );
 
     /**
+     * @notice Emitted when the IRED mint rate per unit IBGT is updated.
+     * @param _sender The address that initiated the update.
+     * @param _oldMintRate The previous IRED mint rate.
+     * @param _newMintRate The new IRED mint rate.
+     */
+    event IredMintRateUpdated(
+        address _sender, uint256 _oldMintRate, uint256 _newMintRate
+    );
+
+    /**
+     * @notice Emitted when a weight is updated.
+     * @param _sender The address that initiated the update.
+     * @param _weightType The weight type updated.
+     * @param _oldWeight The old value of the weight.
+     * @param _newWeight The new value of the weight.
+     */
+    event WeightUpdated(
+        address _sender,
+        WeightType _weightType,
+        uint256 _oldWeight,
+        uint256 _newWeight
+    );
+
+    /**
      * @notice Emitted when protocol fee rate is updated.
      * @param _sender The address that initiated the update.
-     * @param _token The address of the token for the protocol fee rate.
+     * @param _feeType The fee type updated.
      * @param _oldFeeRate The old protocol fee rate.
      * @param _newFeeRate The new protocol fee rate.
      */
-    event ProtocolFeeRateUpdated(
+    event FeeUpdated(
         address _sender,
-        address _token,
+        FeeType _feeType,
         uint256 _oldFeeRate,
         uint256 _newFeeRate
     );
@@ -412,6 +515,20 @@ interface IInfrared {
     );
 
     /**
+     * @notice Emitted when bribes are harvested then collected by collector.
+     * @param _sender The address that initiated the bribe collection.
+     * @param _token The payout token from bribe collection.
+     * @param _amtWiberaVault The amount of collected bribe sent to the wrapped iBERA vault.
+     * @param _amtIbgtVault The amount of collected bribe sent to the iBGT vault.
+     */
+    event BribesCollected(
+        address _sender,
+        address _token,
+        uint256 _amtWiberaVault,
+        uint256 _amtIbgtVault
+    );
+
+    /**
      * @notice Emitted when a validator harvests its rewards.
      * @param _sender The address that initiated the harvest.
      * @param _validator The public key of the validator.
@@ -428,81 +545,74 @@ interface IInfrared {
     /**
      * @notice Emitted when validators are added.
      * @param _sender The address that initiated the addition.
-     * @param _validators An array of validators' addresses that were added.
-     * @param _commissions An array of validators' commission rates to charge for those added.
+     * @param _validators An array of validators that were added.
      */
-    event ValidatorsAdded(
-        address _sender, address[] _validators, uint256[] _commissions
-    );
+    event ValidatorsAdded(address _sender, Validator[] _validators);
 
     /**
      * @notice Emitted when validators are removed from validator set.
      * @param _sender The address that initiated the removal.
-     * @param _validators An array of validators' addresses that were removed.
+     * @param _pubkeys An array of validators' pubkeys that were removed.
      */
-    event ValidatorsRemoved(address _sender, address[] _validators);
+    event ValidatorsRemoved(address _sender, bytes[] _pubkeys);
 
     /**
      * @notice Emitted when a validator is replaced with a new validator.
      * @param _sender The address that initiated the replacement.
-     * @param _current The address of the current validator being replaced.
-     * @param _new The address of the new validator.
+     * @param _current The pubkey of the current validator being replaced.
+     * @param _new The pubkey of the new validator.
      */
-    event ValidatorReplaced(address _sender, address _current, address _new);
+    event ValidatorReplaced(address _sender, bytes _current, bytes _new);
 
     /**
      * @notice Emitted when a validator commission rate is updated.
      * @param _sender The address that initated the update.
-     * @param _validator The address of the validator whose commission rate is being updated.
+     * @param _pubkey The pubkey of the validator whose commission rate is being updated.
      * @param _current The current commission rate being updated.
      * @param _new The new commission rate being updated to.
      */
     event ValidatorCommissionUpdated(
-        address _sender, address _validator, uint256 _current, uint256 _new
+        address _sender, bytes _pubkey, uint256 _current, uint256 _new
     );
 
     /**
      * @notice Emitted when BGT tokens are queued for boosts to validators.
      * @param _sender The address that initiated the boost.
-     * @param _validators The addresses of the validators to which tokens are queued for boosts.
+     * @param _pubkeys The addresses of the validators to which tokens are queued for boosts.
      * @param _amts The amounts of tokens that were queued.
      */
-    event QueuedBoosts(address _sender, address[] _validators, uint128[] _amts);
+    event QueuedBoosts(address _sender, bytes[] _pubkeys, uint128[] _amts);
 
     /**
      * @notice Emitted when existing queued boosts to validators are cancelled.
      * @param _sender The address that initiated the cancellation.
-     * @param _validators The addresses of the validators to which tokens were queued for boosts.
+     * @param _pubkeys The pubkeys of the validators to which tokens were queued for boosts.
      * @param _amts The amounts of tokens to remove from boosts.
      */
-    event CancelledBoosts(
-        address _sender, address[] _validators, uint128[] _amts
-    );
+    event CancelledBoosts(address _sender, bytes[] _pubkeys, uint128[] _amts);
 
     /**
      * @notice Emitted when an existing boost to a validator is activated.
      * @param _sender The address that initiated the activation.
-     * @param _validators The addresses of the validators which were boosted.
+     * @param _pubkeys The addresses of the validators which were boosted.
      */
-    event ActivatedBoosts(address _sender, address[] _validators);
+    event ActivatedBoosts(address _sender, bytes[] _pubkeys);
 
     /**
      * @notice Emitted when boost is removed from a validator.
      * @param _sender The address that initiated the cancellation.
-     * @param _validators The addresses of the validators to which tokens were queued for boosts.
+     * @param _pubkeys The addresses of the validators to which tokens were queued for boosts.
      * @param _amts The amounts of tokens to remove from boosts.
      */
-    event DroppedBoosts(
-        address _sender, address[] _validators, uint128[] _amts
-    );
+    event DroppedBoosts(address _sender, bytes[] _pubkeys, uint128[] _amts);
 
     /**
      * @notice Emitted when tokens are undelegated from a validator.
      * @param _sender The address that initiated the undelegation.
-     * @param _validator The public key of the validator from which tokens are undelegated.
+     * @param _pubkey The pubkey of the validator from which tokens are undelegated.
      * @param _amt The amount of tokens that were undelegated.
      */
-    event Undelegated(address _sender, bytes _validator, uint256 _amt);
+    event Undelegated(address _sender, bytes _pubkey, uint256 _amt);
 
     /**
      * @notice Emitted when tokens are redelegated from one validator to another.

@@ -9,6 +9,8 @@ import {
 } from "@openzeppelin-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 import {Errors} from "@utils/Errors.sol";
+
+import {IInfrared} from "@interfaces/IInfrared.sol";
 import {IInfraredUpgradeable} from "@interfaces/IInfraredUpgradeable.sol";
 
 /**
@@ -24,6 +26,9 @@ abstract contract InfraredUpgradeable is
     bytes32 public constant KEEPER_ROLE = keccak256("KEEPER_ROLE");
     bytes32 public constant GOVERNANCE_ROLE = keccak256("GOVERNANCE_ROLE");
 
+    /// @inheritdoc IInfraredUpgradeable
+    IInfrared public immutable infrared;
+
     modifier onlyKeeper() {
         _checkRole(KEEPER_ROLE);
         _;
@@ -34,14 +39,35 @@ abstract contract InfraredUpgradeable is
         _;
     }
 
+    modifier onlyInfrared() {
+        if (msg.sender != address(infrared)) revert Errors.NotInfrared();
+        _;
+    }
+
     modifier whenInitialized() {
         if (_isInitializing()) revert Errors.NotInitialized();
         _;
     }
 
-    constructor() {
-        //. prevents implementation contracts from being used
+    constructor(address _infrared) {
+        // _infrared == address(0) means this is infrared
+        infrared = IInfrared(_infrared);
+        // prevents implementation contracts from being used
         _disableInitializers();
+    }
+
+    /// @dev Overrides to check role on infrared contract
+    function _checkRole(bytes32 role, address account)
+        internal
+        view
+        virtual
+        override
+    {
+        if (infrared == IInfrared(address(0))) {
+            super._checkRole(role, account);
+        } else if (!infrared.hasRole(role, account)) {
+            revert AccessControlUnauthorizedAccount(account, role);
+        }
     }
 
     function __InfraredUpgradeable_init() internal onlyInitializing {

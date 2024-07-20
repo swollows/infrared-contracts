@@ -9,9 +9,15 @@ import {ERC1967Proxy} from
     "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
 
+import {Voter} from "@voting/Voter.sol";
+import {VotingEscrow} from "@voting/VotingEscrow.sol";
+
+import {InfraredDistributor} from "@core/InfraredDistributor.sol";
+import {BribeCollector} from "@core/BribeCollector.sol";
+
 // internal
 import "@core/Infrared.sol";
-import "@core/InfraredBribes.sol";
+import "@core/InfraredDistributor.sol";
 import "@core/IBGT.sol";
 import "@core/InfraredVault.sol";
 import "@utils/DataTypes.sol";
@@ -29,6 +35,12 @@ import "@mocks/MockBeaconDepositContract.sol";
 contract Helper is Test {
     Infrared public infrared;
     IBGT public ibgt;
+
+    Voter public voter;
+    VotingEscrow public veIRED;
+
+    BribeCollector public collector;
+    InfraredDistributor public distributor;
 
     address public admin;
     address public keeper;
@@ -54,7 +66,6 @@ contract Helper is Test {
     InfraredVault public ibgtVault;
     InfraredVault public infraredVault;
 
-    //
     address validator = address(888);
     address validator2 = address(999);
 
@@ -94,25 +105,44 @@ contract Helper is Test {
         // chef = new MockBeraChef();
 
         // initialize Infrared contracts
-        address implementation = address(
-            new Infrared(
-                address(ibgt),
-                address(rewardsFactory),
-                address(chef),
-                address(mockWbera),
-                address(honey),
-                address(ired),
-                address(wibera)
+        infrared = Infrared(
+            setupProxy(
+                address(
+                    new Infrared(
+                        address(ibgt),
+                        address(rewardsFactory),
+                        address(chef),
+                        address(mockWbera),
+                        address(honey),
+                        address(ired),
+                        address(wibera)
+                    )
+                )
             )
         );
-        address infraredProxy = address(new ERC1967Proxy(implementation, ""));
-        infrared = Infrared(infraredProxy);
+        collector = BribeCollector(
+            setupProxy(address(new BribeCollector(address(infrared))))
+        );
+        distributor = InfraredDistributor(
+            setupProxy(address(new InfraredDistributor(address(infrared))))
+        );
 
-        // TODO: actually deploy collector, bribes
-        address collector = makeAddr("collector");
-        address bribes = makeAddr("bribes");
+        // IRED voting
+        voter = Voter(setupProxy(address(new Voter(address(infrared)))));
+        veIRED = new VotingEscrow(
+            address(this), address(ired), address(voter), address(infrared)
+        );
 
-        infrared.initialize(address(this), collector, bribes, 1 days); // make helper contract the admin
+        collector.initialize(address(this), address(mockWbera), 10 ether);
+        distributor.initialize();
+        infrared.initialize(
+            address(this),
+            address(collector),
+            address(distributor),
+            address(voter),
+            1 days
+        ); // make helper contract the admin
+        voter.initialize(address(veIRED));
 
         // set access control
         infrared.grantRole(infrared.KEEPER_ROLE(), keeper);
@@ -144,6 +174,7 @@ contract Helper is Test {
         vm.label(address(rewardsFactory), "rewardsFactory");
         vm.label(address(chef), "chef");
         vm.label(address(ibgtVault), "ibgtVault");
+        vm.label(address(collector), "collector");
     }
 
     function stakeInVault(
@@ -178,5 +209,12 @@ contract Helper is Test {
         }
 
         return true;
+    }
+
+    function setupProxy(address implementation)
+        internal
+        returns (address proxy)
+    {
+        proxy = address(new ERC1967Proxy(implementation, ""));
     }
 }

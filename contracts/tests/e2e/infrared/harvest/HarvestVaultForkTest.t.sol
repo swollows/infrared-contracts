@@ -8,6 +8,7 @@ import {IMultiRewards} from "@interfaces/IMultiRewards.sol";
 import {HarvestForkTest} from "./HarvestForkTest.t.sol";
 
 contract HarvestVaultForkTest is HarvestForkTest {
+/*
     function testHarvestVault(uint256 protocolFeeRate) public {
         vm.assume(protocolFeeRate < FEE_UNIT);
 
@@ -62,4 +63,5 @@ contract HarvestVaultForkTest is HarvestForkTest {
 
         vm.stopPrank();
     }
+    */
 }

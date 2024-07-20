@@ -14,8 +14,9 @@ contract InfraredRegisterVaultTest is Helper {
         infrared.grantRole(infrared.KEEPER_ROLE(), address(this));
 
         // Mock data for the test
-        address[] memory rewardTokens = new address[](1); // Assuming you have reward token addresses
+        address[] memory rewardTokens = new address[](2); // Assuming you have reward token addresses
         rewardTokens[0] = address(ibgt);
+        rewardTokens[1] = address(ired);
 
         /*
         // Expect the NewVault event to be emitted with correct parameters
@@ -103,6 +104,7 @@ contract InfraredRegisterVaultTest is Helper {
 
         address[] memory rewardTokens; // Assuming you've defined rewardTokens somewhere
         rewardTokens[0] = address(ibgt); // Example reward token address
+        rewardTokens[1] = address(ired);
 
         // Because stakingAsset is already registered, expect a revert
         vm.expectRevert(Errors.DuplicateAssetAddress.selector);
@@ -140,14 +142,32 @@ contract InfraredRegisterVaultTest is Helper {
         infrared.registerVault(assetAddress, rewardTokens);
     }
 
+    function testVaultRegistrationWithoutIREDRewardToken() public {
+        address[] memory rewardTokens = new address[](2); // Empty array for reward tokens
+        rewardTokens[0] = address(ibgt); // Example reward token address
+        rewardTokens[1] = address(mockWbera); // Example reward token address
+
+        infrared.grantRole(infrared.KEEPER_ROLE(), address(this));
+
+        MockERC20 mockAsset = new MockERC20("MockAsset", "MAS", 18);
+
+        // Assuming mockAsset has been initialized and represents the asset being staked
+        address assetAddress = address(mockAsset);
+
+        // Register the vault with an empty array of reward tokens
+        vm.expectRevert(Errors.IREDNotRewardToken.selector);
+        infrared.registerVault(assetAddress, rewardTokens);
+    }
+
     function testRolePersistencePostVaultRegistration() public {
         // Grant the KEEPER_ROLE to the test contract
         infrared.grantRole(infrared.KEEPER_ROLE(), address(this));
 
         MockERC20 mockAsset = new MockERC20("MockAsset", "MAS", 18);
         // Prepare the reward tokens array; assuming it's already initialized and filled as needed
-        address[] memory rewardTokens = new address[](1); // example initialization
+        address[] memory rewardTokens = new address[](2); // example initialization
         rewardTokens[0] = address(ibgt); // Assuming mockRewardToken has been defined elsewhere
+        rewardTokens[1] = address(ired);
 
         // Register the vault without specifying a pool address, adhering to the updated function signature
         infrared.registerVault(address(mockAsset), rewardTokens);

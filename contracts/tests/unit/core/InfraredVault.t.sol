@@ -20,6 +20,7 @@ contract InfraredVaultTest is Test {
     InfraredVault public infraredVault;
 
     IBGT public ibgt;
+    MockERC20 public ired;
     address public infrared;
 
     MockERC20 public bgt;
@@ -42,6 +43,7 @@ contract InfraredVaultTest is Test {
         // Mock non transferable token BGT token
         bgt = new MockERC20("BGT", "BGT", 18);
         ibgt = new IBGT(address(bgt));
+        ired = new MockERC20("iRED", "iRED", 18);
 
         // deploy a berachain rewards vault for staking token
         rewardsFactory = new MockBerachainRewardsVaultFactory(address(bgt));
@@ -53,15 +55,19 @@ contract InfraredVaultTest is Test {
             rewardsFactory.getVault(address(stakingToken))
         );
 
-        infrared =
-            address(new MockInfrared(address(ibgt), address(rewardsFactory)));
+        infrared = address(
+            new MockInfrared(
+                address(ibgt), address(ired), address(rewardsFactory)
+            )
+        );
         assertEq(
             address(rewardsFactory),
             address(MockInfrared(infrared).rewardsFactory())
         );
 
-        rewardTokens = new address[](1);
+        rewardTokens = new address[](2);
         rewardTokens[0] = address(ibgt);
+        rewardTokens[1] = address(ired);
 
         // Deploy the InfraredVault contract
         vm.prank(infrared);

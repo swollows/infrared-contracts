@@ -12,9 +12,12 @@ import {ERC20PresetMinterPauser} from
 import {IBerachainRewardsVault} from
     "@berachain/interfaces/IBerachainRewardsVault.sol";
 
+import {Voter} from "@voting/Voter.sol";
+import {VotingEscrow} from "@voting/VotingEscrow.sol";
+
 import {IBGT} from "@core/IBGT.sol";
 import {Infrared} from "@core/Infrared.sol";
-import {InfraredBribes} from "@core/InfraredBribes.sol";
+import {InfraredDistributor} from "@core/InfraredDistributor.sol";
 import {BribeCollector} from "@core/BribeCollector.sol";
 
 import {IInfraredVault} from "@interfaces/IInfraredVault.sol";
@@ -34,8 +37,11 @@ contract InfraredForkTest is HelperForkTest {
     ERC20PresetMinterPauser public stakingToken;
 
     BribeCollector public collector;
-    InfraredBribes public bribes;
+    InfraredDistributor public distributor;
     Infrared public infrared;
+
+    Voter public voter;
+    VotingEscrow public veIRED;
 
     IInfraredVault public lpVault;
 
@@ -55,8 +61,6 @@ contract InfraredForkTest is HelperForkTest {
         stakingToken.mint(address(this), 1000 ether);
         deal(address(lpToken), address(this), 1000 ether);
 
-        collector = BribeCollector(setupProxy(address(new BribeCollector())));
-        bribes = InfraredBribes(setupProxy(address(new InfraredBribes())));
         infrared = Infrared(
             setupProxy(
                 address(
@@ -73,18 +77,30 @@ contract InfraredForkTest is HelperForkTest {
             )
         );
 
+        collector = BribeCollector(
+            setupProxy(address(new BribeCollector(address(infrared))))
+        );
+        distributor = InfraredDistributor(
+            setupProxy(address(new InfraredDistributor(address(infrared))))
+        );
+
+        // IRED voting
+        voter = Voter(setupProxy(address(new Voter(address(infrared)))));
+        veIRED = new VotingEscrow(
+            admin, address(ired), address(voter), address(infrared)
+        );
+
         // initialize proxies
-        // @dev must initialize collector before bribes
-        collector.initialize(
-            admin,
-            address(wbera),
-            address(collector),
-            bribeCollectorPayoutAmount
-        );
-        bribes.initialize(admin, address(infrared), address(collector));
+        collector.initialize(admin, address(wbera), bribeCollectorPayoutAmount);
+        distributor.initialize();
         infrared.initialize(
-            admin, address(collector), address(bribes), rewardsDuration
+            admin,
+            address(collector),
+            address(distributor),
+            address(voter),
+            rewardsDuration
         );
+        voter.initialize(address(veIRED));
 
         // grant infrared ibgt minter role
         ibgt.grantRole(ibgt.MINTER_ROLE(), address(infrared));
@@ -97,10 +113,6 @@ contract InfraredForkTest is HelperForkTest {
 
         vm.prank(admin);
         lpVault = infrared.registerVault(address(lpToken), _rewardTokens);
-
-        // set validator operator in berachef as infrared
-        vm.prank(infraredValidator);
-        beraChef.setOperator(address(infrared));
     }
 
     function setupProxy(address implementation)
@@ -117,7 +129,7 @@ contract InfraredForkTest is HelperForkTest {
         assertEq(address(infrared.ired()), address(ired));
 
         assertEq(address(infrared.collector()), address(collector));
-        assertEq(address(infrared.bribes()), address(bribes));
+        assertEq(address(infrared.distributor()), address(distributor));
 
         IInfraredVault _ibgtVault = infrared.vaultRegistry(address(ibgt));
         assertTrue(address(_ibgtVault) != address(0));
@@ -158,28 +170,26 @@ contract InfraredForkTest is HelperForkTest {
             address(lpVault.rewardsVault()),
             rewardsFactory.getVault(address(lpToken))
         );
-        assertEq(beraChef.getOperator(infraredValidator), address(infrared));
 
         // test implementations disabled
         address collectorImplementation = collector.currentImplementation();
         vm.expectRevert(Initializable.InvalidInitialization.selector);
         BribeCollector(collectorImplementation).initialize(
-            admin,
-            address(wbera),
-            address(collector),
-            bribeCollectorPayoutAmount
+            admin, address(wbera), bribeCollectorPayoutAmount
         );
 
-        address bribesImplementation = bribes.currentImplementation();
+        address distributorImplementation = distributor.currentImplementation();
         vm.expectRevert(Initializable.InvalidInitialization.selector);
-        InfraredBribes(bribesImplementation).initialize(
-            admin, address(infrared), address(collector)
-        );
+        InfraredDistributor(distributorImplementation).initialize();
 
         address infraredImplementation = infrared.currentImplementation();
         vm.expectRevert(Initializable.InvalidInitialization.selector);
         Infrared(infraredImplementation).initialize(
-            admin, address(collector), address(bribes), rewardsDuration
+            admin,
+            address(collector),
+            address(distributor),
+            address(voter),
+            rewardsDuration
         );
     }
 }

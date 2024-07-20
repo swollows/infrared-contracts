@@ -8,9 +8,12 @@ import {ERC1967Proxy} from
 import {ERC20PresetMinterPauser} from
     "../src/vendors/ERC20PresetMinterPauser.sol";
 
+import {Voter} from "@voting/Voter.sol";
+import {VotingEscrow} from "@voting/VotingEscrow.sol";
+
 import {IBGT} from "@core/IBGT.sol";
 import {Infrared} from "@core/Infrared.sol";
-import {InfraredBribes} from "@core/InfraredBribes.sol";
+import {InfraredDistributor} from "@core/InfraredDistributor.sol";
 import {BribeCollector} from "@core/BribeCollector.sol";
 
 contract InfraredDeployer is Script {
@@ -19,14 +22,19 @@ contract InfraredDeployer is Script {
     ERC20PresetMinterPauser ibera;
 
     BribeCollector public collector;
-    InfraredBribes public bribes;
+    InfraredDistributor public distributor;
     Infrared public infrared;
+
+    Voter public voter;
+    VotingEscrow public veIRED;
 
     function run(
         address _admin,
+        address _votingKeeper,
         address _bgt,
         address _berachainRewardsFactory,
         address _beraChef,
+        address _beaconDeposit,
         address _wbera,
         address _honey,
         uint256 _rewardsDuration,
@@ -39,8 +47,6 @@ contract InfraredDeployer is Script {
         ired = new ERC20PresetMinterPauser("Infrared Token", "iRED"); // TODO: fix for actual IRED implementation
         ibera = new ERC20PresetMinterPauser("Infrared Bera", "iBERA"); // TODO: fix for actual IBERA implementation
 
-        collector = BribeCollector(setupProxy(address(new BribeCollector())));
-        bribes = InfraredBribes(setupProxy(address(new InfraredBribes())));
         infrared = Infrared(
             setupProxy(
                 address(
@@ -56,16 +62,30 @@ contract InfraredDeployer is Script {
                 )
             )
         );
+        collector = BribeCollector(
+            setupProxy(address(new BribeCollector(address(infrared))))
+        );
+        distributor = InfraredDistributor(
+            setupProxy(address(new InfraredDistributor(address(infrared))))
+        );
+
+        // IRED voting
+        voter = Voter(setupProxy(address(new Voter(address(infrared)))));
+        veIRED = new VotingEscrow(
+            _votingKeeper, address(ired), address(voter), address(infrared)
+        );
 
         // initialize proxies
-        // @dev must initialize collector before bribes
-        collector.initialize(
-            _admin, _wbera, address(collector), _bribeCollectorPayoutAmount
-        );
-        bribes.initialize(_admin, address(infrared), address(collector));
+        collector.initialize(_admin, _wbera, _bribeCollectorPayoutAmount);
+        distributor.initialize();
         infrared.initialize(
-            _admin, address(collector), address(bribes), _rewardsDuration
+            _admin,
+            address(collector),
+            address(distributor),
+            address(voter),
+            _rewardsDuration
         );
+        voter.initialize(address(veIRED));
 
         // grant infrared ibgt minter role
         ibgt.grantRole(ibgt.MINTER_ROLE(), address(infrared));

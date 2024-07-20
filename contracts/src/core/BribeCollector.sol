@@ -8,7 +8,8 @@ import {InfraredUpgradeable} from "@core/InfraredUpgradeable.sol";
 import {Errors} from "@utils/Errors.sol";
 
 import {IBribeCollector} from "@interfaces/IBribeCollector.sol";
-import {IInfraredBribes} from "@interfaces/IInfraredBribes.sol";
+import {IInfrared} from "@interfaces/IInfrared.sol";
+import {IInfraredVault} from "@interfaces/IInfraredVault.sol";
 
 /**
  * @title BribeCollector
@@ -26,33 +27,22 @@ contract BribeCollector is InfraredUpgradeable, IBribeCollector {
     /// @inheritdoc IBribeCollector
     uint256 public payoutAmount;
 
-    /// @inheritdoc IBribeCollector
-    address public rewardReceiver;
-
-    constructor() InfraredUpgradeable() {}
+    constructor(address _infrared) InfraredUpgradeable(_infrared) {
+        if (_infrared == address(0)) revert Errors.ZeroAddress();
+    }
 
     function initialize(
         address _admin,
         address _payoutToken,
-        address _rewardReceiver,
         uint256 _payoutAmount
     ) external initializer {
-        if (
-            _admin == address(0) || _payoutToken == address(0)
-                || _rewardReceiver == address(0)
-        ) {
+        if (_admin == address(0) || _payoutToken == address(0)) {
             revert Errors.ZeroAddress();
         }
         if (_payoutAmount == 0) revert Errors.ZeroAmount();
 
-        // grand admin access roles
-        _grantRole(DEFAULT_ADMIN_ROLE, _admin);
-        _grantRole(KEEPER_ROLE, _admin);
-        _grantRole(GOVERNANCE_ROLE, _admin);
-
         payoutToken = _payoutToken;
         payoutAmount = _payoutAmount;
-        rewardReceiver = _rewardReceiver;
         emit PayoutAmountSet(0, _payoutAmount);
 
         // init upgradeable components
@@ -79,10 +69,12 @@ contract BribeCollector is InfraredUpgradeable, IBribeCollector {
         external
     {
         IERC20(payoutToken).safeIncreaseAllowance(
-            address(rewardReceiver), payoutAmount
+            address(infrared), payoutAmount
         );
-        // Notify that the reward amount has been updated.
-        IInfraredBribes(rewardReceiver).notifyRewardAmount(payoutAmount);
+
+        // Callback into infrared post auction to split amount to vaults and protocol
+        infrared.collectBribes(payoutToken, payoutAmount);
+
         // From all the specified fee tokens, transfer them to the recipient.
         for (uint256 i = 0; i < _feeTokens.length; i++) {
             address feeToken = _feeTokens[i];

@@ -10,6 +10,11 @@ contract MockBeaconDepositContract is IBeaconDepositContract {
     }
 
     mapping(bytes => Validator) public validators;
+    mapping(bytes => address) public getOperator;
+
+    function setOperator(bytes calldata pubkey, address operator) external {
+        getOperator[pubkey] = operator;
+    }
 
     function deposit(
         bytes calldata validatorPubKey,

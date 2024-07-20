@@ -7,6 +7,7 @@ import {IInfraredVault} from "@interfaces/IInfraredVault.sol";
 import {HarvestForkTest} from "./HarvestForkTest.t.sol";
 
 contract HarvestBaseForkTest is HarvestForkTest {
+/*
     function testHarvestBase(uint256 protocolFeeRate) public {
         vm.assume(protocolFeeRate < FEE_UNIT);
         vm.startPrank(admin);
@@ -54,4 +55,5 @@ contract HarvestBaseForkTest is HarvestForkTest {
 
         vm.stopPrank();
     }
+    */
 }

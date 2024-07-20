@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {IAccessControl} from "@openzeppelin/access/IAccessControl.sol";
+import {IInfrared} from "@interfaces/IInfrared.sol";
 
 interface IInfraredUpgradeable is IAccessControl {
     /// @notice Access control for keeper role
@@ -9,4 +10,7 @@ interface IInfraredUpgradeable is IAccessControl {
 
     /// @notice Access control for governance role
     function GOVERNANCE_ROLE() external view returns (bytes32);
+
+    /// @notice Infrared coordinator contract
+    function infrared() external view returns (IInfrared);
 }

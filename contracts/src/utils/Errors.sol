@@ -22,26 +22,30 @@ library Errors {
     error Unauthorized(address sender);
     error NoRewardsHarvested();
     error IBGTNotRewardToken();
+    error IREDNotRewardToken();
     error IBGTNotStakingToken();
     error StakedInRewardsVault();
     error NoRewardsVault();
 
     // InfraredValidators errors.
     error InvalidValidator();
+    error InvalidOperator();
     error InvalidDepositAmount();
 
     // Infrared errors.
     error VaultNotSupported();
     error VaultNotStaked();
     error ClaimDistrRewardsFailed();
+    error ClaimableRewardsExist();
     error DuplicateAssetAddress();
     error VaultDeploymentFailed();
     error RewardTokenNotSupported();
     error BGTBalanceMismatch();
     error NotInfrared();
     error NotInitialized();
-    error InvalidProtocolFeeRate();
+    error InvalidFee();
     error InvalidCommissionRate();
     error InvalidDelegatee();
+    error InvalidWeight();
     error MaxProtocolFeeAmount();
 }

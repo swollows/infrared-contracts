@@ -4,6 +4,7 @@ pragma solidity 0.8.22;
 import "./Helper.sol";
 import "@forge-std/console2.sol";
 import "@core/Infrared.sol";
+import "@interfaces/IInfrared.sol";
 
 contract InfraredRewardsTest is Helper {
     /*//////////////////////////////////////////////////////////////
@@ -37,25 +38,33 @@ contract InfraredRewardsTest is Helper {
         address user = address(123);
         stakeInVault(address(infraredVault), stakingAsset, user, 100 ether);
 
+        // TODO: include voting fees distribution
         vm.startPrank(governance);
-        infrared.updateProtocolFeeRate(address(ibgt), 3e5);
+        infrared.updateFee(IInfrared.FeeType.HarvestVaultFeeRate, 3e5);
+        infrared.updateFee(IInfrared.FeeType.HarvestVaultProtocolRate, 1e6);
+        infrared.updateIredMintRate(2e6); // 2x
         vm.stopPrank();
 
         vm.warp(10 days);
         vm.startPrank(keeper);
         uint256 vaultBalanceBefore = ibgt.balanceOf(address(infraredVault));
+        uint256 vaultIredBalanceBefore = ired.balanceOf(address(infraredVault));
         uint256 protocolFeeAmountBefore =
             infrared.protocolFeeAmounts(address(ibgt));
+        uint256 protocolFeeAmountIredBefore =
+            infrared.protocolFeeAmounts(address(ired));
 
         uint256 amt = 1099999999999999958400;
         uint256 protocolFees = (amt * 3e5) / 1e6;
         uint256 bgtAmt = amt - protocolFees;
 
+        uint256 iredAmt = 2 * amt;
+
         vm.expectEmit();
         emit IInfrared.VaultHarvested(
             keeper, stakingAsset, address(infraredVault), amt
         );
-        emit IInfrared.IBGTSupplied(address(infraredVault), bgtAmt);
+        emit IInfrared.IBGTSupplied(address(infraredVault), bgtAmt, iredAmt);
         infrared.harvestVault(stakingAsset);
         vm.stopPrank();
 
@@ -66,6 +75,13 @@ contract InfraredRewardsTest is Helper {
         assertEq(
             infrared.protocolFeeAmounts(address(ibgt)),
             protocolFeeAmountBefore + protocolFees
+        );
+
+        uint256 vaultIredBalanceAfter = ired.balanceOf(address(infraredVault));
+        assertEq(vaultIredBalanceAfter, vaultIredBalanceBefore + iredAmt);
+        assertEq(
+            infrared.protocolFeeAmounts(address(ired)),
+            protocolFeeAmountIredBefore
         );
     }
 
