@@ -18,6 +18,9 @@ contract MockInfrared {
 
     EnumerableSet.AddressSet internal _infraredValidators;
 
+    mapping(bytes pub => address validator) internal _infraredPubkeyToValidator;
+    mapping(address validator => bytes pub) internal _infraredValidatorToPubkey;
+
     event VaultHarvested(address vault);
 
     mapping(address => IInfraredVault) public vaultRegistry;
@@ -36,8 +39,27 @@ contract MockInfrared {
         _infraredValidators.add(validator);
     }
 
+    // TODO: replace other function checking other tests not affected
+    function addValidator(address validator, bytes memory pubkey) external {
+        _infraredValidators.add(validator);
+        _infraredPubkeyToValidator[pubkey] = validator;
+        _infraredValidatorToPubkey[validator] = pubkey;
+    }
+
+    // TODO: replace with fn signature more in line with Infrared.sol
     function removeValidator(address validator) external {
         _infraredValidators.remove(validator);
+        bytes memory pubkey = _infraredValidatorToPubkey[validator];
+        delete _infraredValidatorToPubkey[validator];
+        delete _infraredPubkeyToValidator[pubkey];
+    }
+
+    function isInfraredValidator(bytes calldata pubkey)
+        external
+        view
+        returns (bool)
+    {
+        return (_infraredPubkeyToValidator[pubkey] != address(0));
     }
 
     function numInfraredValidators() external view returns (uint256) {
