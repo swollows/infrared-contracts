@@ -1,17 +1,21 @@
-[submodule "contracts/lib/forge-std"]
-	path = contracts/lib/forge-std
+[submodule "lib/forge-std"]
+	path = lib/forge-std
 	url = https://github.com/foundry-rs/forge-std
-[submodule "contracts/lib/solmate"]
-	path = contracts/lib/solmate
-	url = https://github.com/transmissions11/solmate
-[submodule "contracts/lib/prb-test"]
-	path = contracts/lib/prb-test
-	url = https://github.com/PaulRBerg/prb-test
-[submodule "contracts/lib/openzeppelin-contracts-upgradeable"]
-	path = contracts/lib/openzeppelin-contracts-upgradeable
+[submodule "lib/openzeppelin-contracts"]
+	path = lib/openzeppelin-contracts
+	url = https://github.com/OpenZeppelin/openzeppelin-contracts
+[submodule "lib/openzeppelin-contracts-upgradeable"]
+	path = lib/openzeppelin-contracts-upgradeable
 	url = https://github.com/OpenZeppelin/openzeppelin-contracts-upgradeable
-	tag = v5.0.1
-[submodule "contracts/lib/openzeppelin-contracts"]
-	path = contracts/lib/openzeppelin-contracts
-	url = https://github.com/OpenZeppelin/openzeppelin-contracts.git
-	branch = master
+[submodule "lib/contracts-monorepo"]
+	path = lib/contracts-monorepo
+	url = https://github.com/berachain/contracts-monorepo
+[submodule "lib/solady"]
+	path = lib/solady
+	url = https://github.com/vectorized/solady
+[submodule "lib/solmate"]
+	path = lib/solmate
+	url = https://github.com/transmissions11/solmate
+[submodule "lib/prb-test"]
+	path = lib/prb-test
+	url = https://github.com/PaulRBerg/prb-test

@@ -1,8 +1,0 @@
-#!/bin/sh
-. "$(dirname "$0")/_/husky.sh"
-
-# Format the contracts
-npm run format:contracts
-
-# Stage the changes
-git add -u

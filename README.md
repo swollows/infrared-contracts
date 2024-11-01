@@ -11,16 +11,3 @@ The Infrared Protocol is designed to democratize access to staking, fostering br
 **Prerequisites:**
 
 - [Foundry](https://book.getfoundry.sh/getting-started/installation)
-
-## Getting Started
-
-```bash
-# Setup the repo dependencies
-make setup
-
-# Build contracts
-make build
-
-# Run smart contract tests 
-make test
-```

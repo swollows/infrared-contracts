@@ -30,6 +30,8 @@ src/script/devnet/loadEnv.sh
 
 ## IDE
 .idea/
+.husky/
+.vscode/
 
 ## Secrets.
 .env

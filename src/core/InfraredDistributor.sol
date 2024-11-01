@@ -1,0 +1,134 @@
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity 0.8.26;
+
+import {SafeERC20} from "@openzeppelin/token/ERC20/utils/SafeERC20.sol";
+import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
+
+import {IBeaconDeposit as IBerachainBeaconDeposit} from
+    "@berachain/pol/interfaces/IBeaconDeposit.sol";
+
+import {InfraredUpgradeable} from "@core/InfraredUpgradeable.sol";
+
+import {IInfrared} from "@interfaces/IInfrared.sol";
+import {IInfraredDistributor} from "@interfaces/IInfraredDistributor.sol";
+import {Errors} from "@utils/Errors.sol";
+
+/// @title InfraredDistributor
+/// @notice A contract for distributing rewards in a single ERC20 token (iBGT) to validators
+contract InfraredDistributor is InfraredUpgradeable, IInfraredDistributor {
+    using SafeERC20 for IERC20;
+
+    // token for reward payouts
+    IERC20 public token;
+
+    // cumulative reward amount of token per validator
+    uint256 public amountsCumulative;
+
+    // validator pubkey claimed amounts status
+    mapping(bytes pubkey => Snapshot) public snapshots;
+
+    // registry of validator pubkey to address for claims
+    mapping(bytes pubkey => address) public validators;
+
+    constructor(address _infrared) InfraredUpgradeable(_infrared) {
+        if (_infrared == address(0)) revert Errors.ZeroAddress();
+    }
+
+    function initialize() external initializer {
+        token = IERC20(address(infrared.ibgt()));
+
+        // claim amounts calculated via differences so absolute amount not relevant
+        amountsCumulative++;
+
+        // init upgradeable components
+        __InfraredUpgradeable_init();
+    }
+
+    /// @inheritdoc IInfraredDistributor
+    function add(bytes calldata pubkey, address validator)
+        external
+        onlyInfrared
+    {
+        if (validators[pubkey] != address(0)) {
+            revert Errors.ValidatorAlreadyExists();
+        }
+        validators[pubkey] = validator;
+
+        Snapshot storage s = snapshots[pubkey];
+        uint256 _amountsCumulative = amountsCumulative;
+
+        s.amountCumulativeLast = _amountsCumulative;
+        s.amountCumulativeFinal = 0;
+
+        emit Added(pubkey, validator, _amountsCumulative);
+    }
+
+    /// @inheritdoc IInfraredDistributor
+    function remove(bytes calldata pubkey) external onlyInfrared {
+        address validator = validators[pubkey];
+        if (validator == address(0)) revert Errors.ValidatorDoesNotExist();
+
+        uint256 _amountsCumulative = amountsCumulative;
+        if (_amountsCumulative == 0) revert Errors.ZeroAmount();
+
+        Snapshot storage s = snapshots[pubkey];
+        s.amountCumulativeFinal = _amountsCumulative;
+
+        emit Removed(pubkey, validator, _amountsCumulative);
+    }
+
+    /// @inheritdoc IInfraredDistributor
+    function purge(bytes calldata pubkey) external {
+        address validator = validators[pubkey];
+        if (validator == address(0)) revert Errors.ValidatorDoesNotExist();
+
+        Snapshot memory s = snapshots[pubkey];
+        if (s.amountCumulativeLast == 0) revert Errors.ZeroAmount();
+        if (s.amountCumulativeLast != s.amountCumulativeFinal) {
+            revert Errors.ClaimableRewardsExist();
+        }
+
+        delete snapshots[pubkey];
+        delete validators[pubkey];
+
+        emit Purged(pubkey, validator);
+    }
+
+    /// @inheritdoc IInfraredDistributor
+    function notifyRewardAmount(uint256 amount) external {
+        if (amount == 0) revert Errors.ZeroAmount();
+
+        uint256 num = infrared.numInfraredValidators();
+        if (num == 0) revert Errors.InvalidValidator();
+
+        unchecked {
+            amountsCumulative += amount / num;
+        }
+        token.safeTransferFrom(msg.sender, address(this), amount);
+
+        emit Notified(amount, num);
+    }
+
+    /// @inheritdoc IInfraredDistributor
+    function claim(bytes calldata pubkey, address recipient) external {
+        address validator = validators[pubkey];
+        if (validator != msg.sender) revert Errors.InvalidValidator();
+
+        Snapshot memory s = snapshots[pubkey];
+        if (s.amountCumulativeLast == 0) revert Errors.ZeroAmount();
+
+        uint256 fin = s.amountCumulativeFinal == 0
+            ? amountsCumulative
+            : s.amountCumulativeFinal;
+        uint256 amount;
+        unchecked {
+            amount = fin - s.amountCumulativeLast;
+        }
+
+        s.amountCumulativeLast = fin;
+        snapshots[pubkey] = s;
+
+        if (amount > 0) token.safeTransfer(recipient, amount);
+        emit Claimed(pubkey, validator, recipient, amount);
+    }
+}

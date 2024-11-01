@@ -1,0 +1,72 @@
+[profile.default]
+ignored_error_codes = [1878, 5574]
+evm_version = 'shanghai'
+solc = '0.8.26'
+cache = true
+force = false
+optimizer = true
+optimizer_runs = 1
+verbosity = 1
+via_ir = true
+fuzz = { runs = 1_000 }
+test = 'tests'
+remappings = [
+    '@forge-std/=lib/forge-std/src/',
+    '@openzeppelin/=lib/openzeppelin-contracts/contracts/',
+    '@openzeppelin-upgradeable/=lib/openzeppelin-contracts-upgradeable/contracts/',
+    '@solmate/=lib/solmate/src/',
+    'solady/src/=lib/solady/src/',
+    'solady/test/=lib/solady/test/',
+    '@berachain/=lib/contracts-monorepo/src/',
+    '@utils/=src/utils/',
+    '@interfaces/=src/interfaces/',
+    '@core/=src/core/',
+    '@vendors/=src/vendors/',
+    '@prb/=lib/prb-test/src/',
+    '@vesting/=src/vesting/',
+    '@mocks/=tests/unit/mocks',
+    '@voting/=src/voting/',
+    '@staking/=src/staking/',
+]
+
+[profile.ci]
+fuzz = { runs = 256 }
+verbosity = 4
+remappings = [
+    '@forge-std/=lib/forge-std/src/',
+    '@openzeppelin/=lib/openzeppelin-contracts/contracts/',
+    '@openzeppelin-upgradeable/=lib/openzeppelin-contracts-upgradeable/contracts/',
+    '@solmate/=lib/solmate/src/',
+    'solady/src/=lib/solady/src/',
+    'solady/test/=lib/solady/test/',
+    '@berachain/=lib/contracts-monorepo/src/',
+    '@utils/=src/utils/',
+    '@interfaces/=src/interfaces/',
+    '@core/=src/core/',
+    '@vendors/=src/vendors/',
+    '@prb/=lib/prb-test/src/',
+    '@vesting/=src/vesting/',
+    '@mocks/=tests/unit/mocks',
+    '@voting/=src/voting/',
+    '@staking/=src/staking/',
+]
+
+[profile.default.optimizer_details]
+constantOptimizer = true
+yul = true
+
+[profile.default.optimizer_details.yulDetails]
+stackAllocation = true
+
+[rpc_endpoints]
+local = "${RPC_URL_LOCAL}"
+devnet = "${RPC_URL_DEVNET}"
+testnet = "${RPC_URL_TESTNET}"
+mainnet = "${RPC_URL_MAINNET}"
+
+# [etherscan]
+# goerli = { key = "${ETHERSCAN_KEY}", url = "https://api-goerli.etherscan.io/api" }
+# mainnet = { key = "${ETHERSCAN_KEY}" }
+[fmt]
+line_length = 80
+int_types = "long"
