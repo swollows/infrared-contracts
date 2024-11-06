@@ -9,6 +9,7 @@ interface IIBERA is IERC20, IAccessControl {
     error NotInitialized();
     error InvalidShares();
     error InvalidAmount();
+    error InvalidSignature();
 
     event Mint(
         address indexed receiver,
@@ -27,6 +28,7 @@ interface IIBERA is IERC20, IAccessControl {
     event Sweep(uint256 amount);
     event Register(bytes pubkey, int256 delta, uint256 stake);
     event SetFeeProtocol(uint16 from, uint16 to);
+    event SetDepositSignature(bytes pubkey, bytes from, bytes to);
 
     /// @notice Address of the Infrared operator contract
     function infrared() external view returns (address);
@@ -50,6 +52,17 @@ interface IIBERA is IERC20, IAccessControl {
     /// @notice Returns the amount of BERA staked in validator with given pubkey
     /// @return The amount of BERA staked in validator
     function stakes(bytes calldata pubkey) external view returns (uint256);
+
+    /// @notice Returns whether initial deposit has been staked to validator with given pubkey
+    /// @return Whethere initial deposit has been staked to validator
+    function staked(bytes calldata pubkey) external view returns (bool);
+
+    /// @notice Returns the deposit signature to use for given pubkey
+    /// @return The deposit signature for pubkey
+    function signatures(bytes calldata pubkey)
+        external
+        view
+        returns (bytes memory);
 
     /// @notice Fee taken by the protocol on yield from EL coinbase priority fees + MEV, represented as an integer denominator (1/x)%
     /// @return The fee taken by protocol
@@ -117,4 +130,12 @@ interface IIBERA is IERC20, IAccessControl {
     /// @notice Sets the fee protocol taken on yield from EL coinbase priority fees + MEV
     /// @param to The new fee protocol represented as an integer denominator (1/x)%
     function setFeeProtocol(uint16 to) external;
+
+    /// @notice Sets the deposit signature to be used when depositing to pubkey
+    /// @param pubkey The pubkey of the validator receiving the deposit
+    /// @param signature The deposit signature to use for pubkey
+    function setDepositSignature(
+        bytes calldata pubkey,
+        bytes calldata signature
+    ) external;
 }

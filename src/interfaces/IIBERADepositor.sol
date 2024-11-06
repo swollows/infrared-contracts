@@ -6,6 +6,7 @@ interface IIBERADepositor {
     error InvalidValidator();
     error InvalidAmount();
     error InvalidFee();
+    error InvalidSignature();
 
     event Queue(uint256 nonce, uint256 amount);
     event Execute(bytes pubkey, uint256 start, uint256 end, uint256 amount);
@@ -43,10 +44,5 @@ interface IIBERADepositor {
     /// @notice Executes a deposit to deposit precompile using escrowed funds
     /// @param pubkey The pubkey to deposit validator funds to
     /// @param amount The amount of funds to use from escrow to deposit to validator
-    /// @param signature The signature used only on the first deposit
-    function execute(
-        bytes calldata pubkey,
-        uint256 amount,
-        bytes calldata signature
-    ) external;
+    function execute(bytes calldata pubkey, uint256 amount) external;
 }

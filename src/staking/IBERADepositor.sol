@@ -82,11 +82,7 @@ contract IBERADepositor is IIBERADepositor {
     }
 
     /// @inheritdoc IIBERADepositor
-    function execute(
-        bytes calldata pubkey,
-        uint256 amount,
-        bytes calldata signature
-    ) external {
+    function execute(bytes calldata pubkey, uint256 amount) external {
         bool kpr = IIBERA(IBERA).keeper(msg.sender);
         // check if in *current* validator set on Infrared
         if (!IIBERA(IBERA).validator(pubkey)) revert InvalidValidator();
@@ -95,9 +91,16 @@ contract IBERADepositor is IIBERADepositor {
             amount == 0 || (amount % 1 gwei) != 0
                 || ((IIBERA(IBERA).stakes(pubkey) + amount) / 1 gwei)
                     > type(uint64).max
+                || (
+                    !IIBERA(IBERA).staked(pubkey)
+                        && amount != IBERAConstants.INITIAL_DEPOSIT
+                )
         ) {
             revert InvalidAmount();
         }
+        // check if governor has added a valid deposit signature to avoid keeper mistakenly burning
+        bytes memory signature = IIBERA(IBERA).signatures(pubkey);
+        if (signature.length == 0) revert InvalidSignature();
 
         // cache for event after the bundling while loop
         address withdrawor = IIBERA(IBERA).withdrawor();

@@ -265,7 +265,7 @@ contract IBERATest is IBERABaseTest {
         vm.expectEmit();
         emit IIBERA.Sweep(comp_);
 
-        uint256 value = 40 ether;
+        uint256 value = 100 ether;
         (uint256 nonce_, uint256 shares_) = ibera.mint{value: value}(alice);
 
         assertEq(depositor.fees(), depositorFees + 2 * fee);
@@ -361,9 +361,13 @@ contract IBERATest is IBERABaseTest {
     function testBurnBurnsShares() public {
         testMintCompoundsPrior();
 
+        vm.prank(governor);
+        ibera.setDepositSignature(pubkey0, signature0);
         uint256 _reserves = depositor.reserves();
         vm.prank(keeper);
-        depositor.execute(pubkey0, _reserves, signature0);
+        depositor.execute(pubkey0, IBERAConstants.INITIAL_DEPOSIT);
+        vm.prank(keeper);
+        depositor.execute(pubkey0, _reserves - IBERAConstants.INITIAL_DEPOSIT);
         assertEq(ibera.confirmed(), _reserves);
         assertEq(depositor.reserves(), 0);
 
@@ -385,9 +389,13 @@ contract IBERATest is IBERABaseTest {
     function testBurnUpdatesDeposits() public {
         testMintCompoundsPrior();
 
+        vm.prank(governor);
+        ibera.setDepositSignature(pubkey0, signature0);
         uint256 _reserves = depositor.reserves();
         vm.prank(keeper);
-        depositor.execute(pubkey0, _reserves, signature0);
+        depositor.execute(pubkey0, IBERAConstants.INITIAL_DEPOSIT);
+        vm.prank(keeper);
+        depositor.execute(pubkey0, _reserves - IBERAConstants.INITIAL_DEPOSIT);
         assertEq(ibera.confirmed(), _reserves);
         assertEq(depositor.reserves(), 0);
 
@@ -410,9 +418,13 @@ contract IBERATest is IBERABaseTest {
     function testBurnQueuesToWithdrawor() public {
         testMintCompoundsPrior();
 
+        vm.prank(governor);
+        ibera.setDepositSignature(pubkey0, signature0);
         uint256 _reserves = depositor.reserves();
         vm.prank(keeper);
-        depositor.execute(pubkey0, _reserves, signature0);
+        depositor.execute(pubkey0, IBERAConstants.INITIAL_DEPOSIT);
+        vm.prank(keeper);
+        depositor.execute(pubkey0, _reserves - IBERAConstants.INITIAL_DEPOSIT);
         assertEq(ibera.confirmed(), _reserves);
         assertEq(depositor.reserves(), 0);
 
@@ -461,9 +473,13 @@ contract IBERATest is IBERABaseTest {
     function testBurnCompoundsPrior() public {
         testMintCompoundsPrior();
 
+        vm.prank(governor);
+        ibera.setDepositSignature(pubkey0, signature0);
         uint256 _reserves = depositor.reserves();
         vm.prank(keeper);
-        depositor.execute(pubkey0, _reserves, signature0);
+        depositor.execute(pubkey0, IBERAConstants.INITIAL_DEPOSIT);
+        vm.prank(keeper);
+        depositor.execute(pubkey0, _reserves - IBERAConstants.INITIAL_DEPOSIT);
         assertEq(ibera.confirmed(), _reserves);
         assertEq(depositor.reserves(), 0);
 
@@ -545,9 +561,13 @@ contract IBERATest is IBERABaseTest {
     function testBurnEmitsBurn() public {
         testMintCompoundsPrior();
 
+        vm.prank(governor);
+        ibera.setDepositSignature(pubkey0, signature0);
         uint256 _reserves = depositor.reserves();
         vm.prank(keeper);
-        depositor.execute(pubkey0, _reserves, signature0);
+        depositor.execute(pubkey0, IBERAConstants.INITIAL_DEPOSIT);
+        vm.prank(keeper);
+        depositor.execute(pubkey0, _reserves - IBERAConstants.INITIAL_DEPOSIT);
         assertEq(ibera.confirmed(), _reserves);
         assertEq(depositor.reserves(), 0);
 
@@ -571,9 +591,13 @@ contract IBERATest is IBERABaseTest {
     function testBurnRevertsWhenSharesZero() public {
         testMintCompoundsPrior();
 
+        vm.prank(governor);
+        ibera.setDepositSignature(pubkey0, signature0);
         uint256 _reserves = depositor.reserves();
         vm.prank(keeper);
-        depositor.execute(pubkey0, _reserves, signature0);
+        depositor.execute(pubkey0, IBERAConstants.INITIAL_DEPOSIT);
+        vm.prank(keeper);
+        depositor.execute(pubkey0, _reserves - IBERAConstants.INITIAL_DEPOSIT);
         assertEq(ibera.confirmed(), _reserves);
         assertEq(depositor.reserves(), 0);
 
@@ -586,9 +610,13 @@ contract IBERATest is IBERABaseTest {
     function testBurnRevertsWhenFeeBelowMinimum() public {
         testMintCompoundsPrior();
 
+        vm.prank(governor);
+        ibera.setDepositSignature(pubkey0, signature0);
         uint256 _reserves = depositor.reserves();
         vm.prank(keeper);
-        depositor.execute(pubkey0, _reserves, signature0);
+        depositor.execute(pubkey0, IBERAConstants.INITIAL_DEPOSIT);
+        vm.prank(keeper);
+        depositor.execute(pubkey0, _reserves - IBERAConstants.INITIAL_DEPOSIT);
         assertEq(ibera.confirmed(), _reserves);
         assertEq(depositor.reserves(), 0);
 
@@ -672,5 +700,20 @@ contract IBERATest is IBERABaseTest {
         uint16 feeProtocol = 4; // 25% of fees
         vm.expectRevert(IIBERA.Unauthorized.selector);
         ibera.setFeeProtocol(feeProtocol);
+    }
+
+    function testSetDepositSignatureUpdatesSignature() public {
+        assertEq(ibera.signatures(pubkey0).length, 0);
+        vm.prank(governor);
+        ibera.setDepositSignature(pubkey0, signature0);
+        assertEq(ibera.signatures(pubkey0), signature0);
+    }
+
+    function testSetDepositSignatureEmitsSetDepositSignature() public {
+        assertEq(ibera.signatures(pubkey0).length, 0);
+    }
+
+    function testSetDepositSignatureRevertsWhenUnauthorized() public {
+        assertEq(ibera.signatures(pubkey0).length, 0);
     }
 }

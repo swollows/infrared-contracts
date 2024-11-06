@@ -10,11 +10,15 @@ import {IBERABaseTest} from "./IBERABase.t.sol";
 contract IBERAWithdraworTest is IBERABaseTest {
     function setUp() public virtual override {
         super.setUp();
-        uint256 value = 96 ether + IBERAConstants.MINIMUM_DEPOSIT_FEE;
+        uint256 value = 200 ether + IBERAConstants.MINIMUM_DEPOSIT_FEE;
         ibera.mint{value: value}(alice);
-        uint256 amount = 48 ether + IBERAConstants.MINIMUM_DEPOSIT;
+        uint256 amount = 100 ether + IBERAConstants.MINIMUM_DEPOSIT;
+        vm.prank(governor);
+        ibera.setDepositSignature(pubkey0, signature0);
         vm.prank(keeper);
-        depositor.execute(pubkey0, amount, signature0);
+        depositor.execute(pubkey0, IBERAConstants.INITIAL_DEPOSIT);
+        vm.prank(keeper);
+        depositor.execute(pubkey0, amount - IBERAConstants.INITIAL_DEPOSIT);
     }
 
     function testSetUp() public virtual override {
@@ -27,10 +31,10 @@ contract IBERAWithdraworTest is IBERABaseTest {
         assertEq(feeFirst_, 0);
         assertEq(feeSecond_, 0);
         assertEq(amountFirst_, 0);
-        assertEq(amountSecond_, 48 ether);
-        assertEq(ibera.deposits(), 96 ether + IBERAConstants.MINIMUM_DEPOSIT);
-        assertEq(ibera.confirmed(), 48 ether + IBERAConstants.MINIMUM_DEPOSIT);
-        assertEq(ibera.pending(), 48 ether);
+        assertEq(amountSecond_, 100 ether);
+        assertEq(ibera.deposits(), 200 ether + IBERAConstants.MINIMUM_DEPOSIT);
+        assertEq(ibera.confirmed(), 100 ether + IBERAConstants.MINIMUM_DEPOSIT);
+        assertEq(ibera.pending(), 100 ether);
     }
 
     function testQueueUpdatesFees() public {

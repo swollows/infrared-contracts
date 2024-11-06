@@ -44,6 +44,12 @@ contract IBERA is ERC20, AccessControl, IIBERA {
     mapping(bytes => uint256) public stakes;
 
     /// @inheritdoc IIBERA
+    mapping(bytes => bool) public staked;
+
+    /// @inheritdoc IIBERA
+    mapping(bytes => bytes) public signatures;
+
+    /// @inheritdoc IIBERA
     uint16 public feeProtocol;
 
     /// @notice Whether initial mint to address(this) has happened
@@ -197,6 +203,9 @@ contract IBERA is ERC20, AccessControl, IIBERA {
         if (delta > 0) stake += uint256(delta);
         else stake -= uint256(-delta);
         stakes[pubkey] = stake;
+        // update whether have staked to validator before
+        if (delta > 0 && !staked[pubkey]) staked[pubkey] = true;
+
         emit Register(pubkey, delta, stake);
     }
 
@@ -205,5 +214,16 @@ contract IBERA is ERC20, AccessControl, IIBERA {
         if (!governor(msg.sender)) revert Unauthorized();
         emit SetFeeProtocol(feeProtocol, to);
         feeProtocol = to;
+    }
+
+    /// @inheritdoc IIBERA
+    function setDepositSignature(
+        bytes calldata pubkey,
+        bytes calldata signature
+    ) external {
+        if (!governor(msg.sender)) revert Unauthorized();
+        if (signature.length != 96) revert InvalidSignature();
+        emit SetDepositSignature(pubkey, signatures[pubkey], signature);
+        signatures[pubkey] = signature;
     }
 }
