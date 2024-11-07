@@ -5,6 +5,8 @@ import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol"
 import "forge-std/Test.sol";
 
 import {InfraredVault, Errors, MultiRewards} from "@core/InfraredVault.sol";
+import {IMultiRewards} from "@interfaces/IMultiRewards.sol";
+
 import {IBGT} from "@core/IBGT.sol";
 
 import {IInfrared} from "@interfaces/IInfrared.sol";
@@ -510,7 +512,7 @@ contract InfraredVaultTest is Test {
         vm.stopPrank();
         vm.startPrank(infrared);
         vm.expectEmit();
-        emit MultiRewards.RewardsDurationUpdated(
+        emit IMultiRewards.RewardsDurationUpdated(
             address(rewardsToken), newDuration
         );
         infraredVault.updateRewardsDuration(address(rewardsToken), newDuration);

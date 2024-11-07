@@ -10,9 +10,12 @@ import {ERC2771Context} from "@openzeppelin/metatx/ERC2771Context.sol";
 import {ReentrancyGuard} from "@openzeppelin/utils/ReentrancyGuard.sol";
 import {VelodromeTimeLibrary} from "../libraries/VelodromeTimeLibrary.sol";
 
-/// @title Reward
-/// @author velodrome.finance, @figs999, @pegahcarter
-/// @notice Base reward contract for distribution of rewards
+/**
+ * @title Reward
+ * @author velodrome.finance, @figs999, @pegahcarter
+ * @notice Base implementation for reward distribution contracts
+ * @dev Abstract contract providing core reward distribution functionality
+ */
 abstract contract Reward is IReward, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
@@ -25,29 +28,34 @@ abstract contract Reward is IReward, ReentrancyGuard {
     address public immutable ve;
     /// @inheritdoc IReward
     address public authorized;
-
     /// @inheritdoc IReward
     uint256 public totalSupply;
+    /// @inheritdoc IReward
+    uint256 public supplyNumCheckpoints;
+    /**
+     * @notice List of all reward tokens supported by this contract
+     * @dev Used for token enumeration and management
+     */
+    address[] public rewards;
     /// @inheritdoc IReward
     mapping(uint256 => uint256) public balanceOf;
     /// @inheritdoc IReward
     mapping(address => mapping(uint256 => uint256)) public tokenRewardsPerEpoch;
     /// @inheritdoc IReward
     mapping(address => mapping(uint256 => uint256)) public lastEarn;
-
-    address[] public rewards;
     /// @inheritdoc IReward
     mapping(address => bool) public isReward;
-
     /// @notice A record of balance checkpoints for each account, by index
     mapping(uint256 => mapping(uint256 => Checkpoint)) public checkpoints;
     /// @inheritdoc IReward
     mapping(uint256 => uint256) public numCheckpoints;
     /// @notice A record of balance checkpoints for each token, by index
     mapping(uint256 => SupplyCheckpoint) public supplyCheckpoints;
-    /// @inheritdoc IReward
-    uint256 public supplyNumCheckpoints;
 
+    /**
+     * @notice Initializes reward contract with voter address
+     * @param _voter Address of voter contract managing rewards
+     */
     constructor(address _voter) {
         voter = _voter;
         ve = IVoter(_voter).ve();
@@ -126,6 +134,12 @@ abstract contract Reward is IReward, ReentrancyGuard {
         }
         return lower;
     }
+    /**
+     * @notice Writes user checkpoint with updated balance
+     * @dev Updates or creates checkpoint based on epoch timing
+     * @param tokenId ID of veNFT to checkpoint
+     * @param balance New balance to record
+     */
 
     function _writeCheckpoint(uint256 tokenId, uint256 balance) internal {
         uint256 _nCheckPoints = numCheckpoints[tokenId];
@@ -145,6 +159,10 @@ abstract contract Reward is IReward, ReentrancyGuard {
             numCheckpoints[tokenId] = _nCheckPoints + 1;
         }
     }
+    /**
+     * @notice Writes global supply checkpoint
+     * @dev Updates or creates checkpoint based on epoch timing
+     */
 
     function _writeSupplyCheckpoint() internal {
         uint256 _nCheckPoints = supplyNumCheckpoints;
@@ -251,7 +269,13 @@ abstract contract Reward is IReward, ReentrancyGuard {
         nonReentrant
     {}
 
-    /// @dev used with all getReward implementations
+    /**
+     * @notice Internal helper for processing reward claims
+     * @dev Calculates and transfers earned rewards to recipient
+     * @param recipient Address to receive claimed rewards
+     * @param tokenId ID of veNFT claiming rewards
+     * @param tokens Array of reward tokens to claim
+     */
     function _getReward(
         address recipient,
         uint256 tokenId,
@@ -274,7 +298,13 @@ abstract contract Reward is IReward, ReentrancyGuard {
         nonReentrant
     {}
 
-    /// @dev used within all notifyRewardAmount implementations
+    /**
+     * @notice Internal helper for adding rewards
+     * @dev Transfers tokens and updates reward accounting
+     * @param sender Address providing reward tokens
+     * @param token Address of reward token
+     * @param amount Amount of tokens to add as rewards
+     */
     function _notifyRewardAmount(address sender, address token, uint256 amount)
         internal
     {

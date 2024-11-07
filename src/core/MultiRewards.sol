@@ -24,45 +24,49 @@ abstract contract MultiRewards is ReentrancyGuard, Pausable, IMultiRewards {
                                 STATE
     //////////////////////////////////////////////////////////////*/
 
-    // The token that users stake to earn rewards.
+    /**
+     * @notice The token that users stake to earn rewards
+     * @dev This is the base token that users deposit into the contract
+     */
     IERC20 public stakingToken;
 
-    // RewardData for each reward token.
+    /**
+     * @notice Stores reward-related data for each reward token
+     * @dev Maps reward token addresses to their Reward struct containing distribution parameters
+     */
     mapping(address => Reward) public override rewardData;
 
-    // List of reward tokens.
+    /**
+     * @notice Array of all reward token addresses
+     * @dev Used to iterate through all reward tokens when updating or claiming rewards
+     */
     address[] public rewardTokens;
 
-    // The amount of reward token that a user has earned.
+    /**
+     * @notice Tracks the reward per token paid to each user for each reward token
+     * @dev Maps user address to reward token address to amount already paid
+     * Used to calculate new rewards since last claim
+     */
     mapping(address => mapping(address => uint256)) public
         userRewardPerTokenPaid;
 
+    /**
+     * @notice Tracks the unclaimed rewards for each user for each reward token
+     * @dev Maps user address to reward token address to unclaimed amount
+     */
     mapping(address => mapping(address => uint256)) public rewards;
 
+    /**
+     * @notice The total amount of staking tokens in the contract
+     * @dev Used to calculate rewards per token
+     */
     uint256 internal _totalSupply;
 
-    // The balance of staked token for each user.
+    /**
+     * @notice Maps user addresses to their staked token balance
+     * @dev Internal mapping used to track individual stake amounts
+     */
     mapping(address => uint256) internal _balances;
-
-    /*//////////////////////////////////////////////////////////////
-                            EVENTS
-    //////////////////////////////////////////////////////////////*/
-
-    event RewardAdded(uint256 reward);
-
-    event Staked(address indexed user, uint256 amount);
-
-    event Withdrawn(address indexed user, uint256 amount);
-
-    event RewardPaid(
-        address indexed user, address indexed rewardsToken, uint256 reward
-    );
-
-    event RewardsDurationUpdated(address token, uint256 newDuration);
-
-    event Recovered(address token, uint256 amount);
-
-    event RewardStored(address rewardsToken, uint256 rewardsDuration);
 
     /*//////////////////////////////////////////////////////////////
                         MODIFIERS
@@ -103,19 +107,12 @@ abstract contract MultiRewards is ReentrancyGuard, Pausable, IMultiRewards {
                                READS
     //////////////////////////////////////////////////////////////*/
 
-    /**
-     * @notice Returns the number of staked tokens.
-     * @return uint256 The number of staked tokens.
-     */
+    /// @inheritdoc IMultiRewards
     function totalSupply() external view returns (uint256) {
         return _totalSupply;
     }
 
-    /**
-     * @notice Returns the balance of staked tokens for the given account.
-     * @param account   address The account to get the balance for.
-     * @return _balance uint256 The balance of staked tokens.
-     */
+    /// @inheritdoc IMultiRewards
     function balanceOf(address account)
         external
         view
@@ -124,12 +121,7 @@ abstract contract MultiRewards is ReentrancyGuard, Pausable, IMultiRewards {
         return _balances[account];
     }
 
-    /**
-     * @notice Calculates the last time reward is applicable for a given rewards token.
-     * @dev This function returns the minimum between the current block timestamp and the period finish time of the rewards token.
-     * @param _rewardsToken address The address of the rewards token.
-     * @return              uint256 value representing the last time reward is applicable.
-     */
+    /// @inheritdoc IMultiRewards
     function lastTimeRewardApplicable(address _rewardsToken)
         public
         view
@@ -138,13 +130,7 @@ abstract contract MultiRewards is ReentrancyGuard, Pausable, IMultiRewards {
         return Math.min(block.timestamp, rewardData[_rewardsToken].periodFinish);
     }
 
-    /**
-     * @notice Calculates the reward per token for a given rewards token.
-     * @param _rewardsToken address  The address of the rewards token.
-     * @return A uint256 value representing the reward per token.
-     * @dev This function returns the stored reward per token if the total supply is 0.
-     * Otherwise, it calculates the reward per token by adding the stored reward per token to the product of the reward rate and the time difference between the last applicable time for rewards and the last update time, multiplied by 1e18 and divided by the total supply.
-     */
+    /// @inheritdoc IMultiRewards
     function rewardPerToken(address _rewardsToken)
         public
         view
@@ -162,13 +148,7 @@ abstract contract MultiRewards is ReentrancyGuard, Pausable, IMultiRewards {
         );
     }
 
-    /**
-     * @notice Calculates the earned rewards for a given account and rewards token.
-     * @dev This function calculates the earned rewards by multiplying the account balance by the difference between the reward per token and the paid reward per token for the account, dividing by 1e18, and adding the rewards for the account.
-     * @param account       address The address of the account.
-     * @param _rewardsToken address The address of the rewards token.
-     * @return              uint256 value representing the earned rewards.
-     */
+    /// @inheritdoc IMultiRewards
     function earned(address account, address _rewardsToken)
         public
         view
@@ -181,12 +161,7 @@ abstract contract MultiRewards is ReentrancyGuard, Pausable, IMultiRewards {
         ).div(1e18).add(rewards[account][_rewardsToken]);
     }
 
-    /**
-     * @notice Calculates the total reward for the duration of a given rewards token.
-     * @dev This function calculates the total reward by multiplying the reward rate by the rewards duration for the given rewards token.
-     * @param _rewardsToken address The address of the rewards token.
-     * @return              uint256 value representing the total reward for the duration.
-     */
+    /// @inheritdoc IMultiRewards
     function getRewardForDuration(address _rewardsToken)
         external
         view
@@ -201,10 +176,7 @@ abstract contract MultiRewards is ReentrancyGuard, Pausable, IMultiRewards {
                             WRITES
     //////////////////////////////////////////////////////////////*/
 
-    /**
-     * @notice Stakes the given amount of tokens for the user (msg.sender).
-     * @param amount uint256 The amount of tokens to stake.
-     */
+    /// @inheritdoc IMultiRewards
     function stake(uint256 amount)
         external
         nonReentrant
@@ -227,10 +199,7 @@ abstract contract MultiRewards is ReentrancyGuard, Pausable, IMultiRewards {
      */
     function onStake(uint256 amount) internal virtual;
 
-    /**
-     * @notice Withdraws the staked tokens for the user (msg.sender).
-     * @param amount uint256 The amount of staked tokens to withdraw.
-     */
+    /// @inheritdoc IMultiRewards
     function withdraw(uint256 amount)
         public
         nonReentrant
@@ -252,10 +221,7 @@ abstract contract MultiRewards is ReentrancyGuard, Pausable, IMultiRewards {
      */
     function onWithdraw(uint256 amount) internal virtual;
 
-    /**
-     * @notice claims the rewards for the given user.
-     * @param _user address The address of the user to claim the rewards for.
-     */
+    /// @inheritdoc IMultiRewards
     function getRewardForUser(address _user)
         public
         nonReentrant
@@ -273,22 +239,17 @@ abstract contract MultiRewards is ReentrancyGuard, Pausable, IMultiRewards {
     }
 
     /**
-     * @notice Hook called in getRewardForUser function after updating rewards
+     * @notice Hook called in getRewardForUser function
      */
     function onReward() internal virtual;
 
-    /**
-     * @notice Claims all pending rewards for msg sender.
-     * @dev Change from forked MultiRewards.sol to allow for claim of reward for any user to their address
-     */
+    /// @inheritdoc IMultiRewards
     function getReward() public {
         onReward();
         getRewardForUser(msg.sender);
     }
 
-    /**
-     * @notice Withdraws the staked tokens and all rewards for the user.
-     */
+    /// @inheritdoc IMultiRewards
     function exit() external {
         withdraw(_balances[msg.sender]);
         getReward();
@@ -359,7 +320,7 @@ abstract contract MultiRewards is ReentrancyGuard, Pausable, IMultiRewards {
         rewardData[_rewardsToken].lastUpdateTime = block.timestamp;
         rewardData[_rewardsToken].periodFinish =
             block.timestamp.add(rewardData[_rewardsToken].rewardsDuration);
-        emit RewardAdded(reward);
+        emit RewardAdded(_rewardsToken, reward);
     }
 
     /**

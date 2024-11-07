@@ -21,95 +21,201 @@ import {DataTypes} from "@utils/DataTypes.sol";
 import {IInfraredUpgradeable} from "./IInfraredUpgradeable.sol";
 
 interface IInfrared is IInfraredUpgradeable {
-    /// @notice Whether given token is a whitelisted reward token
+    /**
+     * @notice Checks if a token is a whitelisted reward token
+     * @param _token The address of the token to check
+     * @return bool True if the token is whitelisted, false otherwise
+     */
     function whitelistedRewardTokens(address _token)
         external
         view
         returns (bool);
 
-    /// @notice Returns the infrared vault address for a given staking token
+    /**
+     * @notice Returns the infrared vault address for a given staking token
+     * @param _asset The address of the staking asset
+     * @return IInfraredVault The vault associated with the asset
+     */
     function vaultRegistry(address _asset)
         external
         view
         returns (IInfraredVault);
 
-    /// @notice The IBGT liquid staked token
+    /**
+     * @notice The IBGT liquid staked token
+     * @return IIBGT The IBGT token contract address
+     */
     function ibgt() external view returns (IIBGT);
 
-    /// @notice The Infrared governance token
+    /**
+     * @notice The Infrared governance token
+     * @return IERC20Mintable instance of the IRED token contract address
+     */
     function ired() external view returns (IERC20Mintable);
 
-    /// @notice The wrapped Infrared bera token
+    /**
+     * @notice The wrapped Infrared bera token
+     * @return IERC20 instance of the wibera token contract address
+     */
     function wibera() external view returns (IERC20);
 
-    /// @notice The Berachain rewards vault factory address
+    /**
+     * @notice The Berachain rewards vault factory address
+     * @return IBerachainRewardsVaultFactory instance of the rewards factory contract address
+     */
     function rewardsFactory()
         external
         view
         returns (IBerachainRewardsVaultFactory);
 
-    /// @notice The Berachain chef contract for distributing validator rewards
+    /**
+     * @notice The Berachain chef contract for distributing validator rewards
+     * @return IBeraChef instance of the BeraChef contract address
+     */
     function chef() external view returns (IBeraChef);
 
-    /// @notice The IBGT vault
+    /**
+     * @notice The IBGT vault
+     * @return IInfraredVault instance of the iBGT vault contract address
+     */
     function ibgtVault() external view returns (IInfraredVault);
 
-    /// @notice The wrapped IBERA vault
+    /**
+     * @notice The wrapped IBERA vault
+     * @return IInfraredVault instance of the wibera vault contract address
+     */
     function wiberaVault() external view returns (IInfraredVault);
 
-    /// @notice The unclaimed Infrared protocol fees of token accumulated by contract
-    /// @param token address The token address for the accumulated fees
+    /**
+     * @notice The unclaimed Infrared protocol fees of token accumulated by contract
+     * @param token address The token address for the accumulated fees
+     * @return uint256 The amount of accumulated fees
+     */
     function protocolFeeAmounts(address token)
         external
         view
         returns (uint256);
 
-    /// @notice Weight type enum for determining how much to weight reward distribution amongst recipients
+    /**
+     * @notice Weight type enum for determining how much to weight reward distribution amongst recipients
+     */
     enum WeightType {
         HarvestBaseWiberaVault,
         CollectBribesWiberaVault
     }
 
-    /// @notice Weights for various harvest function distributions
+    /**
+     * @notice Weights for various harvest function distributions
+     * @param i The index of the weight
+     * @return uint256 The weight value
+     */
     function weights(uint256 i) external view returns (uint256);
 
-    /// @notice Fee type enum for determining rates to charge on reward distribution.
-    enum FeeType {
-        HarvestBaseFeeRate,
-        HarvestBaseProtocolRate,
-        HarvestVaultFeeRate,
-        HarvestVaultProtocolRate,
-        HarvestBribesFeeRate,
-        HarvestBribesProtocolRate,
-        HarvestBoostFeeRate,
-        HarvestBoostProtocolRate
-    }
-
-    /// @notice Protocol fee rates to charge for various harvest function distributions
+    /**
+     * @notice Protocol fee rates to charge for various harvest function distributions
+     * @param i The index of the fee rate
+     * @return uint256 The fee rate
+     */
     function fees(uint256 i) external view returns (uint256);
 
-    /// @notice Wrapped bera
+    /**
+     * @notice Wrapped bera
+     * @return IWBERA The wbera token contract address
+     */
     function wbera() external view returns (IWBERA);
 
-    /// @notice Honey ERC20 token
+    /**
+     * @notice Honey ERC20 token
+     * @return IERC20 The honey token contract address
+     */
     function honey() external view returns (IERC20);
 
-    /// @notice bribe collector contract
+    /**
+     * @notice bribe collector contract
+     * @return IBribeCollector The bribe collector contract address
+     */
     function collector() external view returns (IBribeCollector);
 
-    /// @notice Infrared distributor for BGT rewards to validators
+    /**
+     * @notice Infrared distributor for BGT rewards to validators
+     * @return IInfraredDistributor instance of the distributor contract address
+     */
     function distributor() external view returns (IInfraredDistributor);
 
-    /// @notice IRED voter
+    /**
+     * @notice IRED voter
+     * @return IVoter instance of the voter contract address
+     */
     function voter() external view returns (IVoter);
 
-    /// @notice The rewards duration
+    /**
+     * @notice The rewards duration
+     * @dev Used as gloabl variabel to set the rewards duration for all new reward tokens on InfraredVaults
+     * @return uint256 The reward duration period, in seconds
+     */
     function rewardsDuration() external view returns (uint256);
 
-    /// @notice The mint amount of IRED rewards minted per IBGT
+    /**
+     * @notice The mint amount of IRED rewards minted per IBGT
+     * @return uint256 The IRED mint rate
+     */
     function iredMintRate() external view returns (uint256);
 
-    /// @notice Initializes Infrared by whitelisting rewards tokens, granting admin access roles, and deploying the ibgt vault
+    /**
+     * @notice Registers a new vault for a given asset and initializes it with reward tokens
+     * @dev Infrared.sol must be admin over MINTER_ROLE on IBGT to grant minter role to deployed vault
+     * @param _asset The address of the asset, such as a specific LP token
+     * @param _rewardTokens The addresses of reward tokens to initialize with the new vault
+     * @return vault The address of the newly created InfraredVault contract
+     */
+    function registerVault(address _asset, address[] memory _rewardTokens)
+        external
+        returns (IInfraredVault vault);
+
+    /**
+     * @notice Updates the whitelist status of a reward token
+     * @param _token The address of the token to whitelist or remove from whitelist
+     * @param _whitelisted A boolean indicating if the token should be whitelisted
+     */
+    function updateWhiteListedRewardTokens(address _token, bool _whitelisted)
+        external;
+
+    /**
+     * @notice Sets the new duration for reward distributions in InfraredVaults
+     * @param _rewardsDuration The new reward duration period, in seconds
+     */
+    function updateRewardsDuration(uint256 _rewardsDuration) external;
+
+    /**
+     * @notice Updates the IRED mint rate per unit of IBGT
+     * @param _iredMintRate The new IRED mint rate in units of 1e6 (hundredths of 1 bip)
+     */
+    function updateIredMintRate(uint256 _iredMintRate) external;
+
+    /**
+     * @notice Pauses staking functionality on a specific vault
+     * @param _asset The address of the staking asset associated with the vault to pause
+     * @dev Only callable by governance, will revert if vault doesn't exist
+     */
+    function pauseVault(address _asset) external;
+
+    /**
+     * @notice Recovers ERC20 tokens sent accidentally to the contract
+     * @param _to The address to receive the recovered tokens
+     * @param _token The address of the token to recover
+     * @param _amount The amount of the token to recover
+     */
+    function recoverERC20(address _to, address _token, uint256 _amount)
+        external;
+
+    /**
+     * @notice Initializes Infrared by whitelisting rewards tokens, granting admin access roles, and deploying the iBGT vault
+     * @param _admin The address of the admin
+     * @param _collector The address of the collector
+     * @param _distributor The address of the distributor
+     * @param _voter The address of the voter
+     * @param _rewardsDuration The reward duration period, in seconds
+     */
     function initialize(
         address _admin,
         address _collector,
@@ -117,51 +223,6 @@ interface IInfrared is IInfraredUpgradeable {
         address _voter,
         uint256 _rewardsDuration
     ) external;
-
-    /**
-     * @notice Registers a new vault.
-     * @dev Infrared.sol must be admin over MINTER_ROLE on IBGT to grant minter role to deployed vault.
-     * @param _asset            address          The address of the asset, e.g. Honey:Bera LP token.
-     * @return vault            IInfraredVault   The address of the new `InfraredVault` contract.
-     */
-    function registerVault(address _asset, address[] memory _rewardTokens)
-        external
-        returns (IInfraredVault vault);
-
-    /**
-     * @notice whitelists a reward token
-     * @param _token address The address of the token to whitelist.
-     * @param _whitelisted bool Whether the token is whitelisted or not.
-     */
-    function updateWhiteListedRewardTokens(address _token, bool _whitelisted)
-        external;
-
-    /**
-     * @notice Updates the period that rewards will be distributed over in InfraredVaults.
-     * @param _rewardsDuration uint256 The new rewards duration.
-     */
-    function updateRewardsDuration(uint256 _rewardsDuration) external;
-
-    /**
-     * @notice Updates the IRED mint rate per unit of IBGT
-     * @param _iredMintRate uint256 The new IRED mint rate.
-     */
-    function updateIredMintRate(uint256 _iredMintRate) external;
-
-    /**
-     * @notice Pauses staking functionality on this vault.
-     * @param _asset address The address of the staking asset that the vault is for.
-     */
-    function pauseVault(address _asset) external;
-
-    /**
-     * @notice Recover ERC20 tokens that were accidentally sent to the contract or where not whitelisted.
-     * @param _to     address The address to send the tokens to.
-     * @param _token  address The address of the token to recover.
-     * @param _amount uint256 The amount of the token to recover.
-     */
-    function recoverERC20(address _to, address _token, uint256 _amount)
-        external;
 
     /**
      * @notice Delegates BGT votes to `_delegatee` address.
@@ -333,12 +394,24 @@ interface IInfrared is IInfraredUpgradeable {
      */
     function getBGTBalance() external view returns (uint256 bgtBalance);
 
+    /// @notice Fee type enum for determining rates to charge on reward distribution.
+    enum FeeType {
+        HarvestBaseFeeRate,
+        HarvestBaseProtocolRate,
+        HarvestVaultFeeRate,
+        HarvestVaultProtocolRate,
+        HarvestBribesFeeRate,
+        HarvestBribesProtocolRate,
+        HarvestBoostFeeRate,
+        HarvestBoostProtocolRate
+    }
+
     /**
-     * @notice Emitted when a new vault is registered.
-     * @param _sender The address that initiated the vault registration.
-     * @param _asset The address of the asset for which the vault is registered.
-     * @param _vault The address of the newly created vault.
-     * @param _rewardTokens An array of addresses of the reward tokens for the new vault.
+     * @notice Emitted when a new vault is registered
+     * @param _sender The address that initiated the vault registration
+     * @param _asset The address of the asset for which the vault is registered
+     * @param _vault The address of the newly created vault
+     * @param _rewardTokens An array of addresses of the reward tokens for the new vault
      */
     event NewVault(
         address _sender,
@@ -431,10 +504,10 @@ interface IInfrared is IInfraredUpgradeable {
     );
 
     /**
-     * @notice Emitted when the rewards duration is updated.
-     * @param _sender The address that initiated the update.
-     * @param _oldDuration The previous rewards duration.
-     * @param _newDuration The new rewards duration.
+     * @notice Emitted when the rewards duration is updated
+     * @param _sender The address that initiated the update
+     * @param _oldDuration The previous rewards duration
+     * @param _newDuration The new rewards duration
      */
     event RewardsDurationUpdated(
         address _sender, uint256 _oldDuration, uint256 _newDuration

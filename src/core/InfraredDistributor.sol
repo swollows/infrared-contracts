@@ -18,16 +18,16 @@ import {Errors} from "@utils/Errors.sol";
 contract InfraredDistributor is InfraredUpgradeable, IInfraredDistributor {
     using SafeERC20 for IERC20;
 
-    // token for reward payouts
+    /// @inheritdoc IInfraredDistributor
     IERC20 public token;
 
-    // cumulative reward amount of token per validator
+    /// @inheritdoc IInfraredDistributor
     uint256 public amountsCumulative;
 
-    // validator pubkey claimed amounts status
+    /// @inheritdoc IInfraredDistributor
     mapping(bytes pubkey => Snapshot) public snapshots;
 
-    // registry of validator pubkey to address for claims
+    /// @inheritdoc IInfraredDistributor
     mapping(bytes pubkey => address) public validators;
 
     constructor(address _infrared) InfraredUpgradeable(_infrared) {

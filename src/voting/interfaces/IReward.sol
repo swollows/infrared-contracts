@@ -1,149 +1,283 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+/**
+ * @title IReward
+ * @notice Interface for rewards distribution contracts in the Infrared Voter
+ * @dev Base interface implemented by all reward-type contracts
+ */
 interface IReward {
+    /*//////////////////////////////////////////////////////////////
+                                ERRORS
+    //////////////////////////////////////////////////////////////*/
+
+    /**
+     * @notice Thrown when attempting to interact with an invalid reward token
+     */
     error InvalidReward();
+    /**
+     * @notice Thrown when caller is not authorized to perform operation
+     */
     error NotAuthorized();
-    error NotGauge();
-    error NotEscrowToken();
-    error NotSingleToken();
-    error NotVotingEscrow();
+    /**
+     * @notice Thrown when token is not in whitelist
+     */
     error NotWhitelisted();
+    /**
+     * @notice Thrown when attempting operation with zero amount
+     */
     error ZeroAmount();
 
+    /*//////////////////////////////////////////////////////////////
+                                EVENTS
+    //////////////////////////////////////////////////////////////*/
+
+    /**
+     * @notice Emitted when tokens are deposited for rewards
+     * @param from Address depositing tokens
+     * @param tokenId ID of the veNFT receiving deposit
+     * @param amount Amount of tokens deposited
+     */
     event Deposit(
         address indexed from, uint256 indexed tokenId, uint256 amount
     );
+
+    /**
+     * @notice Emitted when tokens are withdrawn from rewards
+     * @param from Address withdrawing tokens
+     * @param tokenId ID of the veNFT withdrawing from
+     * @param amount Amount of tokens withdrawn
+     */
     event Withdraw(
         address indexed from, uint256 indexed tokenId, uint256 amount
     );
+
+    /**
+     * @notice Emitted when new rewards are added
+     * @param from Address supplying the reward tokens
+     * @param reward Token being added as reward
+     * @param epoch Epoch timestamp for reward distribution
+     * @param amount Amount of reward tokens added
+     */
     event NotifyReward(
         address indexed from,
         address indexed reward,
         uint256 indexed epoch,
         uint256 amount
     );
+
+    /**
+     * @notice Emitted when rewards are claimed
+     * @param from Address claiming the rewards
+     * @param reward Token being claimed
+     * @param amount Amount of tokens claimed
+     */
     event ClaimRewards(
         address indexed from, address indexed reward, uint256 amount
     );
 
-    /// @notice A checkpoint for marking balance
+    /*//////////////////////////////////////////////////////////////
+                            STRUCTS
+    //////////////////////////////////////////////////////////////*/
+
+    /**
+     * @notice Balance checkpoint for tracking historical balances
+     * @param timestamp Time of checkpoint
+     * @param balanceOf Balance at checkpoint
+     */
     struct Checkpoint {
         uint256 timestamp;
         uint256 balanceOf;
     }
 
-    /// @notice A checkpoint for marking supply
+    /**
+     * @notice Supply checkpoint for tracking total supply
+     * @param timestamp Time of checkpoint
+     * @param supply Total supply at checkpoint
+     */
     struct SupplyCheckpoint {
         uint256 timestamp;
         uint256 supply;
     }
 
-    /// @notice Epoch duration constant (7 days)
+    /*//////////////////////////////////////////////////////////////
+                            VIEW FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
+
+    /**
+     * @notice Duration of each reward epoch in seconds
+     * @return Fixed duration of 7 days
+     */
     function DURATION() external view returns (uint256);
 
-    /// @notice Address of Voter.sol
+    /**
+     * @notice Address of the Voter contract that manages rewards
+     * @return Voter contract address
+     */
     function voter() external view returns (address);
 
-    /// @notice Address of VotingEscrow.sol
+    /**
+     * @notice Address of the VotingEscrow contract that manages veNFTs
+     * @return VotingEscrow contract address
+     */
     function ve() external view returns (address);
 
-    /// @dev Address which has permission to externally call _deposit() & _withdraw()
+    /**
+     * @notice Address permitted to call privileged state-changing functions
+     * @return Authorized caller address
+     */
     function authorized() external view returns (address);
 
-    /// @notice Total amount currently deposited via _deposit()
+    /**
+     * @notice Total amount of staking tokens locked in contract
+     * @return Current total supply of staked tokens
+     */
     function totalSupply() external view returns (uint256);
 
-    /// @notice Current amount deposited by tokenId
+    /**
+     * @notice Retrieves current staked balance for a veNFT
+     * @param tokenId ID of the veNFT to query
+     * @return Current staked token balance
+     */
     function balanceOf(uint256 tokenId) external view returns (uint256);
 
-    /// @notice Amount of tokens to reward depositors for a given epoch
-    /// @param token Address of token to reward
-    /// @param epochStart Startime of rewards epoch
-    /// @return Amount of token
+    /**
+     * @notice Gets reward amount allocated for a specific epoch
+     * @param token Address of reward token
+     * @param epochStart Starting timestamp of epoch
+     * @return Amount of token allocated as rewards for the epoch
+     */
     function tokenRewardsPerEpoch(address token, uint256 epochStart)
         external
         view
         returns (uint256);
 
-    /// @notice Most recent timestamp a veNFT has claimed their rewards
-    /// @param  token Address of token rewarded
-    /// @param tokenId veNFT unique identifier
-    /// @return Timestamp
+    /**
+     * @notice Retrieves timestamp of last reward claim for a veNFT
+     * @param token Address of reward token
+     * @param tokenId ID of veNFT that claimed
+     * @return Timestamp of last claim for this token/veNFT pair
+     */
     function lastEarn(address token, uint256 tokenId)
         external
         view
         returns (uint256);
 
-    /// @notice True if a token is or has been an active reward token, else false
+    /**
+     * @notice Checks if a token is configured as a reward token
+     * @param token Address of token to check
+     * @return True if token is active for rewards
+     */
     function isReward(address token) external view returns (bool);
 
-    /// @notice The number of checkpoints for each tokenId deposited
+    /**
+     * @notice Number of balance checkpoints for a veNFT
+     * @param tokenId ID of veNFT to query
+     * @return Number of checkpoints recorded
+     */
     function numCheckpoints(uint256 tokenId) external view returns (uint256);
 
-    /// @notice The total number of checkpoints
+    /**
+     * @notice Total number of supply checkpoints recorded
+     * @return Count of global supply checkpoints
+     */
     function supplyNumCheckpoints() external view returns (uint256);
 
-    /// @notice Deposit an amount into the rewards contract to earn future rewards associated to a veNFT
-    /// @dev Internal notation used as only callable internally by `authorized`.
-    /// @param amount   Amount deposited for the veNFT
-    /// @param tokenId  Unique identifier of the veNFT
-    function _deposit(uint256 amount, uint256 tokenId) external;
-
-    /// @notice Withdraw an amount from the rewards contract associated to a veNFT
-    /// @dev Internal notation used as only callable internally by `authorized`.
-    /// @param amount   Amount deposited for the veNFT
-    /// @param tokenId  Unique identifier of the veNFT
-    function _withdraw(uint256 amount, uint256 tokenId) external;
-
-    /// @notice Claim the rewards earned by a veNFT staker
-    /// @param tokenId  Unique identifier of the veNFT
-    /// @param tokens   Array of tokens to claim rewards of
-    function getReward(uint256 tokenId, address[] memory tokens) external;
-
-    /// @notice Add rewards for stakers to earn
-    /// @param token    Address of token to reward
-    /// @param amount   Amount of token to transfer to rewards
-    function notifyRewardAmount(address token, uint256 amount) external;
-
-    /// @notice Determine the prior balance for an account as of a block number
-    /// @dev Block number must be a finalized block or else this function will revert to prevent misinformation.
-    /// @param tokenId      The token of the NFT to check
-    /// @param timestamp    The timestamp to get the balance at
-    /// @return The balance the account had as of the given block
-    function getPriorBalanceIndex(uint256 tokenId, uint256 timestamp)
-        external
-        view
-        returns (uint256);
-
-    /// @notice Determine the prior index of supply staked by of a timestamp
-    /// @dev Timestamp must be <= current timestamp
-    /// @param timestamp The timestamp to get the index at
-    /// @return Index of supply checkpoint
-    function getPriorSupplyIndex(uint256 timestamp)
-        external
-        view
-        returns (uint256);
-
-    /// @notice Get number of rewards tokens
-    function rewardsListLength() external view returns (uint256);
-
-    /// @notice Calculate how much in rewards are earned for a specific token and veNFT
-    /// @param token Address of token to fetch rewards of
-    /// @param tokenId Unique identifier of the veNFT
-    /// @return Amount of token earned in rewards
-    function earned(address token, uint256 tokenId)
-        external
-        view
-        returns (uint256);
-
+    /**
+     * @notice Gets balance checkpoint data for a veNFT at specific index
+     * @param tokenId ID of veNFT to query
+     * @param index Checkpoint index to read
+     * @return timestamp Time checkpoint was created
+     * @return balanceOf Balance recorded at checkpoint
+     */
     function checkpoints(uint256 tokenId, uint256 index)
         external
         view
         returns (uint256 timestamp, uint256 balanceOf);
 
+    /**
+     * @notice Gets total supply checkpoint data at specific index
+     * @param index Checkpoint index to read
+     * @return timestamp Time checkpoint was created
+     * @return supply Total supply recorded at checkpoint
+     */
     function supplyCheckpoints(uint256 index)
         external
         view
         returns (uint256 timestamp, uint256 supply);
+
+    /**
+     * @notice Gets historical balance index for a veNFT at timestamp
+     * @dev Uses binary search to find checkpoint index
+     * @param tokenId ID of veNFT to query
+     * @param timestamp Time to query balance at
+     * @return Index of nearest checkpoint before timestamp
+     */
+    function getPriorBalanceIndex(uint256 tokenId, uint256 timestamp)
+        external
+        view
+        returns (uint256);
+
+    /**
+     * @notice Gets historical supply index at timestamp
+     * @dev Uses binary search to find checkpoint index
+     * @param timestamp Time to query supply at
+     * @return Index of nearest checkpoint before timestamp
+     */
+    function getPriorSupplyIndex(uint256 timestamp)
+        external
+        view
+        returns (uint256);
+
+    /**
+     * @notice Number of tokens configured for rewards
+     * @return Length of rewards token list
+     */
+    function rewardsListLength() external view returns (uint256);
+
+    /**
+     * @notice Calculates unclaimed rewards for a veNFT
+     * @param token Address of reward token to calculate
+     * @param tokenId ID of veNFT to calculate for
+     * @return Amount of unclaimed rewards
+     */
+    function earned(address token, uint256 tokenId)
+        external
+        view
+        returns (uint256);
+
+    /*//////////////////////////////////////////////////////////////
+                        STATE CHANGING FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
+
+    /**
+     * @notice Records a token deposit and updates checkpoints
+     * @dev Can only be called by authorized address
+     * @param amount Amount of tokens being deposited
+     * @param tokenId ID of veNFT receiving deposit
+     */
+    function _deposit(uint256 amount, uint256 tokenId) external;
+
+    /**
+     * @notice Records a token withdrawal and updates checkpoints
+     * @dev Can only be called by authorized address
+     * @param amount Amount of tokens being withdrawn
+     * @param tokenId ID of veNFT withdrawing from
+     */
+    function _withdraw(uint256 amount, uint256 tokenId) external;
+
+    /**
+     * @notice Claims accumulated rewards for a veNFT
+     * @param tokenId ID of veNFT claiming rewards
+     * @param tokens Array of reward token addresses to claim
+     */
+    function getReward(uint256 tokenId, address[] memory tokens) external;
+
+    /**
+     * @notice Adds new reward tokens for distribution
+     * @dev Transfers tokens from caller and updates reward accounting
+     * @param token Address of token to add as reward
+     * @param amount Amount of token to add to rewards
+     */
+    function notifyRewardAmount(address token, uint256 amount) external;
 }

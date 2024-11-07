@@ -1,84 +1,144 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
+import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
+
+/**
+ * @title Infrared Distributor Interface
+ * @notice Interface for distributing validator commissions and rewards
+ * @dev Handles reward distribution snapshots and claiming logic for validators
+ */
 interface IInfraredDistributor {
-    /// @notice Returns amounts accumulator for rewards notified to contract per validator
-    function amountsCumulative() external view returns (uint256);
+    /**
+     * @notice Emitted when validator is added to commission-eligible set
+     * @param pubkey Validator's public key
+     * @param operator Address authorized to claim rewards
+     * @param amountCumulative Starting point for commission stream
+     */
+    event Added(bytes pubkey, address operator, uint256 amountCumulative);
 
-    /// @notice Snapshot of the amounts accumulator
-    struct Snapshot {
-        /// amounts cumulative value at last claim
-        uint256 amountCumulativeLast;
-        /// amounts cumulative value at final claim
-        uint256 amountCumulativeFinal;
-    }
+    /**
+     * @notice Emitted when validator is removed from commission-eligible set
+     * @param pubkey Validator's public key
+     * @param operator Address previously authorized for claims
+     * @param amountCumulative Final point for commission stream
+     */
+    event Removed(bytes pubkey, address operator, uint256 amountCumulative);
 
-    /// @notice Returns the snapshot for a validator
-    /// @param pubkey bytes The pubkey of the validator
-    /// @return amountCumulativeLast The value of amounts cumulative at last claim
-    /// @return amountCumulativeFinal The value of amount cumulative at final claim
-    function snapshots(bytes memory pubkey)
-        external
-        view
-        returns (uint256 amountCumulativeLast, uint256 amountCumulativeFinal);
-
-    /// @notice Returns the amounts accumulator snapshot for a validator
-    /// @param pubkey bytes The pubkey of the validator
-    /// @return validator address The address that can claim for the validator
-    function validators(bytes memory pubkey) external view returns (address);
-
-    /// @notice Emitted when add validator to validator set elligible for commissions
-    /// @param pubkey bytes The pubkey of the validator to add
-    /// @param validator address The address of the validator to add
-    /// @param amountCumulative uint256 The snapshot of amountsCumulative to start commission stream at
-    event Added(bytes pubkey, address validator, uint256 amountCumulative);
-
-    /// @notice Emitted when remove validator from validator set elligible for commissions
-    /// @param pubkey bytes The pubkey of the validator to remove
-    /// @param validator address The address of the validator to remove
-    /// @param amountCumulative uint256 The snapshot of amountsCumulative to end commissions stream at
-    event Removed(bytes pubkey, address validator, uint256 amountCumulative);
-
-    /// @notice Emitted when purge validator from validator registry elligible for commissions
-    /// @param pubkey bytes The pubkey fo the validator to remove
+    /**
+     * @notice Emitted when validator is fully purged from registry
+     * @param pubkey Validator's public key
+     * @param validator Address being purged
+     */
     event Purged(bytes pubkey, address validator);
 
-    /// @notice Emitted when notify commissions contract of new commissions
-    /// @param amount uint256 The amount of commission rewards added to contract
-    /// @param num uint256 The number of current validators in the validator set
+    /**
+     * @notice Emitted when new commission rewards are added
+     * @param amount New rewards being distributed
+     * @param num Current number of eligible validators
+     */
     event Notified(uint256 amount, uint256 num);
 
-    /// @notice Emitted when validator claims outstanding commissions owed
-    /// @param pubkey    bytes   The pubkey of the validator claiming
-    /// @param validator address The address of the validator claiming
-    /// @param recipient address The address of the recipient of the claimed commissions
-    /// @param amount    uint256 The amount of commissions claimed
+    /**
+     * @notice Emitted when validator claims their commission
+     * @param pubkey Claiming validator's public key
+     * @param validator Address authorized for claims
+     * @param recipient Address receiving the commission
+     * @param amount Amount of commission claimed
+     */
     event Claimed(
         bytes pubkey, address validator, address recipient, uint256 amount
     );
 
-    /// @notice Adds a validator to validator set to track commission status
-    /// @dev Only callable by infrared coordinator
-    /// @param pubkey    bytes   The pubkey of the validator to add
-    /// @param validator address The address of the validator to add
+    /**
+     * @notice Reward accumulation checkpoints for validators
+     * @dev Used to calculate claimable rewards between snapshots
+     */
+    struct Snapshot {
+        /**
+         * @notice Last claimed reward accumulator value
+         */
+        uint256 amountCumulativeLast;
+        /**
+         * @notice Final reward accumulator value (set on removal)
+         */
+        uint256 amountCumulativeFinal;
+    }
+
+    /**
+     * @notice Token used for reward distributions
+     * @return The ERC20 token interface of the reward token
+     */
+    function token() external view returns (IERC20);
+
+    /**
+     * @notice Tracks reward amount accumulation per validator
+     * @return Current cumulative amount of rewards
+     */
+    function amountsCumulative() external view returns (uint256);
+
+    /**
+     * @notice Get validator's reward snapshots
+     * @param pubkey Validator's public key
+     * @return amountCumulativeLast Last claimed accumulator value
+     * @return amountCumulativeFinal Final accumulator value if removed
+     * @dev Returns (0,0) if validator doesn't exist
+     */
+    function snapshots(bytes calldata pubkey)
+        external
+        view
+        returns (uint256 amountCumulativeLast, uint256 amountCumulativeFinal);
+
+    /**
+     * @notice Get validator's registered claim address
+     * @param pubkey Validator's public key
+     * @return Address authorized to claim validator rewards
+     */
+    function validators(bytes calldata pubkey)
+        external
+        view
+        returns (address);
+
+    /**
+     * @notice Register new validator for rewards
+     * @dev Only callable by Infrared contract
+     * @param pubkey Validator's public key
+     * @param validator Address authorized to claim rewards
+     * @custom:access-control Requires INFRARED_ROLE
+     * @custom:error ValidatorAlreadyExists if validator already registered
+     */
     function add(bytes calldata pubkey, address validator) external;
 
-    /// @notice Removes a validator from validator set to stop commissions
-    /// @dev Only callable by infrared coordinator. Does remove from registry in case claim after remove
-    /// @param pubkey    bytes   The pubkey of the validator to remove
+    /**
+     * @notice Removes validator from reward-eligible set
+     * @dev Only callable by Infrared contract
+     * @param pubkey Validator's public key
+     * @custom:access-control Requires INFRARED_ROLE
+     */
     function remove(bytes calldata pubkey) external;
 
-    /// @notice Purges a validator from validator registry
-    /// @dev Only callable if all outstanding commissions claimed
-    /// @param pubkey    bytes   The pubkey of the validator to purge
+    /**
+     * @notice Purges validator from registry completely
+     * @dev Only possible after all rewards are claimed
+     * @param pubkey Validator's public key
+     * @custom:error ClaimableRewardsExist if unclaimed rewards remain
+     */
     function purge(bytes calldata pubkey) external;
 
-    /// @notice Notifies commission contract of new commissions to be distributed to existing validator set
-    /// @param amount uint256 The amount of commission token to distribute equally amongst validator set
+    /**
+     * @notice Distributes new commission rewards to validator set
+     * @param amount Amount to distribute equally among validators
+     * @custom:error ZeroAmount if amount is 0
+     * @custom:error InvalidValidator if no validators exist
+     */
     function notifyRewardAmount(uint256 amount) external;
 
-    /// @notice Claims outstanding commissions owed for validator
-    /// @param pubkey    bytes   The pubkey of the validator to claim for
-    /// @param recipient address The address for validator to send their owed commissions
+    /**
+     * @notice Claims outstanding commission rewards
+     * @param pubkey Validator's public key
+     * @param recipient Address to receive the claimed rewards
+     * @custom:error InvalidValidator if caller not authorized
+     * @custom:error ZeroAmount if no rewards to claim
+     */
     function claim(bytes calldata pubkey, address recipient) external;
 }

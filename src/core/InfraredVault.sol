@@ -21,10 +21,11 @@ import {IInfraredVault} from "@interfaces/IInfraredVault.sol";
 contract InfraredVault is MultiRewards, IInfraredVault {
     using SafeERC20 for IERC20;
 
-    // Number of reward tokens that can be added to the vault.
+    /// @notice Maximum number of reward tokens that can be supported
+    /// @dev Limited to prevent gas issues with reward calculations
     uint256 public constant MAX_NUM_REWARD_TOKENS = 10;
 
-    // The infrared contract address acts a vault factory and coordinator
+    /// @notice The infrared contract address acts a vault factory and coordinator
     address public immutable infrared;
 
     // The address of the berachain rewards vault

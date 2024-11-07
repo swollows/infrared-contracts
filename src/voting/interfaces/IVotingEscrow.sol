@@ -9,14 +9,33 @@ import {IERC6372} from "@openzeppelin/interfaces/IERC6372.sol";
 import {IERC4906} from "@openzeppelin/interfaces/IERC4906.sol";
 import {IERC165} from "@openzeppelin/interfaces/IERC165.sol";
 import {IVotes} from "./IVotes.sol";
+import {IInfrared} from "@interfaces/IInfrared.sol";
 
 interface IVotingEscrow is IVotes, IERC4906, IERC6372, IERC721Metadata {
+    /*//////////////////////////////////////////////////////////////
+                            STRUCTS/ENUMS
+    //////////////////////////////////////////////////////////////*/
+
+    /**
+     * @notice Represents a locked token balance in the voting escrow system
+     * @param amount The amount of tokens locked by the user
+     * @param end The expiration timestamp for the lock
+     * @param isPermanent Flag indicating if the lock is permanent
+     */
     struct LockedBalance {
         int128 amount;
         uint256 end;
         bool isPermanent;
     }
 
+    /**
+     * @notice Represents a snapshot of a user's voting power at a given point
+     * @param bias Voting power, decaying over time
+     * @param slope Rate of decay of voting power
+     * @param ts Timestamp of this snapshot
+     * @param blk Block number of this snapshot
+     * @param permanent Amount locked permanently without decay
+     */
     struct UserPoint {
         int128 bias;
         int128 slope; // # -dweight / dt
@@ -25,6 +44,14 @@ interface IVotingEscrow is IVotes, IERC4906, IERC6372, IERC721Metadata {
         uint256 permanent;
     }
 
+    /**
+     * @notice Tracks cumulative voting power and its decay across all users
+     * @param bias Total voting power, decaying over time
+     * @param slope Global decay rate of voting power
+     * @param ts Timestamp of this global checkpoint
+     * @param blk Block number of this global checkpoint
+     * @param permanentLockBalance Cumulative balance of permanently locked tokens
+     */
     struct GlobalPoint {
         int128 bias;
         int128 slope; // # -dweight / dt
@@ -33,7 +60,13 @@ interface IVotingEscrow is IVotes, IERC4906, IERC6372, IERC721Metadata {
         uint256 permanentLockBalance;
     }
 
-    /// @notice A checkpoint for recorded delegated voting weights at a certain timestamp
+    /**
+     * @notice Snapshot of delegated voting weights at a particular timestamp
+     * @param fromTimestamp Timestamp when the delegation was made
+     * @param owner Address of the NFT owner
+     * @param delegatedBalance Balance that has been delegated
+     * @param delegatee Address receiving the delegated voting power
+     */
     struct Checkpoint {
         uint256 fromTimestamp;
         address owner;
@@ -41,6 +74,13 @@ interface IVotingEscrow is IVotes, IERC4906, IERC6372, IERC721Metadata {
         uint256 delegatee;
     }
 
+    /**
+     * @notice Types of deposits supported in the voting escrow contract
+     * @param DEPOSIT_FOR_TYPE Deposit for another address
+     * @param CREATE_LOCK_TYPE Create a new lock
+     * @param INCREASE_LOCK_AMOUNT Increase tokens in an existing lock
+     * @param INCREASE_UNLOCK_TIME Extend the duration of an existing lock
+     */
     enum DepositType {
         DEPOSIT_FOR_TYPE,
         CREATE_LOCK_TYPE,
@@ -48,10 +88,12 @@ interface IVotingEscrow is IVotes, IERC4906, IERC6372, IERC721Metadata {
         INCREASE_UNLOCK_TIME
     }
 
-    /// @dev Different types of veNFTs:
-    /// NORMAL  - typical veNFT
-    /// LOCKED  - veNFT which is locked into a MANAGED veNFT
-    /// MANAGED - veNFT which can accept the deposit of NORMAL veNFTs
+    /**
+     * @notice Specifies the type of voting escrow NFT (veNFT)
+     * @param NORMAL Standard veNFT
+     * @param LOCKED veNFT locked within a managed veNFT
+     * @param MANAGED veNFT capable of accepting deposits from NORMAL veNFTs
+     */
     enum EscrowType {
         NORMAL,
         LOCKED,
@@ -186,6 +228,12 @@ interface IVotingEscrow is IVotes, IERC4906, IERC6372, IERC721Metadata {
 
     /// @dev Current count of token
     function tokenId() external view returns (uint256);
+
+    /**
+     * @notice Address of Infrared contract
+     * @return IInfrared instance of contract address
+     */
+    function infrared() external view returns (IInfrared);
 
     /*///////////////////////////////////////////////////////////////
                             MANAGED NFT STORAGE

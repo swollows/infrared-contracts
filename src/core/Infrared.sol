@@ -51,19 +51,34 @@ contract Infrared is InfraredUpgradeable, IInfrared {
                            STORAGE/EVENTS
     //////////////////////////////////////////////////////////////*/
 
-    // mapping of whitelisted reward tokens
+    /**
+     * @notice Mapping of tokens that are whitelisted to be used as rewards or accepted as bribes
+     * @dev serves as central source of truth for whitelisted reward tokens for all Infrared contracts
+     */
     mapping(address => bool) public whitelistedRewardTokens;
 
-    // Mapping of staking token address to `IInfraredVault`.
+    /**
+     * @notice Mapping of staking token addresses to their corresponding InfraredVault
+     * @dev Each staking token can only have one vault
+     */
     mapping(address => IInfraredVault) public vaultRegistry;
 
-    // The set of infrared validator IDs, where an ID is keccak256(pubkey)
+    /**
+     * @notice Set of infrared validator IDs where an ID is keccak256(pubkey)
+     * @dev Used to track active validators in the system
+     */
     EnumerableSet.Bytes32Set internal _infraredValidatorIds;
 
-    // The mapping of infrared validator IDs to CL pub keys
+    /**
+     * @notice Mapping of validator IDs to their CL public keys
+     * @dev Maps the keccak256 hash of a validator's pubkey to their actual pubkey
+     */
     mapping(bytes32 id => bytes pub) internal _infraredValidatorPubkeys;
 
-    // The BGT address
+    /**
+     * @notice The BGT token contract reference
+     * @dev Immutable IBerachainBGT instance of the BGT token
+     */
     IBerachainBGT internal immutable _bgt;
 
     /// @inheritdoc IInfrared
@@ -78,7 +93,7 @@ contract Infrared is InfraredUpgradeable, IInfrared {
     /// @inheritdoc IInfrared
     IBerachainRewardsVaultFactory public immutable rewardsFactory;
 
-    /// inheritdoc IInfrared
+    /// @inheritdoc IInfrared
     IBeraChef public immutable chef;
 
     /// @inheritdoc IInfrared
@@ -117,18 +132,34 @@ contract Infrared is InfraredUpgradeable, IInfrared {
     /// @inheritdoc IInfrared
     mapping(uint256 => uint256) public fees;
 
-    /// @notice Weight units when partitioning reward amounts in hundredths of 1 bip
+    /**
+     * @notice Weight units when partitioning reward amounts in hundredths of 1 bip
+     * @dev Used as the denominator when calculating weighted distributions (1e6)
+     */
     uint256 internal constant WEIGHT_UNIT = 1e6;
 
-    /// @notice Protocol fee rate in hundredths of 1 bip
+    /**
+     * @notice Protocol fee rate in hundredths of 1 bip
+     * @dev Used as the denominator when calculating protocol fees (1e6)
+     */
     uint256 internal constant FEE_UNIT = 1e6;
 
-    /// @notice IRED mint rate in hundredths of 1 bip
+    /**
+     * @notice IRED mint rate in hundredths of 1 bip
+     * @dev Used as the denominator when calculating IRED minting (1e6)
+     */
     uint256 internal constant RATE_UNIT = 1e6;
 
-    /// @notice Commission rate in units of 1 bip
+    /**
+     * @notice Commission rate in units of 1 bip
+     * @dev Maximum commission rate that can be set (1e3)
+     */
     uint256 internal constant COMMISSION_MAX = 1e3;
 
+    /**
+     * @dev Ensures that only the collector contract can call the function
+     * Reverts if the caller is not the collector
+     */
     modifier onlyCollector() {
         if (msg.sender != address(collector)) {
             revert Errors.Unauthorized(msg.sender);

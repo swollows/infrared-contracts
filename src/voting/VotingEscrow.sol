@@ -67,9 +67,16 @@ contract VotingEscrow is IVotingEscrow, ReentrancyGuard {
     /// @inheritdoc IVotingEscrow
     uint256 public tokenId;
 
+    /// @inheritdoc IVotingEscrow
     IInfrared public infrared;
 
-    /// @param _token `VELO` token address
+    /**
+     * @notice Initializes VotingEscrow contract
+     * @param _keeper Address of keeper contract
+     * @param _token Address of token (VELO) used to create a veNFT
+     * @param _voter Address of Voter contract
+     * @param _infrared Address of Infrared contract
+     */
     constructor(
         address _keeper,
         address _token,

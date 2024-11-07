@@ -30,18 +30,34 @@ contract Voter is IVoter, InfraredUpgradeable, ReentrancyGuardUpgradeable {
 
     /// @inheritdoc IVoter
     address public ve;
-    /// @notice Rewards are released over 7 days
+
+    /**
+     * @notice Duration over which rewards are released
+     *  @dev Used as constant across various reward calculations
+     */
     uint256 internal constant DURATION = 7 days;
+
     /// @inheritdoc IVoter
     uint256 public totalWeight;
+
     /// @inheritdoc IVoter
     uint256 public maxVotingNum;
+
+    /**
+     * @notice Minimum allowed value for maximum voting number
+     *  @dev Used as validation threshold in setMaxVotingNum
+     */
     uint256 internal constant MIN_MAXVOTINGNUM = 1;
 
     /// @inheritdoc IVoter
     address public feeVault;
-    /// @dev All stakingTokens viable for incentives
+
+    /**
+     * @dev Internal array of all staking tokens with active bribe vaults
+     *      Used for token enumeration and state tracking
+     */
     address[] public stakingTokens;
+
     /// @inheritdoc IVoter
     mapping(address => address) public bribeVaults;
     /// @inheritdoc IVoter
@@ -59,6 +75,11 @@ contract Voter is IVoter, InfraredUpgradeable, ReentrancyGuardUpgradeable {
     /// @inheritdoc IVoter
     mapping(address => bool) public isAlive;
 
+    /**
+     * @notice Ensures operations only occur in new epochs and outside distribution window
+     * @dev Validates both epoch transition and proper timing within epoch
+     * @param _tokenId The token ID to check last vote timestamp for
+     */
     modifier onlyNewEpoch(uint256 _tokenId) {
         // ensure new epoch since last vote
         if (
@@ -72,14 +93,17 @@ contract Voter is IVoter, InfraredUpgradeable, ReentrancyGuardUpgradeable {
         _;
     }
 
+    /// @inheritdoc IVoter
     function epochStart(uint256 _timestamp) external pure returns (uint256) {
         return VelodromeTimeLibrary.epochStart(_timestamp);
     }
+    /// @inheritdoc IVoter
 
     function epochNext(uint256 _timestamp) external pure returns (uint256) {
         return VelodromeTimeLibrary.epochNext(_timestamp);
     }
 
+    /// @inheritdoc IVoter
     function epochVoteStart(uint256 _timestamp)
         external
         pure
@@ -88,14 +112,25 @@ contract Voter is IVoter, InfraredUpgradeable, ReentrancyGuardUpgradeable {
         return VelodromeTimeLibrary.epochVoteStart(_timestamp);
     }
 
+    /// @inheritdoc IVoter
     function epochVoteEnd(uint256 _timestamp) external pure returns (uint256) {
         return VelodromeTimeLibrary.epochVoteEnd(_timestamp);
     }
 
+    /**
+     * @notice Constructor for Voter contract
+     * @dev Reverts if infrared address is zero
+     * @param _infrared Address of the Infrared contract
+     */
     constructor(address _infrared) InfraredUpgradeable(_infrared) {
         if (_infrared == address(0)) revert Errors.ZeroAddress();
     }
 
+    /**
+     * @notice Initializes the Voter contract with the voting escrow and fee vault
+     * @dev Sets up initial state including fee vault with configured reward tokens
+     * @param _ve Address of the voting escrow contract
+     */
     function initialize(address _ve) external initializer {
         if (_ve == address(0)) revert Errors.ZeroAddress();
         ve = _ve;
@@ -135,6 +170,11 @@ contract Voter is IVoter, InfraredUpgradeable, ReentrancyGuardUpgradeable {
         _reset(_tokenId);
     }
 
+    /**
+     * @notice Resets vote state for a token ID
+     * @dev Cleans up all vote accounting and emits appropriate events
+     * @param _tokenId Token ID to reset voting state for
+     */
     function _reset(uint256 _tokenId) internal {
         address[] storage _stakingTokenVote = stakingTokenVote[_tokenId];
         uint256 _stakingTokenVoteCnt = _stakingTokenVote.length;
@@ -177,6 +217,12 @@ contract Voter is IVoter, InfraredUpgradeable, ReentrancyGuardUpgradeable {
         _poke(_tokenId, _weight);
     }
 
+    /**
+     * @notice Updates voting power for a token ID
+     * @dev Recalculates and updates all vote weightings
+     * @param _tokenId Token ID to update voting power for
+     * @param _weight New voting power weight to apply
+     */
     function _poke(uint256 _tokenId, uint256 _weight) internal {
         address[] memory _stakingTokenVote = stakingTokenVote[_tokenId];
         uint256 _stakingTokenCnt = _stakingTokenVote.length;
@@ -188,6 +234,23 @@ contract Voter is IVoter, InfraredUpgradeable, ReentrancyGuardUpgradeable {
         _vote(_tokenId, _weight, _stakingTokenVote, _weights);
     }
 
+    /**
+     * @notice Core voting logic to allocate weights to staking tokens
+     * @param _tokenId Token ID that is voting
+     * @param _weight Total voting power weight available
+     * @param _stakingTokenVote Array of staking tokens to vote for
+     * @param _weights Array of weights to allocate to each token
+     * @dev Handles vote accounting, reward deposits and event emissions
+     * @dev Implementation sequence:
+     * 1. Reset all existing votes and accounting via _reset
+     * 2. Calculate total vote weight for normalizing allocations
+     * 3. For each staking token:
+     *    - Validate bribe vault exists and is active
+     *    - Calculate and apply normalized vote weight
+     *    - Update token-specific accounting
+     *    - Deposit into bribe vault
+     * 4. Update global vote accounting if votes were cast
+     */
     function _vote(
         uint256 _tokenId,
         uint256 _weight,
@@ -399,7 +462,13 @@ contract Voter is IVoter, InfraredUpgradeable, ReentrancyGuardUpgradeable {
         IReward(feeVault).getReward(_tokenId, _tokens);
     }
 
-    /// @dev helper function to get all staking tokens and their weights
+    /**
+     * @notice Returns all staking tokens and their current voting weights
+     * @dev Helper function that aggregates staking token data
+     * @return _stakingTokens Array of staking token addresses
+     * @return _weights Array of voting weights corresponding to each token
+     * @return _totalWeight Sum of all voting weights
+     */
     function getStakingTokenWeights()
         public
         view

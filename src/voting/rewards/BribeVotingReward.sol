@@ -4,13 +4,25 @@ pragma solidity 0.8.26;
 import {IVoter} from "../interfaces/IVoter.sol";
 import {VotingReward} from "./VotingReward.sol";
 
-/// @notice Bribes pay out rewards for a given pool based on the votes that were received from the user (goes hand in hand with Voter.vote())
+/**
+ * @title BribeVotingReward
+ * @notice Implementation of voting rewards for bribes based on user votes
+ * @dev Final implementation of voting rewards specifically for bribe distribution
+ */
 contract BribeVotingReward is VotingReward {
+    /**
+     * @notice Initializes bribe voting rewards
+     * @param _voter Address of voter contract
+     * @param _rewards Initial array of reward token addresses
+     */
     constructor(address _voter, address[] memory _rewards)
         VotingReward(_voter, _rewards)
     {}
 
-    /// @inheritdoc VotingReward
+    /**
+     * @inheritdoc VotingReward
+     * @dev Validates and whitelists reward tokens before processing
+     */
     function notifyRewardAmount(address token, uint256 amount)
         external
         override
