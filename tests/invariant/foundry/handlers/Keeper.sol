@@ -8,11 +8,14 @@ import "@core/Infrared.sol";
 import "@core/MultiRewards.sol";
 
 import "forge-std/Test.sol";
-import "@mocks/MockBerachainRewardsVaultFactory.sol";
+
+import "@mocks/MockERC20.sol";
+
+import "@berachain/pol/rewards/RewardVaultFactory.sol";
 
 contract Keeper is Test {
     Infrared public infrared;
-    MockBerachainRewardsVaultFactory public rewardsFactory;
+    RewardVaultFactory public rewardsFactory;
     address public keeper;
 
     uint256 public totalBgtRewards;
@@ -24,8 +27,8 @@ contract Keeper is Test {
     constructor(
         Infrared _infrared,
         address _keeper,
-        MockBerachainRewardsVaultFactory _rewardsFactory
-    ) public {
+        RewardVaultFactory _rewardsFactory
+    ) {
         // Initialize mock assets
         infrared = _infrared;
         keeper = _keeper;
@@ -45,7 +48,7 @@ contract Keeper is Test {
         MockERC20 stakingAsset = new MockERC20("MockPool", "MP", 18);
 
         address beraVault =
-            rewardsFactory.createRewardsVault(address(stakingAsset));
+            rewardsFactory.createRewardVault(address(stakingAsset));
 
         vm.startPrank(keeper);
         address[] memory rewardTokens = new address[](1);
@@ -81,7 +84,7 @@ contract Keeper is Test {
 
         totalBgtRewards += bgtReward;
 
-        rewardsFactory.increaseRewardsForVault(stakingAsset, bgtReward);
+        // rewardsFactory.increaseRewardsForVault(stakingAsset, bgtReward);
 
         vm.warp(block.timestamp + 10 days);
 

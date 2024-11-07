@@ -9,13 +9,17 @@
 	url = https://github.com/OpenZeppelin/openzeppelin-contracts-upgradeable
 [submodule "lib/contracts-monorepo"]
 	path = lib/contracts-monorepo
+	branch = main
 	url = https://github.com/berachain/contracts-monorepo
 [submodule "lib/solady"]
 	path = lib/solady
+	branch = main
 	url = https://github.com/vectorized/solady
 [submodule "lib/solmate"]
 	path = lib/solmate
+	branch = main
 	url = https://github.com/transmissions11/solmate
 [submodule "lib/prb-test"]
 	path = lib/prb-test
+	branch = main
 	url = https://github.com/PaulRBerg/prb-test

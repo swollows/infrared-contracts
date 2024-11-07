@@ -19,7 +19,7 @@ contract Governance is Test {
     bytes[] public validtors;
     bytes public signature;
 
-    constructor(Infrared _infrared, address _governanced) public {
+    constructor(Infrared _infrared, address _governanced) {
         infrared = _infrared;
         governance = _governanced;
 

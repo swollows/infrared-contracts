@@ -54,7 +54,7 @@ contract InfraredDeployer is Script {
                         address(ibgt),
                         _berachainRewardsFactory,
                         _beraChef,
-                        _wbera,
+                        payable(_wbera),
                         _honey,
                         address(ired),
                         address(ibera)

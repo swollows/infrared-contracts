@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.22;
 
-import {Math} from "@openzeppelin/utils/math/Math.sol";
+import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 
 import {IIBERA} from "@interfaces/IIBERA.sol";
 import {IIBERAWithdrawor} from "@interfaces/IIBERAWithdrawor.sol";

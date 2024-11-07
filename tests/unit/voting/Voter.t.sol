@@ -1,6 +1,8 @@
+// SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
 import "./Base.t.sol";
+
 // import {assertApproxEq} from "forge-std/StdAssertions.sol";
 
 contract VoterTest is Base {

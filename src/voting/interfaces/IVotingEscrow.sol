@@ -4,10 +4,10 @@ pragma solidity ^0.8.0;
 import {
     IERC721,
     IERC721Metadata
-} from "@openzeppelin/token/ERC721/extensions/IERC721Metadata.sol";
-import {IERC6372} from "@openzeppelin/interfaces/IERC6372.sol";
-import {IERC4906} from "@openzeppelin/interfaces/IERC4906.sol";
-import {IERC165} from "@openzeppelin/interfaces/IERC165.sol";
+} from "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol";
+import {IERC6372} from "@openzeppelin/contracts/interfaces/IERC6372.sol";
+import {IERC4906} from "@openzeppelin/contracts/interfaces/IERC4906.sol";
+import {IERC165} from "@openzeppelin/contracts/interfaces/IERC165.sol";
 import {IVotes} from "./IVotes.sol";
 import {IInfrared} from "@interfaces/IInfrared.sol";
 

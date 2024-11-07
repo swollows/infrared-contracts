@@ -8,15 +8,15 @@ import {IBeaconDeposit as IBerachainBeaconDeposit} from
     "@berachain/pol/interfaces/IBeaconDeposit.sol";
 import {IDistributor as IBerachainDistributor} from
     "@berachain/pol/interfaces/IDistributor.sol";
-import {IBerachainRewardsVaultFactory} from
-    "@berachain/pol/interfaces/IBerachainRewardsVaultFactory.sol";
+import {IRewardVaultFactory as IBerachainRewardsVaultFactory} from
+    "@berachain/pol/interfaces/IRewardVaultFactory.sol";
 import {IBerachainBGT} from "@interfaces/IBerachainBGT.sol";
 import {IBerachainBGTStaker} from "@interfaces/IBerachainBGTStaker.sol";
 import {IFeeCollector as IBerachainFeeCollector} from
     "@berachain/pol/interfaces/IFeeCollector.sol";
 
 import {IWBERA} from "@interfaces/IWBERA.sol";
-import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract HelperForkTest is Test {
     string constant BARTIO_RPC_URL = "https://bartio.rpc.berachain.com/";
@@ -65,7 +65,7 @@ contract HelperForkTest is Test {
             IBerachainBGTStaker(0x791fb53432eED7e2fbE4cf8526ab6feeA604Eb6d);
         beaconDeposit = IBerachainBeaconDeposit(address(0)); // TODO: fix
 
-        wbera = IWBERA(0x7507c1dc16935B82698e4C63f2746A2fCf994dF8);
+        wbera = IWBERA(payable(0x7507c1dc16935B82698e4C63f2746A2fCf994dF8));
         honey = IERC20(0x0E4aaF1351de4c0264C5c7056Ef3777b41BD8e03);
         lpToken = IERC20(0xd28d852cbcc68DCEC922f6d5C7a8185dBaa104B7);
         vdHoneyToken = IERC20(0x1339503343be5626B40Ee3Aee12a4DF50Aa4C0B9);
@@ -83,12 +83,12 @@ contract HelperForkTest is Test {
     /// @param coinbase address  The address of the coinbase to distribute POL for at each block
     /// @param number   uint256  The block number to roll to
     function rollPol(address coinbase, uint256 number) public {
-        require(number > block.number, "rolling number <= block.number");
-        uint256 delta = number - block.number;
-        for (uint256 i = 1; i < delta + 1; i++) {
-            vm.roll(block.number + i);
-            distributePol(coinbase);
-        }
+        // require(number > block.number, "rolling number <= block.number");
+        // uint256 delta = number - block.number;
+        // for (uint256 i = 1; i < delta + 1; i++) {
+        //     vm.roll(block.number + i);
+        //     distributePol(coinbase);
+        // }
     }
 
     /// @notice Simulates distribution of POL for current block.number

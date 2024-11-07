@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import {IBeraChef} from "@berachain/pol/interfaces/IBeraChef.sol";
-import {IBerachainRewardsVaultFactory} from
-    "@berachain/pol/interfaces/IBerachainRewardsVaultFactory.sol";
+import {IRewardVaultFactory as IBerachainRewardsVaultFactory} from
+    "@berachain/pol/interfaces/IRewardVaultFactory.sol";
 
 import {IVoter} from "@voting/interfaces/IVoter.sol";
 
@@ -314,14 +314,15 @@ interface IInfrared is IInfraredUpgradeable {
     function replaceValidator(bytes calldata _current, bytes calldata _new)
         external;
 
-    /* TODO: Update for queue => activate commission flow
-
+    /**
+     * @notice Updates a validator commission rate in the set of `InfraredValidators`.
+     * @param _pubkey     bytes   The pubkey of the validator to update commission rate for.
+     * @param _commission uint256 The commission rate to update to.
+     */
     function updateValidatorCommission(
         bytes calldata _pubkey,
         uint256 _commission
     ) external;
-
-    */
 
     /**
      * @notice Queue `_amts` of tokens to `_validators` for boosts.
@@ -346,10 +347,13 @@ interface IInfrared is IInfraredUpgradeable {
      */
     function activateBoosts(bytes[] memory _pubkeys) external;
 
-    /* TODO: fix for berachain core queue => activate drop boost updates
+    /**
+     * @notice Removes boost `_amt` of BGT boost from `_pubkey`.
+     * @param _pubkeys     address[] memory The pubkeys of the validator to remove boost from.
+     * @param _amts        uint128[] memory The amounts of BGT to remove from the boost.
+     */
     function dropBoosts(bytes[] memory _pubkeys, uint128[] memory _amts)
         external;
-    */
 
     /**
      * @notice Queues a new cutting board on BeraChef for reward weight distribution for validator

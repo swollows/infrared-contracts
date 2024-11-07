@@ -1,12 +1,13 @@
+// SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
 import "./Base.t.sol";
-import {IERC165} from "@openzeppelin/interfaces/IERC165.sol";
+import {IERC165} from "@openzeppelin/contracts/interfaces/IERC165.sol";
 import {
     IERC721,
     IERC721Metadata
-} from "@openzeppelin/token/ERC721/extensions/IERC721Metadata.sol";
-import {IERC6372} from "@openzeppelin/interfaces/IERC6372.sol";
+} from "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol";
+import {IERC6372} from "@openzeppelin/contracts/interfaces/IERC6372.sol";
 
 contract VotingEscrowTest is Base {
     event DelegateChanged(

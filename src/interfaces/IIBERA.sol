@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import {IAccessControl} from "@openzeppelin/access/IAccessControl.sol";
-import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
+import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 interface IIBERA is IERC20, IAccessControl {
     error Unauthorized();

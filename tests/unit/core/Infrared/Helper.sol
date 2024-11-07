@@ -26,12 +26,12 @@ import "@interfaces/IInfrared.sol";
 
 // mocks
 import "@mocks/MockERC20.sol";
-import "@mocks/MockWbera.sol";
-import "@mocks/MockBerachainRewardsVaultFactory.sol";
-import "@mocks/MockBeaconDepositContract.sol";
+import "@berachain/pol/rewards/RewardVaultFactory.sol";
+// import "@mocks/MockBeaco nDepositContract.sol";
 // TODO: fix import "@mocks/MockBerachef.sol";
+import {POLTest} from "@berachain/../test/pol/POL.t.sol";
 
-contract Helper is Test {
+abstract contract Helper is POLTest {
     Infrared public infrared;
     IBGT public ibgt;
 
@@ -39,20 +39,20 @@ contract Helper is Test {
     VotingEscrow public veIRED;
 
     BribeCollector public collector;
-    InfraredDistributor public distributor;
+    InfraredDistributor public infraredDistributor;
 
     address public admin;
     address public keeper;
-    address public governance;
+    address public infraredGovernance;
 
-    MockERC20 public bgt;
+    // MockERC20 public bgt;
     MockERC20 public ired;
     MockERC20 public wibera;
     MockERC20 public honey;
-    MockWbera public mockWbera;
+    address public beraVault;
 
     MockERC20 public mockPool;
-    MockBerachainRewardsVaultFactory public rewardsFactory;
+    // MockBerachainRewardsVaultFactory public rewardsFactory;
     // MockBeraChef public chef; // TODO: fix for chef
     address public chef = makeAddr("chef");
 
@@ -71,33 +71,34 @@ contract Helper is Test {
     // New declaration for mock pools
     MockERC20[] public mockPools;
 
-    function setUp() public {
+    function setUp() public virtual override {
+        super.setUp();
         // Mock non transferable token BGT token
-        bgt = new MockERC20("BGT", "BGT", 18);
+        // bgt = new MockERC20("BGT", "BGT", 18);
         // Mock contract instantiations
+
         ibgt = new IBGT(address(bgt));
         ired = new MockERC20("IRED", "IRED", 18);
         wibera = new MockERC20("WIBERA", "WIBERA", 18);
         honey = new MockERC20("HONEY", "HONEY", 18);
-        mockWbera = new MockWbera();
 
         // Set up addresses for roles
         admin = address(this);
         keeper = address(1);
-        governance = address(2);
+        infraredGovernance = address(2);
 
         // TODO: mock contracts
-        mockPool = new MockERC20("Mock Asset", "MAS", 18);
-        stakingAsset = address(mockPool);
+        // mockPool = new MockERC20("Mock Asset", "MAS", 18);
+        stakingAsset = address(wbera);
 
         // deploy a rewards vault for IBGT
-        rewardsFactory = new MockBerachainRewardsVaultFactory(address(bgt));
-        address rewardsVault = rewardsFactory.createRewardsVault(address(ibgt));
-        assertEq(rewardsVault, rewardsFactory.getVault(address(ibgt)));
+        // rewardsFactory = new MockBerachainRewardsVaultFactory(address(bgt));
+        address rewardsVault = factory.createRewardVault(address(ibgt));
+        assertEq(rewardsVault, factory.getVault(address(ibgt)));
 
         // Set up bera bgt distribution for mockPool
-        address beraVault = rewardsFactory.createRewardsVault(stakingAsset);
-        rewardsFactory.increaseRewardsForVault(stakingAsset, 1000 ether);
+        beraVault = factory.createRewardVault(stakingAsset);
+        // rewardsFactory.increaseRewardsForVault(stakingAsset, 1000 ether);
 
         // Set up the chef
         // TODO: fix mock chef
@@ -109,9 +110,9 @@ contract Helper is Test {
                 address(
                     new Infrared(
                         address(ibgt),
-                        address(rewardsFactory),
+                        address(factory),
                         address(chef),
-                        address(mockWbera),
+                        payable(address(wbera)),
                         address(honey),
                         address(ired),
                         address(wibera)
@@ -122,7 +123,7 @@ contract Helper is Test {
         collector = BribeCollector(
             setupProxy(address(new BribeCollector(address(infrared))))
         );
-        distributor = InfraredDistributor(
+        infraredDistributor = InfraredDistributor(
             setupProxy(address(new InfraredDistributor(address(infrared))))
         );
 
@@ -132,12 +133,12 @@ contract Helper is Test {
             address(this), address(ired), address(voter), address(infrared)
         );
 
-        collector.initialize(address(this), address(mockWbera), 10 ether);
-        distributor.initialize();
+        collector.initialize(address(this), address(wbera), 10 ether);
+        infraredDistributor.initialize();
         infrared.initialize(
             address(this),
             address(collector),
-            address(distributor),
+            address(infraredDistributor),
             address(voter),
             1 days
         ); // make helper contract the admin
@@ -145,9 +146,14 @@ contract Helper is Test {
 
         // set access control
         infrared.grantRole(infrared.KEEPER_ROLE(), keeper);
-        infrared.grantRole(infrared.GOVERNANCE_ROLE(), governance);
+        infrared.grantRole(infrared.GOVERNANCE_ROLE(), infraredGovernance);
 
         ibgt.grantRole(ibgt.MINTER_ROLE(), address(infrared));
+        ibgt.grantRole(ibgt.MINTER_ROLE(), address(blockRewardController));
+
+        vm.startPrank(governance);
+        bgt.whitelistSender(address(factory), true);
+        vm.stopPrank();
 
         address[] memory _rewardTokens = new address[](2);
         _rewardTokens[0] = address(ibgt); // all Infrared vaults will only receive ibgt as rewards
@@ -164,13 +170,13 @@ contract Helper is Test {
         vm.label(address(infrared), "infrared");
         vm.label(address(ibgt), "ibgt");
         vm.label(address(bgt), "bgt");
-        vm.label(address(mockPool), "mockPool");
-        vm.label(address(mockWbera), "mockWbera");
+        // vm.label(address(mockPool), "mockPool");
+        vm.label(address(wbera), "wbera");
         vm.label(admin, "admin");
         vm.label(keeper, "keeper");
         vm.label(stakingAsset, "stakingAsset");
-        vm.label(governance, "governance");
-        vm.label(address(rewardsFactory), "rewardsFactory");
+        vm.label(infraredGovernance, "infraredGovernance");
+        vm.label(address(factory), "rewardsFactory");
         vm.label(address(chef), "chef");
         vm.label(address(ibgtVault), "ibgtVault");
         vm.label(address(collector), "collector");

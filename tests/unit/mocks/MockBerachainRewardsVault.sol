@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
-import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
-import {IBerachainRewardsVault} from
-    "@berachain/pol/interfaces/IBerachainRewardsVault.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IRewardVault as IBerachainRewardsVault} from
+    "@berachain/pol/interfaces/IRewardVault.sol";
 import {MultiRewards} from "@core/MultiRewards.sol";
 import {SafeMath} from "@utils/SafeMath.sol";
-import {SafeERC20} from "@openzeppelin/token/ERC20/utils/SafeERC20.sol";
+import {SafeERC20} from
+    "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 /// @notice Multirewards but focused on single reward token
 /// @dev For testing InfraredVault.sol and Infrared.sol

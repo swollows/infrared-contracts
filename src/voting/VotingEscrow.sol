@@ -1,14 +1,17 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.26;
 
-import {IERC721Receiver} from "@openzeppelin/token/ERC721/IERC721Receiver.sol";
+import {IERC721Receiver} from
+    "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import {IVeArtProxy} from "./interfaces/IVeArtProxy.sol";
 import {IVotingEscrow} from "./interfaces/IVotingEscrow.sol";
 import {IVoter} from "./interfaces/IVoter.sol";
-import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
-import {SafeERC20} from "@openzeppelin/token/ERC20/utils/SafeERC20.sol";
-import {IERC6372} from "@openzeppelin/interfaces/IERC6372.sol";
-import {ReentrancyGuard} from "@openzeppelin/utils/ReentrancyGuard.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from
+    "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {IERC6372} from "@openzeppelin/contracts/interfaces/IERC6372.sol";
+import {ReentrancyGuard} from
+    "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {DelegationLogicLibrary} from "./libraries/DelegationLogicLibrary.sol";
 import {BalanceLogicLibrary} from "./libraries/BalanceLogicLibrary.sol";
 import {SafeCastLibrary} from "./libraries/SafeCastLibrary.sol";
@@ -131,7 +134,9 @@ contract VotingEscrow is IVotingEscrow, ReentrancyGuard {
         if (
             msg.sender != allowedManager
                 && !infrared.hasRole(infrared.GOVERNANCE_ROLE(), msg.sender)
-        ) revert NotGovernorOrManager();
+        ) {
+            revert NotGovernorOrManager();
+        }
 
         _mTokenId = ++tokenId;
         _mint(_to, _mTokenId);

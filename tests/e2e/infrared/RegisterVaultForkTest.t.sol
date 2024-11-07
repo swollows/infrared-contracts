@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.26;
 
-import {IBerachainRewardsVault} from
-    "@berachain/pol/interfaces/IBerachainRewardsVault.sol";
+import {IRewardVault} from "@berachain/pol/interfaces/IRewardVault.sol";
 import {IInfraredVault} from "@interfaces/IInfraredVault.sol";
 import {IMultiRewards} from "@interfaces/IMultiRewards.sol";
 
@@ -35,7 +34,7 @@ contract RegisterVaultForkTest is InfraredForkTest {
         );
 
         // check berachain rewards vault created
-        IBerachainRewardsVault _newRewardsVault = _newVault.rewardsVault();
+        IRewardVault _newRewardsVault = _newVault.rewardsVault();
         assertEq(
             address(_newRewardsVault),
             rewardsFactory.getVault(address(stakingToken))
@@ -93,7 +92,7 @@ contract RegisterVaultForkTest is InfraredForkTest {
         );
 
         // check berachain rewards vault created
-        IBerachainRewardsVault _newRewardsVault = _newVault.rewardsVault();
+        IRewardVault _newRewardsVault = _newVault.rewardsVault();
         assertEq(address(_newRewardsVault), rewardsVaultAddress);
 
         // check infrared rewards vault sets infrared as operator

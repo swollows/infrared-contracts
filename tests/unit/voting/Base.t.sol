@@ -1,10 +1,11 @@
+// SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
 import {ERC1967Proxy} from
     "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import "@mocks/MockWbera.sol";
 import "@mocks/MockERC20.sol";
-import "@mocks/MockBerachainRewardsVaultFactory.sol";
+import "@berachain/pol/rewards/RewardVaultFactory.sol";
 
 import "@voting/VotingEscrow.sol";
 import "@voting/Voter.sol";
@@ -30,7 +31,7 @@ abstract contract Base is Test {
     address public constant keeper = address(888);
     Infrared public infrared;
 
-    MockBerachainRewardsVaultFactory public rewardsFactory;
+    RewardVaultFactory public rewardsFactory;
     address public chef = makeAddr("chef"); // TODO: actual chef
 
     uint256 constant TOKEN_1 = 1e18;
@@ -66,7 +67,7 @@ abstract contract Base is Test {
         honey = new MockERC20("HONEY", "HONEY", 18);
         address wibera = address(new MockERC20("WIBERA", "WIBERA", 18));
 
-        rewardsFactory = new MockBerachainRewardsVaultFactory(address(bgt));
+        rewardsFactory = new RewardVaultFactory();
 
         // initialize Infrared contracts
         infrared = Infrared(
@@ -76,7 +77,7 @@ abstract contract Base is Test {
                         address(ibgt),
                         address(rewardsFactory),
                         address(chef),
-                        address(WBERA),
+                        payable(address(WBERA)),
                         address(honey),
                         address(ired),
                         address(wibera)

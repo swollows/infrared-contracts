@@ -149,6 +149,5 @@ contract ValidatorMgmtForkTest is InfraredForkTest {
         assertEq(qcb.weights.length, 0);
     }
     */
-
 // TODO: BGTMgmtForkTest.t.sol separately for boosts
 }

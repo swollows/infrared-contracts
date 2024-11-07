@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.26;
 
-import {IBerachainRewardsVault} from
-    "@berachain/pol/interfaces/IBerachainRewardsVault.sol";
+import {IRewardVault} from "@berachain/pol/interfaces/IRewardVault.sol";
 import {IMultiRewards} from "@interfaces/IMultiRewards.sol";
 
 import {HarvestForkTest} from "./HarvestForkTest.t.sol";
@@ -25,7 +24,7 @@ contract HarvestVaultForkTest is HarvestForkTest {
         // move timestamp forward to accumulate berachain vault rewards
         vm.warp(block.timestamp + 1 days);
 
-        IBerachainRewardsVault lpRewardsVault = lpVault.rewardsVault();
+        IRewardVault lpRewardsVault = lpVault.rewardsVault();
         uint256 reward = lpRewardsVault.earned(address(lpVault));
         uint256 fees = (reward * protocolFeeRate) / FEE_UNIT;
 

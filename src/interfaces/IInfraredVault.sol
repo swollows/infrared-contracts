@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import {IBerachainRewardsVault} from
-    "@berachain/pol/interfaces/IBerachainRewardsVault.sol";
+import {IRewardVault as IBerachainRewardsVault} from
+    "@berachain/pol/interfaces/IRewardVault.sol";
 import {IMultiRewards} from "./IMultiRewards.sol";
 
 interface IInfraredVault is IMultiRewards {

@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
-import {EnumerableSet} from "@openzeppelin/utils/structs/EnumerableSet.sol";
-import {IBerachainRewardsVaultFactory} from
-    "@berachain/pol/interfaces/IBerachainRewardsVaultFactory.sol";
+import {EnumerableSet} from
+    "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import {IRewardVaultFactory as IBerachainRewardsVaultFactory} from
+    "@berachain/pol/interfaces/IRewardVaultFactory.sol";
 import {IIBGT} from "@interfaces/IIBGT.sol";
 import {IERC20Mintable} from "@interfaces/IERC20Mintable.sol";
 import {IInfraredVault} from "@interfaces/IInfraredVault.sol";

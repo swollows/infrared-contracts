@@ -23,7 +23,7 @@ contract User is Test {
     mapping(address => mapping(InfraredVault => uint256)) public
         userVaultClaimed;
 
-    constructor(Infrared _infrared, Keeper _keeper) public {
+    constructor(Infrared _infrared, Keeper _keeper) {
         infrared = _infrared;
         keeper = _keeper;
 

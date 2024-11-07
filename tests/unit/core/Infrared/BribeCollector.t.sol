@@ -5,7 +5,7 @@ import "./Helper.sol";
 
 contract BribeCollectorTest is Helper {
     function testSetPayoutAmount() public {
-        vm.startPrank(governance);
+        vm.startPrank(infraredGovernance);
         collector.setPayoutAmount(1 ether);
         vm.stopPrank();
     }

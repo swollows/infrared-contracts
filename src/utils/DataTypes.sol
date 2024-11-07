@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {EnumerableSet} from "@openzeppelin/utils/structs/EnumerableSet.sol";
+import {EnumerableSet} from
+    "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 library DataTypes {
     // Enum for the actions used in the ValidatorSet library.

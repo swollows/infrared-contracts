@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
-import {IBerachainRewardsVaultFactory} from
-    "@berachain/pol/interfaces/IBerachainRewardsVaultFactory.sol";
-import "./MockBerachainRewardsVault.sol";
-import {SafeERC20} from "@openzeppelin/token/ERC20/utils/SafeERC20.sol";
+import {SafeERC20} from
+    "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
+import {IRewardVaultFactory as IBerachainRewardsVaultFactory} from
+    "@berachain/pol/interfaces/IRewardVaultFactory.sol";
+import "@berachain/../test/mock/pol/MockRewardVault.sol";
 import "./MockERC20.sol";
 
 /// @dev For testing InfraredVault.sol and Infrared.sol
@@ -21,17 +23,16 @@ contract MockBerachainRewardsVaultFactory is IBerachainRewardsVaultFactory {
         bgt = MockERC20(_bgt);
     }
 
-    function createRewardsVault(address stakingToken)
+    function createRewardVault(address stakingToken)
         external
         returns (address)
     {
-        MockBerachainRewardsVault vault =
-            new MockBerachainRewardsVault(stakingToken);
+        MockRewardVault vault = new MockRewardVault();
 
         allVaultsLength++;
         getVault[stakingToken] = address(vault);
 
-        vault.initialize(address(bgt), address(this), 1 days);
+        vault.initialize(address(bgt), stakingToken);
         return address(vault);
     }
 
@@ -43,14 +44,13 @@ contract MockBerachainRewardsVaultFactory is IBerachainRewardsVaultFactory {
         // Increase rewards for a BerachainRewardsVault
         beraVault = getVault[stakingAsset];
         SafeERC20.safeIncreaseAllowance(IERC20(address(bgt)), beraVault, amount);
-        MockBerachainRewardsVault(beraVault).notifyRewardAmount(amount);
+        // notify not yet in bera mock
+        // MockRewardVault(beraVault).notifyRewardAmount(amount);
     }
 
     function initializeRewardsVault(address _stakingAsset) public {
         address beraVault = getVault[_stakingAsset];
-        MockBerachainRewardsVault(beraVault).initialize(
-            address(bgt), address(this), 1 days
-        );
+        MockRewardVault(beraVault).initialize(address(bgt), _stakingAsset);
     }
 
     function mint(address receiver, uint256 amount) public {
@@ -58,7 +58,7 @@ contract MockBerachainRewardsVaultFactory is IBerachainRewardsVaultFactory {
     }
 
     // TODO: fix
-    function predictRewardsVaultAddress(address stakingToken)
+    function predictRewardVaultAddress(address stakingToken)
         external
         view
         returns (address)

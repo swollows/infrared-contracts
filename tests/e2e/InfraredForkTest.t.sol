@@ -9,8 +9,8 @@ import {Initializable} from
 import {ERC20PresetMinterPauser} from
     "../../src/vendors/ERC20PresetMinterPauser.sol";
 
-import {IBerachainRewardsVault} from
-    "@berachain/pol/interfaces/IBerachainRewardsVault.sol";
+import {IRewardVault as IBerachainRewardsVault} from
+    "@berachain/pol/interfaces/IRewardVault.sol";
 
 import {Voter} from "@voting/Voter.sol";
 import {VotingEscrow} from "@voting/VotingEscrow.sol";
@@ -68,7 +68,7 @@ contract InfraredForkTest is HelperForkTest {
                         address(ibgt),
                         address(rewardsFactory),
                         address(beraChef),
-                        address(wbera),
+                        payable(address(wbera)),
                         address(honey),
                         address(ired),
                         address(wibera)

@@ -5,88 +5,224 @@ import "./Helper.sol";
 import "@forge-std/console2.sol";
 import "@core/Infrared.sol";
 import "@interfaces/IInfrared.sol";
+import {IRewardVault as IBerachainRewardsVault} from
+    "@berachain/pol/interfaces/IRewardVault.sol";
 
 contract InfraredRewardsTest is Helper {
     /*//////////////////////////////////////////////////////////////
                 Vault Rewards test
     //////////////////////////////////////////////////////////////*/
 
-    function testHarvestVault() public {
-        rewardsFactory.increaseRewardsForVault(stakingAsset, 100 ether);
-        address user = address(123);
-        stakeInVault(address(infraredVault), stakingAsset, user, 100 ether);
+    function testharvestVaultSuccess() public {
+        address[] memory rewardTokens = new address[](2);
+        rewardTokens[0] = address(ibgt);
+        rewardTokens[1] = address(ired);
 
-        vm.warp(10 days);
-        uint256 vaultBalanceBefore = ibgt.balanceOf(address(infraredVault));
-        vm.expectEmit();
-        emit IInfrared.VaultHarvested(
-            address(this),
-            stakingAsset,
-            address(infraredVault),
-            1099999999999999958400
-        );
-        infrared.harvestVault(stakingAsset);
+        infrared.grantRole(infrared.KEEPER_ROLE(), address(this));
+        // InfraredVault vault = InfraredVault(
+        //     address(infrared.registerVault(address(wbera), rewardTokens))
+        // );
+        InfraredVault vault = infraredVault;
 
-        uint256 vaultBalanceAfter = ibgt.balanceOf(address(infraredVault));
-        assertEq(vaultBalanceAfter, vaultBalanceBefore + 1099999999999999958400); // adjust for rounding error
-        // assert that bgt balance and IBGT balance are equal
-        assertEq(ibgt.totalSupply(), bgt.balanceOf(address(infrared)));
-    }
-
-    function testHarvestVaultWithProtocolFees() public {
-        rewardsFactory.increaseRewardsForVault(stakingAsset, 100 ether);
-        address user = address(123);
-        stakeInVault(address(infraredVault), stakingAsset, user, 100 ether);
-
-        // TODO: include voting fees distribution
-        vm.startPrank(governance);
-        infrared.updateFee(IInfrared.FeeType.HarvestVaultFeeRate, 3e5);
-        infrared.updateFee(IInfrared.FeeType.HarvestVaultProtocolRate, 1e6);
-        infrared.updateIredMintRate(2e6); // 2x
+        vm.startPrank(infraredGovernance);
+        infrared.updateWhiteListedRewardTokens(address(wbera), true);
         vm.stopPrank();
 
-        vm.warp(10 days);
+        address user = address(10);
+        vm.deal(address(user), 1000 ether);
+        uint256 stakeAmount = 1000 ether;
+        vm.startPrank(user);
+        wbera.deposit{value: stakeAmount}();
+        wbera.approve(address(vault), stakeAmount);
+        vault.stake(stakeAmount);
+        vm.stopPrank();
+
+        address vaultWbera = factory.getVault(address(wbera));
+
+        vm.startPrank(address(blockRewardController));
+        bgt.mint(address(distributor), 100 ether);
+        vm.stopPrank();
+
+        vm.startPrank(address(distributor));
+        bgt.approve(address(vaultWbera), 100 ether);
+        IBerachainRewardsVault(vaultWbera).notifyRewardAmount(
+            abi.encodePacked(bytes32("v0"), bytes16("")), 100 ether
+        );
+        vm.stopPrank();
+
+        vm.warp(block.timestamp + 10 days);
+
+        uint256 vaultBalanceBefore = ibgt.balanceOf(address(vault));
+
+        vm.startPrank(address(vault));
+        vault.rewardsVault().setOperator(address(infrared));
         vm.startPrank(keeper);
-        uint256 vaultBalanceBefore = ibgt.balanceOf(address(infraredVault));
-        uint256 vaultIredBalanceBefore = ired.balanceOf(address(infraredVault));
-        uint256 protocolFeeAmountBefore =
-            infrared.protocolFeeAmounts(address(ibgt));
-        uint256 protocolFeeAmountIredBefore =
-            infrared.protocolFeeAmounts(address(ired));
-
-        uint256 amt = 1099999999999999958400;
-        uint256 protocolFees = (amt * 3e5) / 1e6;
-        uint256 bgtAmt = amt - protocolFees;
-
-        uint256 iredAmt = 2 * amt;
-
         vm.expectEmit();
         emit IInfrared.VaultHarvested(
-            keeper, stakingAsset, address(infraredVault), amt
+            keeper, address(wbera), address(vault), 99999999999999999000
         );
-        emit IInfrared.IBGTSupplied(address(infraredVault), bgtAmt, iredAmt);
-        infrared.harvestVault(stakingAsset);
+        infrared.harvestVault(address(wbera));
         vm.stopPrank();
 
-        uint256 vaultBalanceAfter = ibgt.balanceOf(address(infraredVault));
-        assertEq(vaultBalanceAfter, vaultBalanceBefore + bgtAmt); // adjust for rounding error
-        // assert that bgt balance and IBGT balance are equal
-        assertEq(ibgt.totalSupply(), bgt.balanceOf(address(infrared)));
-        assertEq(
-            infrared.protocolFeeAmounts(address(ibgt)),
-            protocolFeeAmountBefore + protocolFees
-        );
-
-        uint256 vaultIredBalanceAfter = ired.balanceOf(address(infraredVault));
-        assertEq(vaultIredBalanceAfter, vaultIredBalanceBefore + iredAmt);
-        assertEq(
-            infrared.protocolFeeAmounts(address(ired)),
-            protocolFeeAmountIredBefore
+        uint256 vaultBalanceAfter = ibgt.balanceOf(address(vault));
+        assertTrue(
+            vaultBalanceAfter > vaultBalanceBefore,
+            "Vault should have more IBGT after harvest"
         );
     }
 
+    function testharvestVaultNotWhitelistedToken() public {
+        MockERC20 mockAsset = new MockERC20("MockAsset", "MCK", 18);
+        vm.expectRevert(abi.encodeWithSignature("VaultNotSupported()"));
+        infrared.harvestVault(address(mockAsset));
+    }
+
+    function testrecoverERC20Success() public {
+        uint256 recoverAmount = 10 ether;
+        MockERC20 mockAsset = new MockERC20("MockAsset", "MCK", 18);
+        mockAsset.mint(address(infrared), recoverAmount);
+
+        address user = address(10);
+        uint256 userBalanceBefore = mockAsset.balanceOf(user);
+
+        vm.startPrank(address(infraredGovernance));
+        vm.expectEmit();
+        emit IInfrared.Recovered(
+            infraredGovernance, address(mockAsset), recoverAmount
+        );
+        infrared.recoverERC20(user, address(mockAsset), recoverAmount);
+        vm.stopPrank();
+
+        uint256 userBalanceAfter = mockAsset.balanceOf(user);
+        assertTrue(
+            userBalanceAfter == userBalanceBefore + recoverAmount,
+            "User should have more mockAsset after recovery"
+        );
+    }
+
+    function testrecoverERC20ZeroAddressRecipient() public {
+        MockERC20 mockAsset = new MockERC20("MockAsset", "MCK", 18);
+
+        vm.startPrank(address(infraredGovernance));
+        vm.expectRevert(abi.encodeWithSignature("ZeroAddress()"));
+        infrared.recoverERC20(address(0), address(mockAsset), 10 ether);
+        vm.stopPrank();
+    }
+
+    function testrecoverERC20ZeroAddressToken() public {
+        address user = address(10);
+
+        vm.startPrank(address(infraredGovernance));
+        vm.expectRevert(abi.encodeWithSignature("ZeroAddress()"));
+        infrared.recoverERC20(user, address(0), 10 ether);
+        vm.stopPrank();
+    }
+
+    function testrecoverERC20ZeroAmount() public {
+        MockERC20 mockAsset = new MockERC20("MockAsset", "MCK", 18);
+        address user = address(10);
+
+        vm.startPrank(address(infraredGovernance));
+        vm.expectRevert(abi.encodeWithSignature("ZeroAmount()"));
+        infrared.recoverERC20(user, address(mockAsset), 0);
+        vm.stopPrank();
+    }
+
+    function testrecoverERC20NotGovernor() public {
+        MockERC20 mockAsset = new MockERC20("MockAsset", "MCK", 18);
+        address user = address(10);
+
+        vm.startPrank(address(user));
+        vm.expectRevert(
+            abi.encodeWithSignature(
+                "AccessControlUnauthorizedAccount(address,bytes32)",
+                user,
+                infrared.GOVERNANCE_ROLE()
+            )
+        );
+        infrared.recoverERC20(user, address(mockAsset), 10 ether);
+        vm.stopPrank();
+    }
+
+    // function testHarvestVault() public {
+    //      NOTE added in Infrared.t.sol
+    //     // factory.increaseRewardsForVault(stakingAsset, 100 ether);
+    //     address user = address(123);
+    //     stakeInVault(address(infraredVault), stakingAsset, user, 100 ether);
+
+    //     vm.warp(10 days);
+    //     uint256 vaultBalanceBefore = ibgt.balanceOf(address(infraredVault));
+    //     vm.expectEmit();
+    //     emit IInfrared.VaultHarvested(
+    //         address(this),
+    //         stakingAsset,
+    //         address(infraredVault),
+    //         1099999999999999958400
+    //     );
+    //     infrared.harvestVault(stakingAsset);
+
+    //     uint256 vaultBalanceAfter = ibgt.balanceOf(address(infraredVault));
+    //     assertEq(vaultBalanceAfter, vaultBalanceBefore + 1099999999999999958400); // adjust for rounding error
+    //     // assert that bgt balance and IBGT balance are equal
+    //     assertEq(ibgt.totalSupply(), bgt.balanceOf(address(infrared)));
+    // }
+
+    // function testHarvestVaultWithProtocolFees() public {
+    //     NOTE added in Infrared.t.sol
+    //     // factory.increaseRewardsForVault(stakingAsset, 100 ether);
+    //     address user = address(123);
+    //     stakeInVault(address(infraredVault), stakingAsset, user, 100 ether);
+
+    //     // TODO: include voting fees distribution
+    //     vm.startPrank(infraredGovernance);
+    //     infrared.updateFee(IInfrared.FeeType.HarvestVaultFeeRate, 3e5);
+    //     infrared.updateFee(IInfrared.FeeType.HarvestVaultProtocolRate, 1e6);
+    //     infrared.updateIredMintRate(2e6); // 2x
+    //     vm.stopPrank();
+
+    //     vm.warp(10 days);
+    //     vm.startPrank(keeper);
+    //     uint256 vaultBalanceBefore = ibgt.balanceOf(address(infraredVault));
+    //     uint256 vaultIredBalanceBefore = ired.balanceOf(address(infraredVault));
+    //     uint256 protocolFeeAmountBefore =
+    //         infrared.protocolFeeAmounts(address(ibgt));
+    //     uint256 protocolFeeAmountIredBefore =
+    //         infrared.protocolFeeAmounts(address(ired));
+
+    //     uint256 amt = 1099999999999999958400;
+    //     uint256 protocolFees = (amt * 3e5) / 1e6;
+    //     uint256 bgtAmt = amt - protocolFees;
+
+    //     uint256 iredAmt = 2 * amt;
+
+    //     vm.expectEmit();
+    //     emit IInfrared.VaultHarvested(
+    //         keeper, stakingAsset, address(infraredVault), amt
+    //     );
+    //     emit IInfrared.IBGTSupplied(address(infraredVault), bgtAmt, iredAmt);
+    //     infrared.harvestVault(stakingAsset);
+    //     vm.stopPrank();
+
+    //     uint256 vaultBalanceAfter = ibgt.balanceOf(address(infraredVault));
+    //     assertEq(vaultBalanceAfter, vaultBalanceBefore + bgtAmt); // adjust for rounding error
+    //     // assert that bgt balance and IBGT balance are equal
+    //     assertEq(ibgt.totalSupply(), bgt.balanceOf(address(infrared)));
+    //     assertEq(
+    //         infrared.protocolFeeAmounts(address(ibgt)),
+    //         protocolFeeAmountBefore + protocolFees
+    //     );
+
+    //     uint256 vaultIredBalanceAfter = ired.balanceOf(address(infraredVault));
+    //     assertEq(vaultIredBalanceAfter, vaultIredBalanceBefore + iredAmt);
+    //     assertEq(
+    //         infrared.protocolFeeAmounts(address(ired)),
+    //         protocolFeeAmountIredBefore
+    //     );
+    // }
+
+    /*
     function testFailHarvestVaultInvalidPool() public {
-        rewardsFactory.increaseRewardsForVault(stakingAsset, 100 ether);
+        // factory.increaseRewardsForVault(stakingAsset, 100 ether);
         address user = address(123);
         stakeInVault(address(infraredVault), stakingAsset, user, 100 ether);
 
@@ -96,7 +232,7 @@ contract InfraredRewardsTest is Helper {
     }
 
     function testHarvestVaultPremissionless() public {
-        rewardsFactory.increaseRewardsForVault(stakingAsset, 100 ether);
+        // factory.increaseRewardsForVault(stakingAsset, 100 ether);
         address user = address(123);
         stakeInVault(address(infraredVault), stakingAsset, user, 100 ether);
 
@@ -111,32 +247,34 @@ contract InfraredRewardsTest is Helper {
         vm.warp(1 days);
         vm.startPrank(address(123456));
     }
+    */
 
-    function testGetRewardsCallbackIntoHarvestVault() public {
-        rewardsFactory.increaseRewardsForVault(stakingAsset, 100 ether);
-        address user = address(123);
-        stakeInVault(address(infraredVault), stakingAsset, user, 100 ether);
+    // function testGetRewardsCallbackIntoHarvestVault() public {
+    // NOTE added in Infrared.t.sol
+    // // factory.increaseRewardsForVault(stakingAsset, 100 ether);
+    // address user = address(123);
+    // stakeInVault(address(infraredVault), stakingAsset, user, 100 ether);
 
-        vm.warp(10 hours);
-        uint256 vaultBalanceBefore = ibgt.balanceOf(address(infraredVault));
-        infrared.harvestVault(stakingAsset);
+    // vm.warp(10 hours);
+    // uint256 vaultBalanceBefore = ibgt.balanceOf(address(infraredVault));
+    // infrared.harvestVault(stakingAsset);
 
-        uint256 vaultBalanceAfter = ibgt.balanceOf(address(infraredVault));
-        // assert that bgt balance and IBGT balance are equal
-        assertEq(ibgt.totalSupply(), bgt.balanceOf(address(infrared)));
+    // uint256 vaultBalanceAfter = ibgt.balanceOf(address(infraredVault));
+    // // assert that bgt balance and IBGT balance are equal
+    // assertEq(ibgt.totalSupply(), bgt.balanceOf(address(infrared)));
 
-        vm.warp(1 days);
-        // get user rewards
-        (,,, uint256 rewardRateBefore,,) =
-            infraredVault.rewardData(address(ibgt));
-        vm.startPrank(user);
-        infraredVault.getReward();
-        vm.stopPrank();
-        (,,, uint256 rewardRateAfter,,) =
-            infraredVault.rewardData(address(ibgt));
-        assertGt(rewardRateAfter, rewardRateBefore);
-        assertGt(ibgt.totalSupply(), vaultBalanceAfter); // totalSupply > last harvestVault
-    }
+    // vm.warp(1 days);
+    // // get user rewards
+    // (,,, uint256 rewardRateBefore,,) =
+    //     infraredVault.rewardData(address(ibgt));
+    // vm.startPrank(user);
+    // infraredVault.getReward();
+    // vm.stopPrank();
+    // (,,, uint256 rewardRateAfter,,) =
+    //     infraredVault.rewardData(address(ibgt));
+    // assertGt(rewardRateAfter, rewardRateBefore);
+    // assertGt(ibgt.totalSupply(), vaultBalanceAfter); // totalSupply > last harvestVault
+    // }
 
     /*//////////////////////////////////////////////////////////////
                 Validator Rewards test

@@ -23,8 +23,8 @@ import "@utils/DataTypes.sol";
 // mocks
 import "@mocks/MockERC20.sol";
 import "@mocks/MockWbera.sol";
-import "@mocks/MockBerachainRewardsVaultFactory.sol";
-import "@mocks/MockBeaconDepositContract.sol";
+import "@berachain/pol/rewards/RewardVaultFactory.sol";
+// import "@mocks/MockBeaconDepositContract.sol";
 // TODO: fix import "@mocks/MockBerachef.sol";
 
 import "./handlers/Governance.sol";
@@ -58,7 +58,7 @@ contract InvariantsInfrared is Test {
     MockWbera public mockWbera;
 
     MockERC20 public mockPool;
-    MockBerachainRewardsVaultFactory public rewardsFactory;
+    RewardVaultFactory public rewardsFactory;
     address public chef = makeAddr("chef"); // TODO: fix with mock chef
 
     string vaultName;
@@ -90,7 +90,7 @@ contract InvariantsInfrared is Test {
         stakingAsset = address(mockPool);
 
         // deploy a rewards vault for IBGT
-        rewardsFactory = new MockBerachainRewardsVaultFactory(address(bgt));
+        rewardsFactory = new RewardVaultFactory();
 
         // Set up the chef
         // TODO: fix chef
@@ -103,7 +103,7 @@ contract InvariantsInfrared is Test {
                         address(ibgt),
                         address(rewardsFactory),
                         address(chef),
-                        address(mockWbera),
+                        payable(address(mockWbera)),
                         address(honey),
                         address(ired),
                         address(wibera)
@@ -164,7 +164,7 @@ contract InvariantsInfrared is Test {
         userSelectors[2] = userHandler.claim.selector;
 
         excludeArtifact("InfraredVault");
-        excludeArtifact("MockBerachainRewardsVault");
+        // excludeArtifact("MockBerachainRewardsVault");
         excludeArtifact("tests/unit/mocks/MockERC20.sol:MockERC20");
 
         targetSelector(

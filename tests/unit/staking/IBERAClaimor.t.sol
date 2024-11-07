@@ -17,7 +17,6 @@ contract IBERAClaimorTest is IBERABaseTest {
 
     function testQueueEmitsQueue() public {
         uint256 claim = claimor.claims(alice);
-        uint256 balance = address(claimor).balance;
         uint256 amount = 1 ether;
 
         vm.expectEmit();

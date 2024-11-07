@@ -12,7 +12,7 @@ import {InfraredDistributor} from "@core/InfraredDistributor.sol";
 
 import {MockERC20} from "@mocks/MockERC20.sol";
 import {MockInfrared} from "@mocks/MockInfrared.sol";
-import {MockBeaconDepositContract} from "@mocks/MockBeaconDepositContract.sol";
+// import {MockBeaconDepositContract} from "@mocks/MockBeaconDepositContract.sol";
 
 import {stdStorage, StdStorage} from "forge-std/Test.sol";
 
@@ -56,7 +56,7 @@ contract InfraredDistributorTest is Test {
         proxy = address(new ERC1967Proxy(implementation, ""));
     }
 
-    function testInitialize() public {
+    function testInitialize() public view {
         assertEq(address(distributor.infrared()), address(infrared));
         assertEq(address(distributor.token()), address(token));
         assertEq(distributor.amountsCumulative(), 1);

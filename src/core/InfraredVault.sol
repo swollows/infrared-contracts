@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.26;
 
-import {IBerachainRewardsVault} from
-    "@berachain/pol/interfaces/IBerachainRewardsVault.sol";
-import {IBerachainRewardsVaultFactory} from
-    "@berachain/pol/interfaces/IBerachainRewardsVaultFactory.sol";
+import {IRewardVault as IBerachainRewardsVault} from
+    "@berachain/pol/interfaces/IRewardVault.sol";
+import {IRewardVaultFactory as IBerachainRewardsVaultFactory} from
+    "@berachain/pol/interfaces/IRewardVaultFactory.sol";
 
 import {Errors} from "@utils/Errors.sol";
 import {MultiRewards, IERC20, SafeERC20} from "@core/MultiRewards.sol";
@@ -88,7 +88,7 @@ contract InfraredVault is MultiRewards, IInfraredVault {
         address rewardsVaultAddress = rewardsFactory.getVault(_stakingToken);
         if (rewardsVaultAddress == address(0)) {
             rewardsVaultAddress =
-                rewardsFactory.createRewardsVault(_stakingToken);
+                rewardsFactory.createRewardVault(_stakingToken);
         }
         return IBerachainRewardsVault(rewardsVaultAddress);
     }

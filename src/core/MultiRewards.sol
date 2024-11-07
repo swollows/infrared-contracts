@@ -3,13 +3,15 @@ pragma solidity 0.8.26;
 
 import {IMultiRewards} from "../interfaces/IMultiRewards.sol";
 
-import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
-import {Pausable} from "@openzeppelin/utils/Pausable.sol";
-import {ReentrancyGuard} from "@openzeppelin/utils/ReentrancyGuard.sol";
-import {SafeERC20} from "@openzeppelin/token/ERC20/utils/SafeERC20.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
+import {ReentrancyGuard} from
+    "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {SafeERC20} from
+    "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Errors} from "@utils/Errors.sol";
-import {Math} from "@openzeppelin/utils/math/Math.sol";
-import {Ownable} from "@openzeppelin/access/Ownable.sol";
+import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {SafeMath} from "@utils/SafeMath.sol";
 
 /**

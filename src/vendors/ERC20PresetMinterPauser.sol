@@ -5,14 +5,14 @@
 /* solhint-disable */
 pragma solidity ^0.8.0;
 
-import {ERC20} from "@openzeppelin/token/ERC20/ERC20.sol";
+import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {ERC20Burnable} from
-    "@openzeppelin/token/ERC20/extensions/ERC20Burnable.sol";
+    "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import {ERC20Pausable} from
-    "@openzeppelin/token/ERC20/extensions/ERC20Pausable.sol";
+    "@openzeppelin/contracts/token/ERC20/extensions/ERC20Pausable.sol";
 import {AccessControlEnumerable} from
-    "@openzeppelin/access/extensions/AccessControlEnumerable.sol";
-import {Context} from "@openzeppelin/utils/Context.sol";
+    "@openzeppelin/contracts/access/extensions/AccessControlEnumerable.sol";
+import {Context} from "@openzeppelin/contracts/utils/Context.sol";
 
 /**
  * @dev {ERC20} token, including:

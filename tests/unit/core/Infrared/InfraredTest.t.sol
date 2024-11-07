@@ -2,50 +2,78 @@
 pragma solidity 0.8.26;
 
 import "./Helper.sol";
+// import "@berachain/test/pol/BGT.t.sol";
+// import "@berachain/src/pol/BGT.sol";
+// import { BeaconDepositMock, POLTest } from "@berachain/test/pol/POL.t.sol";
+import "@mocks/MockERC20.sol";
+import {BGTStaker} from "@berachain/pol/BGTStaker.sol";
+import "@berachain/pol/rewards/RewardVaultFactory.sol";
+import {IRewardVault as IBerachainRewardsVault} from
+    "@berachain/pol/interfaces/IRewardVault.sol";
 
 contract InfraredTest is Helper {
+    // MockBerachainRewardsVaultFactory public factory
     /*//////////////////////////////////////////////////////////////
                END TO END TESTS, FULL LIFE CYCLE
     //////////////////////////////////////////////////////////////*/
 
     function testEndToEndFlow() public {
-        MockERC20 mockAsset = new MockERC20("MockAsset", "MCK", 18);
-        rewardsFactory.createRewardsVault(address(mockAsset));
-
         address[] memory rewardTokens = new address[](2);
         rewardTokens[0] = address(ibgt);
         rewardTokens[1] = address(ired);
 
         // Step 1: Vault Registration
         infrared.grantRole(infrared.KEEPER_ROLE(), address(this));
-        InfraredVault vault = InfraredVault(
-            address(infrared.registerVault(address(mockAsset), rewardTokens))
-        );
+        // InfraredVault vault = InfraredVault(
+        //     address(infrared.registerVault(address(wbera), rewardTokens))
+        // );
+
+        InfraredVault vault = infraredVault;
+
+        vm.startPrank(infraredGovernance);
+        infrared.updateWhiteListedRewardTokens(address(wbera), true);
+        vm.stopPrank();
 
         // Step 2: User Interaction - Staking Tokens
         address user = address(10);
+        vm.deal(address(user), 1000 ether);
         uint256 stakeAmount = 1000 ether;
-        mockAsset.mint(user, stakeAmount);
         vm.startPrank(user);
-        mockAsset.approve(address(vault), stakeAmount);
+        wbera.deposit{value: stakeAmount}();
+        wbera.approve(address(vault), stakeAmount);
         vault.stake(stakeAmount);
         vm.stopPrank();
 
         // Step 3: Reward Accrual via Rewards Factory (Simulate Reward Increase)
-        // Assuming rewardsFactory and infrared contracts have been set up to interact correctly
-        rewardsFactory.increaseRewardsForVault(address(mockAsset), 100 ether);
+        // Assuming factory and infrared contracts have been set up to interact correctly
+        address vaultWbera = factory.getVault(address(wbera));
+
+        vm.startPrank(address(blockRewardController));
+        bgt.mint(address(distributor), 100 ether);
+        vm.stopPrank();
+
+        vm.startPrank(address(distributor));
+        bgt.approve(address(vaultWbera), 100 ether);
+        IBerachainRewardsVault(vaultWbera).notifyRewardAmount(
+            abi.encodePacked(bytes32("v0"), bytes16("")), 100 ether
+        );
+        vm.stopPrank();
 
         // Step 4: Passage of Time for Rewards Distribution
-        vm.warp(block.timestamp + 10 days); // Simulating 10 days for reward accrual
+        vm.warp(block.timestamp + 100 days); // Simulating 10 days for reward accrual
 
         // Step 5: Harvest Vault - Distributing Rewards
-        vm.startPrank(keeper);
         uint256 vaultBalanceBefore = ibgt.balanceOf(address(vault));
+
+        vm.startPrank(address(vault));
+        vault.rewardsVault().setOperator(address(infrared));
+        vm.stopPrank();
+        vm.startPrank(keeper);
         vm.expectEmit();
         emit IInfrared.VaultHarvested(
-            keeper, address(mockAsset), address(vault), 99999999999999964000
+            keeper, address(wbera), address(vault), 99999999999999999000
         );
-        infrared.harvestVault(address(mockAsset));
+        infrared.harvestVault(address(wbera));
         vm.stopPrank();
 
         uint256 vaultBalanceAfter = ibgt.balanceOf(address(vault));
@@ -62,11 +90,14 @@ contract InfraredTest is Helper {
         uint256 rewardBalance = ibgt.balanceOf(user);
         assertTrue(rewardBalance > 0, "User should have rewards");
 
+        console.log("User reward balance: ", rewardBalance);
+
         // Step 7: Users Withdraw Tokens
         vm.startPrank(user);
         vault.withdraw(stakeAmount);
-        uint256 finalBalance = mockAsset.balanceOf(user);
+        uint256 finalBalance = wbera.balanceOf(user);
         vm.stopPrank();
+
         assertEq(
             finalBalance,
             stakeAmount,
@@ -85,6 +116,406 @@ contract InfraredTest is Helper {
             "User balance in vault should be zero after withdrawal"
         );
     }
+
+    function testCollectBribesSuccess() public {
+        // Step 0. Update the weight of `uint256(WeightType.CollectBribesWiberaVault)`.
+        vm.startPrank(infraredGovernance);
+        infrared.updateWeight(
+            IInfrared.WeightType.CollectBribesWiberaVault, 1e6 / 2
+        );
+        vm.stopPrank();
+
+        // 1. Mint some native tokens to the collector.
+        vm.deal(address(collector), 100 ether);
+        vm.startPrank(address(collector));
+
+        // 2. Wrap these as wbera tokens.
+        wbera.deposit{value: 100 ether}();
+        // Check that the collector balance of wbera is 100 ether.
+        assertEq(
+            wbera.balanceOf(address(collector)),
+            100 ether,
+            "Collector balance should be 100 ether"
+        );
+        vm.stopPrank();
+
+        address wiberaVault = address(infrared.wiberaVault());
+        address ibgtVault = address(infrared.ibgtVault());
+
+        // Step 6. Assure that the vaults received the collected bribes.
+        console.log(
+            "[reward] wiberaVault balance before: ",
+            wbera.balanceOf(address(wiberaVault))
+        );
+        console.log(
+            "[reward] ibgtVault balance before: ",
+            wbera.balanceOf(address(ibgtVault))
+        );
+        console.log(
+            "[reward] Infrared balance before: ",
+            wbera.balanceOf(address(infrared))
+        );
+
+        console.log("------------collectBribes()---------------------");
+
+        // Step 4. approve 3 ether to infrared.
+        vm.startPrank(address(collector));
+        wbera.approve(address(infrared), 3 ether);
+
+        // Step 5. Call `collectBribes` with the reward token.
+        infrared.collectBribes(address(wbera), 3 ether);
+
+        // Step 6. Display the updated balances of the vaults and infrared after they received the collected bribes.
+        console.log(
+            "[reward] wiberaVault balance after: ",
+            wbera.balanceOf(address(wiberaVault))
+        );
+        console.log(
+            "[reward] ibgtVault balance after: ",
+            wbera.balanceOf(address(ibgtVault))
+        );
+        console.log(
+            "[reward] Infrared remaining balance after: ",
+            wbera.balanceOf(address(infrared))
+        );
+
+        // Step 7. Assure that the vaults received the collected bribes.
+        assertTrue(
+            wbera.balanceOf(address(wiberaVault)) == 1.5 ether,
+            "WiberaVault should have 1.5 ether"
+        );
+        assertTrue(
+            wbera.balanceOf(address(ibgtVault)) == 1.5 ether,
+            "IBGTVault should have 1.5 ether"
+        );
+        assertTrue(
+            wbera.balanceOf(address(infrared)) == 0 ether,
+            "Infrared should have 0 ether"
+        );
+    }
+
+    function testcollectBribesNotWhitelistedToken() public {
+        // 1. Mint some native tokens to the collector, then wrap it as wbera.
+        vm.deal(address(collector), 100 ether);
+        vm.startPrank(address(collector));
+        wbera.deposit{value: 100 ether}();
+        wbera.approve(address(infrared), 1 ether);
+
+        // Step 4. Call `collectBribes` with the reward token. Should revert.
+        vm.expectRevert(abi.encodeWithSignature("RewardTokenNotSupported()"));
+        infrared.collectBribes(address(15), 1 ether);
+    }
+
+    function testcollectBribesNotCollector() public {
+        // 1. Mint some native tokens to the collector, then wrap it as wbera.
+        vm.deal(address(collector), 100 ether);
+        vm.startPrank(address(collector));
+        wbera.deposit{value: 100 ether}();
+        wbera.approve(address(infrared), 1 ether);
+        vm.stopPrank();
+
+        // Step 2. Call `updateWhitelistedRewardTokens` to add the reward token.
+        vm.startPrank(infraredGovernance);
+        infrared.updateWhiteListedRewardTokens(address(wbera), true);
+        vm.stopPrank();
+
+        vm.startPrank(address(keeper));
+        // Step 3. Call `collectBribes` with the reward token. Should revert.
+        vm.expectRevert(
+            abi.encodeWithSignature("Unauthorized(address)", address(keeper))
+        );
+        infrared.collectBribes(address(wbera), 1 ether);
+    }
+
+    function testharvestBaseSuccess() public {
+        // 1. Mint ibgt to some random address, such that total supply of ibgt is 100 ether.
+        vm.startPrank(address(blockRewardController));
+        ibgt.mint(address(infraredGovernance), 100 ether);
+
+        // 2. Mint bgt to the Infrared, to simulate the rewards.
+        bgt.mint(address(infrared), 110 ether);
+        vm.stopPrank();
+        assertTrue(
+            bgt.balanceOf(address(infrared)) > ibgt.totalSupply(),
+            "Infrared should have more BGT than total supply of IBGT."
+        );
+
+        // 3. Add a validator to the validator set.
+        vm.startPrank(infraredGovernance);
+        IInfrared.Validator memory validator_str = IInfrared.Validator({
+            pubkey: "0x1234567890abcdef",
+            addr: address(validator),
+            commission: 1 ether
+        });
+        IInfrared.Validator[] memory validators = new IInfrared.Validator[](1);
+        validators[0] = validator_str;
+        bytes[] memory pubkeys = new bytes[](1);
+        pubkeys[0] = validator_str.pubkey;
+        infrared.addValidators(validators);
+        vm.stopPrank();
+
+        console.log(
+            "Distributor balance of [ibgt] before harvest: ",
+            ibgt.balanceOf(address(infrared.distributor()))
+        );
+        // 4. Call `harvestBase` to distribute the rewards.
+        infrared.harvestBase();
+        console.log(
+            "Distributor balance of [ibgt] after harvest: ",
+            ibgt.balanceOf(address(infrared.distributor()))
+        );
+        assertTrue(
+            ibgt.balanceOf(address(infrared.distributor())) > 0,
+            "Infrared should have distributed rewards."
+        );
+
+        console.log(
+            "Validator balance of [ibgt] before claim: ",
+            ibgt.balanceOf(address(validator))
+        );
+        // 5. Claim the rewards as validator.
+        vm.startPrank(validator);
+        infrared.distributor().claim(validator_str.pubkey, validator_str.addr);
+        vm.stopPrank();
+
+        console.log(
+            "Validator balance of [ibgt] after claim: ",
+            ibgt.balanceOf(address(validator))
+        );
+        assertTrue(
+            ibgt.balanceOf(address(validator)) == 10 ether,
+            "Validator should have claimed rewards."
+        );
+    }
+
+    function testharvestBaseNoValidators() public {
+        vm.startPrank(address(blockRewardController));
+
+        ibgt.mint(address(infraredGovernance), 100 ether);
+
+        bgt.mint(address(infrared), 101 ether);
+
+        vm.stopPrank();
+
+        vm.expectRevert(abi.encodeWithSignature("InvalidValidator()"));
+        infrared.harvestBase();
+    }
+
+    function testharvestBaseNoMinted() public {
+        vm.expectRevert(abi.encodeWithSignature("UnderFlow()"));
+        infrared.harvestBase();
+    }
+
+    function testharvestBribesSuccess() public {
+        MockERC20 mockAsset = new MockERC20("MockAsset", "MCK", 18);
+        infrared.grantRole(infrared.GOVERNANCE_ROLE(), address(this));
+        infrared.updateWhiteListedRewardTokens(address(mockAsset), true);
+
+        address[] memory tokens = new address[](2);
+        tokens[0] = address(mockAsset);
+        tokens[1] = address(DataTypes.NATIVE_ASSET);
+
+        uint256 mintMockAssetAmount = 10000000;
+        uint256 mintNativeAssetAmount = 100 ether;
+        mockAsset.mint(address(infrared), mintMockAssetAmount);
+        vm.deal(address(infrared), mintNativeAssetAmount);
+
+        address collectAddress = address(collector);
+        uint256 collectorMockAssetBalanceBefore =
+            mockAsset.balanceOf(collectAddress);
+        uint256 collectorWberaBalanceBefore = wbera.balanceOf(collectAddress);
+
+        uint256 mockAssetFeeAmount =
+            infrared.protocolFeeAmounts(address(mockAsset));
+        uint256 wBeraFeeAmount = infrared.protocolFeeAmounts(address(wbera));
+
+        vm.expectEmit(true, true, true, true);
+        emit IInfrared.BribeSupplied(
+            collectAddress,
+            address(mockAsset),
+            mintMockAssetAmount - mockAssetFeeAmount
+        );
+
+        vm.expectEmit(true, true, true, true);
+        emit IInfrared.BribeSupplied(
+            collectAddress,
+            address(wbera),
+            mintNativeAssetAmount - wBeraFeeAmount
+        );
+
+        address user = address(10);
+        vm.startPrank(user);
+        infrared.harvestBribes(tokens);
+
+        uint256 collectorMockAssetBalanceAfter =
+            mockAsset.balanceOf(collectAddress);
+        uint256 collectorWberaBalanceAfter = wbera.balanceOf(collectAddress);
+
+        assertEq(
+            mockAsset.balanceOf(address(collector)),
+            mintMockAssetAmount - mockAssetFeeAmount,
+            "Collector should receive the mockAsset bribe"
+        );
+
+        assertEq(
+            wbera.balanceOf(address(collector)),
+            mintNativeAssetAmount - wBeraFeeAmount,
+            "Collector should receive the wBera bribe"
+        );
+    }
+
+    function testharvestBribesNotWhitelistedToken() public {
+        MockERC20 mockAsset = new MockERC20("MockAsset", "MCK", 18);
+
+        address[] memory tokens = new address[](1);
+        tokens[0] = address(mockAsset);
+
+        vm.expectEmit(true, false, false, true);
+        emit IInfrared.RewardTokenNotSupported(address(mockAsset));
+
+        address user = address(10);
+        vm.startPrank(user);
+        infrared.harvestBribes(tokens);
+    }
+
+    function testharvestBoostRewards() public {
+        // Step 1: Vault Registration
+        infrared.grantRole(infrared.KEEPER_ROLE(), address(this));
+
+        address[] memory rewardTokens = new address[](2);
+        rewardTokens[0] = address(ibgt);
+        rewardTokens[1] = address(ired);
+        // InfraredVault vault = InfraredVault(
+        //     address(infrared.registerVault(address(wbera), rewardTokens))
+        // );
+        InfraredVault vault = infraredVault;
+
+        vm.startPrank(address(blockRewardController));
+
+        ibgt.mint(address(infraredGovernance), 100 ether);
+
+        bgt.mint(address(infrared), 101 ether);
+
+        vm.stopPrank();
+
+        address wiberaVault = address(infrared.wiberaVault());
+        address ibgtVault = address(infrared.ibgtVault());
+
+        vm.startPrank(infraredGovernance);
+        IInfrared.Validator memory validator_str = IInfrared.Validator({
+            pubkey: "0x1234567890abcdef",
+            addr: address(validator),
+            commission: 1
+        });
+        IInfrared.Validator[] memory validators = new IInfrared.Validator[](1);
+        validators[0] = validator_str;
+
+        bytes[] memory pubkeys = new bytes[](1);
+        pubkeys[0] = validator_str.pubkey;
+
+        infrared.addValidators(validators);
+        vm.stopPrank();
+
+        infrared.harvestBase();
+
+        // ========================================================
+        // HARVEST BASE PART
+        // ========================================================
+
+        // Assumed that there are some boost rewards in the contract.
+        // MockERC20 mockAsset = new MockERC20("MockAsset", "MCK", 18);
+        // factory.createRewardsVault(address(mockAsset));
+        // Step 1: Vault Registration
+        infrared.grantRole(infrared.KEEPER_ROLE(), address(this));
+
+        infrared.grantRole(infrared.KEEPER_ROLE(), address(this));
+        // InfraredVault vault = InfraredVault(
+        //     address(infrared.registerVault(address(wbera), rewardTokens))
+        // );
+
+        vm.startPrank(infraredGovernance);
+        infrared.updateWhiteListedRewardTokens(address(wbera), true);
+        vm.stopPrank();
+
+        // Step 2: User Interaction - Staking Tokens
+        address user = address(10);
+        vm.deal(address(user), 1000 ether);
+        uint256 stakeAmount = 1000 ether;
+        vm.startPrank(user);
+        wbera.deposit{value: stakeAmount}();
+        wbera.approve(address(vault), stakeAmount);
+        vault.stake(stakeAmount);
+        vm.stopPrank();
+
+        // Step 3: Reward Accrual via Rewards Factory (Simulate Reward Increase)
+        // Assuming factory and infrared contracts have been set up to interact correctly
+        address vaultWbera = factory.getVault(address(wbera));
+
+        vm.startPrank(address(blockRewardController));
+        bgt.mint(address(distributor), 100 ether);
+        vm.stopPrank();
+
+        vm.startPrank(address(distributor));
+        bgt.approve(address(vaultWbera), 100 ether);
+        IBerachainRewardsVault(vaultWbera).notifyRewardAmount(
+            abi.encodePacked(bytes32("v0"), bytes16("")), 100 ether
+        );
+        vm.stopPrank();
+
+        // Step 4: Passage of Time for Rewards Distribution
+        vm.warp(block.timestamp + 10 days); // Simulating 10 days for reward accrual
+
+        // Step 5: Harvest Vault - Distributing Rewards
+        uint256 vaultBalanceBefore = ibgt.balanceOf(address(vault));
+
+        vm.startPrank(address(vault));
+        vault.rewardsVault().setOperator(address(infrared));
+
+        vm.startPrank(keeper);
+        infrared.harvestVault(address(wbera));
+        vm.stopPrank();
+
+        // Step 6: Calculate the amounts to queue.
+        uint128[] memory amounts = new uint128[](1);
+        amounts[0] = uint128(bgt.balanceOf(address(infrared)))
+            - bgt.queuedBoost(address(infrared)) - bgt.boosts(address(infrared));
+
+        uint256 unboostedBalance = bgt.unboostedBalanceOf(address(infrared));
+
+        // Step 7: Queue the boosts.
+        vm.startPrank(address(keeper));
+        infrared.queueBoosts(pubkeys, amounts);
+        vm.stopPrank();
+
+        // move forward beyond buffer length so enough time passed through buffer
+        vm.roll(block.number + HISTORY_BUFFER_LENGTH + 1);
+
+        // activate boost
+        infrared.activateBoosts(pubkeys);
+
+        // uint256 earned = bgtStaker.earned(address(infrared));
+
+        uint256 ibgtVaultWberaBalanceBefore =
+            wbera.balanceOf(address(ibgtVault));
+
+        vm.startPrank(address(feeCollector));
+        vm.deal(address(feeCollector), 100 ether);
+        wbera.deposit{value: 100 ether}();
+        wbera.transfer(address(bgt.staker()), 100 ether);
+        bgt.staker().notifyRewardAmount(100 ether);
+        vm.stopPrank();
+
+        vm.warp(block.timestamp + 30 days); // Simulate passage of time for reward distribution
+
+        infrared.harvestBoostRewards();
+
+        uint256 ibgtVaultWberaBalanceAfter = wbera.balanceOf(address(ibgtVault));
+        assertTrue(
+            ibgtVaultWberaBalanceAfter > ibgtVaultWberaBalanceBefore,
+            "Vault should have more wBera after harvest"
+        );
+    }
+
     /* TODO: fix
     function testEndToEndHarvestValidator() public {
         // Staking by User in IBGT Vault

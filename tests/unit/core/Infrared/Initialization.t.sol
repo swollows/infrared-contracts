@@ -17,7 +17,7 @@ contract InfraredInitializationTest is Helper {
 
         assertEq(
             address(infrared.rewardsFactory()),
-            address(rewardsFactory),
+            address(factory),
             "Incorrect Bera Chain Rewards Factory address"
         );
         // assertEq(     // TODO: wait until the distribution contract is implemented
@@ -26,9 +26,7 @@ contract InfraredInitializationTest is Helper {
         //     "Incorrect Distribution Precompile address"
         // );
         assertEq(
-            address(infrared.wbera()),
-            address(mockWbera),
-            "Incorrect Wbera address"
+            address(infrared.wbera()), address(wbera), "Incorrect Wbera address"
         );
 
         assertTrue(
@@ -53,7 +51,7 @@ contract InfraredInitializationTest is Helper {
             "Keeper should have KEEPER_ROLE"
         );
         assertTrue(
-            infrared.hasRole(infrared.GOVERNANCE_ROLE(), governance),
+            infrared.hasRole(infrared.GOVERNANCE_ROLE(), infraredGovernance),
             "Governance should have GOVERNANCE_ROLE"
         );
     }

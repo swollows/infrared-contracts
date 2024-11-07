@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.26;
 
-import {AccessControl} from "@openzeppelin/access/AccessControl.sol";
-import {ERC20} from "@openzeppelin/token/ERC20/ERC20.sol";
-import {Math} from "@openzeppelin/utils/math/Math.sol";
+import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
+import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 
 import {IInfrared} from "@interfaces/IInfrared.sol";
 import {IIBERADepositor} from "@interfaces/IIBERADepositor.sol";

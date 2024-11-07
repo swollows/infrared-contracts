@@ -2,18 +2,20 @@
 pragma solidity 0.8.26;
 
 // External dependencies.
-import {Address} from "@openzeppelin/utils/Address.sol";
-import {Math} from "@openzeppelin/utils/math/Math.sol";
-import {SafeERC20} from "@openzeppelin/token/ERC20/utils/SafeERC20.sol";
-import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
-import {EnumerableSet} from "@openzeppelin/utils/structs/EnumerableSet.sol";
-import {Strings} from "@openzeppelin/utils/Strings.sol";
+import {Address} from "@openzeppelin/contracts/utils/Address.sol";
+import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
+import {SafeERC20} from
+    "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {EnumerableSet} from
+    "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
 import {IBeraChef} from "@berachain/pol/interfaces/IBeraChef.sol";
-import {IBerachainRewardsVault} from
-    "@berachain/pol/interfaces/IBerachainRewardsVault.sol";
-import {IBerachainRewardsVaultFactory} from
-    "@berachain/pol/interfaces/IBerachainRewardsVaultFactory.sol";
+import {IRewardVault as IBerachainRewardsVault} from
+    "@berachain/pol/interfaces/IRewardVault.sol";
+import {IRewardVaultFactory as IBerachainRewardsVaultFactory} from
+    "@berachain/pol/interfaces/IRewardVaultFactory.sol";
 import {IBerachainBGT} from "@interfaces/IBerachainBGT.sol"; // TODO: update when BGT interface fixed
 import {IBerachainBGTStaker} from "@interfaces/IBerachainBGTStaker.sol"; // TODO: update when BGT staker interface fixed
 
@@ -175,7 +177,7 @@ contract Infrared is InfraredUpgradeable, IInfrared {
         address _ibgt,
         address _rewardsFactory,
         address _chef,
-        address _wbera,
+        address payable _wbera,
         address _honey,
         address _ired,
         address _wibera
@@ -837,22 +839,18 @@ contract Infrared is InfraredUpgradeable, IInfrared {
     /* TODO: update for queue => activate with commissions
 
     /// @notice Updates validator commission rate calling BGT to set.
-    function _updateValidatorCommission(
-        bytes memory _pubkey,
-        uint256 _commission
-    ) private {
+    function _updateValidatorCommission(bytes memory _pubkey, uint256 _commission) private {
         if (_commission > COMMISSION_MAX) revert Errors.InvalidCommissionRate();
-        emit ValidatorCommissionUpdated(
-            msg.sender, _pubkey, _getValidatorCommission(_pubkey), _commission
-        );
-        _bgt.setCommission(_pubkey, _commission);
+        emit ValidatorCommissionUpdated(msg.sender, _pubkey, _getValidatorCommission(_pubkey), _commission);
+        // _bgt.setCommission(_pubkey, _commission);
     }
 
     /// @inheritdoc IInfrared
-    function updateValidatorCommission(
-        bytes calldata _pubkey,
-        uint256 _commission
-    ) external onlyGovernor whenInitialized {
+    function updateValidatorCommission(bytes calldata _pubkey, uint256 _commission)
+        external
+        onlyGovernor
+        whenInitialized
+    {
         if (!isInfraredValidator(_pubkey)) revert Errors.InvalidValidator();
         _updateValidatorCommission(_pubkey, _commission);
     }
@@ -866,7 +864,7 @@ contract Infrared is InfraredUpgradeable, IInfrared {
         IBeraChef.Weight[] calldata _weights
     ) external onlyKeeper {
         if (!isInfraredValidator(_pubkey)) revert Errors.InvalidValidator();
-        chef.queueNewCuttingBoard(_pubkey, _startBlock, _weights);
+        chef.queueNewRewardAllocation(_pubkey, _startBlock, _weights);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -921,11 +919,7 @@ contract Infrared is InfraredUpgradeable, IInfrared {
 
     /* TODO: fix for queueing => activate drop boost updates
     /// @inheritdoc IInfrared
-    function dropBoosts(bytes[] memory _pubkeys, uint128[] memory _amts)
-        external
-        onlyKeeper
-        whenInitialized
-    {
+    function dropBoosts(bytes[] memory _pubkeys, uint128[] memory _amts) external onlyKeeper whenInitialized {
         if (_pubkeys.length != _amts.length) {
             revert Errors.InvalidArrayLength();
         }
@@ -979,4 +973,14 @@ contract Infrared is InfraredUpgradeable, IInfrared {
     function getBGTBalance() public view returns (uint256) {
         return _bgt.balanceOf(address(this));
     }
+
+    function updateValidatorCommission(
+        bytes calldata _pubkey,
+        uint256 _commission
+    ) external override {}
+
+    function dropBoosts(bytes[] memory _pubkeys, uint128[] memory _amts)
+        external
+        override
+    {}
 }
