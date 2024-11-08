@@ -9,7 +9,6 @@
 	url = https://github.com/OpenZeppelin/openzeppelin-contracts-upgradeable
 [submodule "lib/contracts-monorepo"]
 	path = lib/contracts-monorepo
-	branch = main
 	url = https://github.com/berachain/contracts-monorepo
 [submodule "lib/solady"]
 	path = lib/solady
