@@ -19,6 +19,8 @@ import {IInfraredVault} from "@interfaces/IInfraredVault.sol";
 import {DataTypes} from "@utils/DataTypes.sol";
 
 import {IInfraredUpgradeable} from "./IInfraredUpgradeable.sol";
+import {ValidatorTypes} from "@core/libraries/ValidatorTypes.sol";
+import {ConfigTypes} from "@core/libraries/ConfigTypes.sol";
 
 interface IInfrared is IInfraredUpgradeable {
     /**
@@ -48,18 +50,6 @@ interface IInfrared is IInfraredUpgradeable {
     function ibgt() external view returns (IIBGT);
 
     /**
-     * @notice The Infrared governance token
-     * @return IERC20Mintable instance of the IRED token contract address
-     */
-    function ired() external view returns (IERC20Mintable);
-
-    /**
-     * @notice The wrapped Infrared bera token
-     * @return IERC20 instance of the wibera token contract address
-     */
-    function wibera() external view returns (IERC20);
-
-    /**
      * @notice The Berachain rewards vault factory address
      * @return IBerachainRewardsVaultFactory instance of the rewards factory contract address
      */
@@ -81,12 +71,6 @@ interface IInfrared is IInfraredUpgradeable {
     function ibgtVault() external view returns (IInfraredVault);
 
     /**
-     * @notice The wrapped IBERA vault
-     * @return IInfraredVault instance of the wibera vault contract address
-     */
-    function wiberaVault() external view returns (IInfraredVault);
-
-    /**
      * @notice The unclaimed Infrared protocol fees of token accumulated by contract
      * @param token address The token address for the accumulated fees
      * @return uint256 The amount of accumulated fees
@@ -95,14 +79,6 @@ interface IInfrared is IInfraredUpgradeable {
         external
         view
         returns (uint256);
-
-    /**
-     * @notice Weight type enum for determining how much to weight reward distribution amongst recipients
-     */
-    enum WeightType {
-        HarvestBaseWiberaVault,
-        CollectBribesWiberaVault
-    }
 
     /**
      * @notice Weights for various harvest function distributions
@@ -156,19 +132,13 @@ interface IInfrared is IInfraredUpgradeable {
     function rewardsDuration() external view returns (uint256);
 
     /**
-     * @notice The mint amount of IRED rewards minted per IBGT
-     * @return uint256 The IRED mint rate
-     */
-    function iredMintRate() external view returns (uint256);
-
-    /**
-     * @notice Registers a new vault for a given asset and initializes it with reward tokens
+     * @notice Registers a new vault for a given asset
      * @dev Infrared.sol must be admin over MINTER_ROLE on IBGT to grant minter role to deployed vault
      * @param _asset The address of the asset, such as a specific LP token
-     * @param _rewardTokens The addresses of reward tokens to initialize with the new vault
      * @return vault The address of the newly created InfraredVault contract
+     * @custom:emits NewVault with the caller, asset address, and new vault address.
      */
-    function registerVault(address _asset, address[] memory _rewardTokens)
+    function registerVault(address _asset)
         external
         returns (IInfraredVault vault);
 
@@ -185,12 +155,6 @@ interface IInfrared is IInfraredUpgradeable {
      * @param _rewardsDuration The new reward duration period, in seconds
      */
     function updateRewardsDuration(uint256 _rewardsDuration) external;
-
-    /**
-     * @notice Updates the IRED mint rate per unit of IBGT
-     * @param _iredMintRate The new IRED mint rate in units of 1e6 (hundredths of 1 bip)
-     */
-    function updateIredMintRate(uint256 _iredMintRate) external;
 
     /**
      * @notice Pauses staking functionality on a specific vault
@@ -215,6 +179,8 @@ interface IInfrared is IInfraredUpgradeable {
      * @param _distributor The address of the distributor
      * @param _voter The address of the voter
      * @param _rewardsDuration The reward duration period, in seconds
+     * @custom:require _admin, _collector, _distributor, and _voter must be non-zero addresses.
+     * @custom:require _rewardsDuration must be greater than zero.
      */
     function initialize(
         address _admin,
@@ -235,7 +201,8 @@ interface IInfrared is IInfraredUpgradeable {
      * @param _t WeightType The weight type
      * @param _weight uint256 The weight value
      */
-    function updateWeight(WeightType _t, uint256 _weight) external;
+    function updateWeight(ConfigTypes.WeightType _t, uint256 _weight)
+        external;
 
     /**
      * @notice Updates the fee rate charged on different harvest functions
@@ -243,7 +210,7 @@ interface IInfrared is IInfraredUpgradeable {
      * @param _t   FeeType The fee type
      * @param _fee uint256 The fee rate to update to
      */
-    function updateFee(FeeType _t, uint256 _fee) external;
+    function updateFee(ConfigTypes.FeeType _t, uint256 _fee) external;
 
     /**
      * @notice Claims accumulated protocol fees in contract
@@ -284,21 +251,12 @@ interface IInfrared is IInfraredUpgradeable {
      */
     function harvestBoostRewards() external;
 
-    /// @notice Validator information for validator set
-    struct Validator {
-        /// pubkey of the validator for beacon deposit contract
-        bytes pubkey;
-        /// address of the validator for claiming infrared commission rewards
-        address addr;
-        /// commission for validator to charge at core berachain level
-        uint256 commission;
-    }
-
     /**
      * @notice Adds validators to the set of `InfraredValidators`.
      * @param _validators Validator[] memory The validators to add.
      */
-    function addValidators(Validator[] memory _validators) external;
+    function addValidators(ValidatorTypes.Validator[] memory _validators)
+        external;
 
     /**
      * @notice Removes validators from the set of `InfraredValidators`.
@@ -374,7 +332,7 @@ interface IInfrared is IInfraredUpgradeable {
     function infraredValidators()
         external
         view
-        returns (Validator[] memory validators);
+        returns (ValidatorTypes.Validator[] memory validators);
 
     /**
      * @notice Gets the number of infrared validators in validator set.
@@ -398,31 +356,21 @@ interface IInfrared is IInfraredUpgradeable {
      */
     function getBGTBalance() external view returns (uint256 bgtBalance);
 
-    /// @notice Fee type enum for determining rates to charge on reward distribution.
-    enum FeeType {
-        HarvestBaseFeeRate,
-        HarvestBaseProtocolRate,
-        HarvestVaultFeeRate,
-        HarvestVaultProtocolRate,
-        HarvestBribesFeeRate,
-        HarvestBribesProtocolRate,
-        HarvestBoostFeeRate,
-        HarvestBoostProtocolRate
-    }
-
     /**
      * @notice Emitted when a new vault is registered
      * @param _sender The address that initiated the vault registration
      * @param _asset The address of the asset for which the vault is registered
      * @param _vault The address of the newly created vault
-     * @param _rewardTokens An array of addresses of the reward tokens for the new vault
      */
     event NewVault(
-        address _sender,
-        address indexed _asset,
-        address indexed _vault,
-        address[] _rewardTokens
+        address _sender, address indexed _asset, address indexed _vault
     );
+
+    /**
+     * @notice Emitted when pause status for new vault registration has changed
+     * @param pause True if new vault creation is paused
+     */
+    event VaultRegistrationPauseStatus(bool pause);
 
     /**
      * @notice Emitted when IBGT tokens are supplied to distributor.
@@ -536,7 +484,7 @@ interface IInfrared is IInfraredUpgradeable {
      */
     event WeightUpdated(
         address _sender,
-        WeightType _weightType,
+        ConfigTypes.WeightType _weightType,
         uint256 _oldWeight,
         uint256 _newWeight
     );
@@ -550,7 +498,7 @@ interface IInfrared is IInfraredUpgradeable {
      */
     event FeeUpdated(
         address _sender,
-        FeeType _feeType,
+        ConfigTypes.FeeType _feeType,
         uint256 _oldFeeRate,
         uint256 _newFeeRate
     );
@@ -620,7 +568,9 @@ interface IInfrared is IInfraredUpgradeable {
      * @param _sender The address that initiated the addition.
      * @param _validators An array of validators that were added.
      */
-    event ValidatorsAdded(address _sender, Validator[] _validators);
+    event ValidatorsAdded(
+        address _sender, ValidatorTypes.Validator[] _validators
+    );
 
     /**
      * @notice Emitted when validators are removed from validator set.

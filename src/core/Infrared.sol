@@ -16,8 +16,8 @@ import {IRewardVault as IBerachainRewardsVault} from
     "@berachain/pol/interfaces/IRewardVault.sol";
 import {IRewardVaultFactory as IBerachainRewardsVaultFactory} from
     "@berachain/pol/interfaces/IRewardVaultFactory.sol";
-import {IBerachainBGT} from "@interfaces/IBerachainBGT.sol"; // TODO: update when BGT interface fixed
-import {IBerachainBGTStaker} from "@interfaces/IBerachainBGTStaker.sol"; // TODO: update when BGT staker interface fixed
+import {IBerachainBGT} from "@interfaces/IBerachainBGT.sol";
+import {IBerachainBGTStaker} from "@interfaces/IBerachainBGTStaker.sol";
 
 // Internal dependencies.
 import {DataTypes} from "@utils/DataTypes.sol";
@@ -33,49 +33,40 @@ import {IIBGT} from "@interfaces/IIBGT.sol";
 import {IBribeCollector} from "@interfaces/IBribeCollector.sol";
 import {IInfraredDistributor} from "@interfaces/IInfraredDistributor.sol";
 import {IInfraredVault} from "@interfaces/IInfraredVault.sol";
-import {IInfrared} from "@interfaces/IInfrared.sol";
+import {ConfigTypes, IInfrared} from "@interfaces/IInfrared.sol";
 
 import {InfraredUpgradeable} from "@core/InfraredUpgradeable.sol";
 import {InfraredVault} from "@core/InfraredVault.sol";
 
+import {ValidatorManagerLib} from "./libraries/ValidatorManagerLib.sol";
+import {ValidatorTypes} from "./libraries/ValidatorTypes.sol";
+import {VaultManagerLib} from "./libraries/VaultManagerLib.sol";
+import {RewardsLib} from "./libraries/RewardsLib.sol";
+
 /**
- * @title Infrared
- * @dev A contract for managing the set of infrared validators, infrared vaults, and interacting with the rewards handler.
- * @dev This contract is the main entry point for interacting with the Infrared protocol.
- * @dev It is an immutable contract that interacts with the upgradable rewards handler and staking handler. These contracts are upgradable by governance (app + chain), main reason is that they could change with a chain upgrade.
+ * @title Infrared Protocol Core Contract
+ * @notice Provides core functionalities for managing validators, vaults, and reward distribution in the Infrared protocol.
+ * @dev Serves as the main entry point for interacting with the Infrared protocol
+ * @dev The contract is upgradeable, ensuring flexibility for governance-led upgrades and chain compatibility.
  */
 contract Infrared is InfraredUpgradeable, IInfrared {
     using SafeERC20 for IERC20;
     using SafeERC20 for IIBGT;
     using EnumerableSet for EnumerableSet.Bytes32Set;
 
+    using ValidatorManagerLib for ValidatorManagerLib.ValidatorStorage;
+    using VaultManagerLib for VaultManagerLib.VaultStorage;
+    using RewardsLib for RewardsLib.RewardsStorage;
+
     /*//////////////////////////////////////////////////////////////
                            STORAGE/EVENTS
     //////////////////////////////////////////////////////////////*/
 
-    /**
-     * @notice Mapping of tokens that are whitelisted to be used as rewards or accepted as bribes
-     * @dev serves as central source of truth for whitelisted reward tokens for all Infrared contracts
-     */
-    mapping(address => bool) public whitelistedRewardTokens;
-
-    /**
-     * @notice Mapping of staking token addresses to their corresponding InfraredVault
-     * @dev Each staking token can only have one vault
-     */
-    mapping(address => IInfraredVault) public vaultRegistry;
-
-    /**
-     * @notice Set of infrared validator IDs where an ID is keccak256(pubkey)
-     * @dev Used to track active validators in the system
-     */
-    EnumerableSet.Bytes32Set internal _infraredValidatorIds;
-
-    /**
-     * @notice Mapping of validator IDs to their CL public keys
-     * @dev Maps the keccak256 hash of a validator's pubkey to their actual pubkey
-     */
-    mapping(bytes32 id => bytes pub) internal _infraredValidatorPubkeys;
+    // Storage for validator management
+    ValidatorManagerLib.ValidatorStorage internal validatorStorage;
+    // Vault storage instance
+    VaultManagerLib.VaultStorage internal vaultStorage;
+    RewardsLib.RewardsStorage internal rewardsStorage;
 
     /**
      * @notice The BGT token contract reference
@@ -85,12 +76,6 @@ contract Infrared is InfraredUpgradeable, IInfrared {
 
     /// @inheritdoc IInfrared
     IIBGT public immutable ibgt;
-
-    /// @inheritdoc IInfrared
-    IERC20Mintable public immutable ired;
-
-    /// @inheritdoc IInfrared
-    IERC20 public immutable wibera;
 
     /// @inheritdoc IInfrared
     IBerachainRewardsVaultFactory public immutable rewardsFactory;
@@ -112,45 +97,6 @@ contract Infrared is InfraredUpgradeable, IInfrared {
 
     /// @inheritdoc IInfrared
     IVoter public voter;
-
-    /// @inheritdoc IInfrared
-    uint256 public rewardsDuration;
-
-    /// @inheritdoc IInfrared
-    uint256 public iredMintRate;
-
-    /// @inheritdoc IInfrared
-    IInfraredVault public ibgtVault;
-
-    /// @inheritdoc IInfrared
-    IInfraredVault public wiberaVault;
-
-    /// @inheritdoc IInfrared
-    mapping(address => uint256) public protocolFeeAmounts;
-
-    /// @inheritdoc IInfrared
-    mapping(uint256 => uint256) public weights;
-
-    /// @inheritdoc IInfrared
-    mapping(uint256 => uint256) public fees;
-
-    /**
-     * @notice Weight units when partitioning reward amounts in hundredths of 1 bip
-     * @dev Used as the denominator when calculating weighted distributions (1e6)
-     */
-    uint256 internal constant WEIGHT_UNIT = 1e6;
-
-    /**
-     * @notice Protocol fee rate in hundredths of 1 bip
-     * @dev Used as the denominator when calculating protocol fees (1e6)
-     */
-    uint256 internal constant FEE_UNIT = 1e6;
-
-    /**
-     * @notice IRED mint rate in hundredths of 1 bip
-     * @dev Used as the denominator when calculating IRED minting (1e6)
-     */
-    uint256 internal constant RATE_UNIT = 1e6;
 
     /**
      * @notice Commission rate in units of 1 bip
@@ -178,9 +124,7 @@ contract Infrared is InfraredUpgradeable, IInfrared {
         address _rewardsFactory,
         address _chef,
         address payable _wbera,
-        address _honey,
-        address _ired,
-        address _wibera
+        address _honey
     ) InfraredUpgradeable(address(0)) {
         wbera = IWBERA(_wbera);
         honey = IERC20(_honey);
@@ -189,8 +133,6 @@ contract Infrared is InfraredUpgradeable, IInfrared {
 
         ibgt = IIBGT(_ibgt);
         _bgt = IBerachainBGT(ibgt.bgt());
-        ired = IERC20Mintable(_ired);
-        wibera = IERC20(_wibera);
     }
 
     function initialize(
@@ -205,36 +147,36 @@ contract Infrared is InfraredUpgradeable, IInfrared {
             _admin == address(0) || _collector == address(0)
                 || _distributor == address(0)
         ) revert Errors.ZeroAddress();
-        _updateWhiteListedRewardTokens(address(wbera), true);
-        _updateWhiteListedRewardTokens(address(ibgt), true);
-        _updateWhiteListedRewardTokens(address(ired), true);
-        _updateWhiteListedRewardTokens(address(honey), true);
+        if (_rewardsDuration == 0) revert Errors.ZeroAmount();
+
+        vaultStorage.rewardsDuration = _rewardsDuration;
 
         // grant admin access roles
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
         _grantRole(KEEPER_ROLE, _admin);
         _grantRole(GOVERNANCE_ROLE, _admin);
 
+        vaultStorage.updateWhitelistedRewardTokens(address(wbera), true);
+        vaultStorage.updateWhitelistedRewardTokens(address(ibgt), true);
+        vaultStorage.updateWhitelistedRewardTokens(address(honey), true);
+
         // set collector, validator distributor, and veIRED voter fee vault
         collector = IBribeCollector(_collector);
         distributor = IInfraredDistributor(_distributor);
         voter = IVoter(_voter);
 
-        if (_rewardsDuration == 0) revert Errors.ZeroAmount();
-        rewardsDuration = _rewardsDuration;
+        validatorStorage.distributor = address(distributor);
+        validatorStorage.bgt = address(_bgt);
 
-        // register ibgt vault which can have ibgt and ired rewards
-        address[] memory rewardTokens = new address[](3);
-        rewardTokens[0] = address(ibgt);
-        rewardTokens[1] = address(ired);
-        rewardTokens[2] = address(honey);
-        address _ibgtVaultAddress = _registerVault(address(ibgt), rewardTokens);
-        ibgtVault = IInfraredVault(_ibgtVaultAddress);
+        rewardsStorage.collector = address(collector);
+        rewardsStorage.distributor = address(distributor);
+        rewardsStorage.wbera = address(wbera);
+        rewardsStorage.bgt = address(_bgt);
+        rewardsStorage.ibgt = address(ibgt);
+        rewardsStorage.voter = address(voter);
+        rewardsStorage.rewardsDuration = _rewardsDuration;
 
-        // register wibera vault which can have ibgt and ired rewards
-        address _wiberaVaultAddress =
-            _registerVault(address(wibera), rewardTokens);
-        wiberaVault = IInfraredVault(_wiberaVaultAddress);
+        rewardsStorage.ibgtVault = vaultStorage.registerVault(address(ibgt));
 
         // init upgradeable components
         __InfraredUpgradeable_init();
@@ -244,53 +186,27 @@ contract Infrared is InfraredUpgradeable, IInfrared {
                         VAULT REGISTRY
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Registers a new vault
-    function _registerVault(address _asset, address[] memory _rewardTokens)
-        private
-        returns (address _new)
+    /// @inheritdoc IInfrared
+    function registerVault(address _asset)
+        external
+        whenInitialized
+        returns (IInfraredVault vault)
     {
-        // Check for duplicate staking asset address
-        if (vaultRegistry[_asset] != IInfraredVault(address(0))) {
-            revert Errors.DuplicateAssetAddress();
-        }
-        // Check for invalid reward tokens
-        for (uint256 i = 0; i < _rewardTokens.length; i++) {
-            if (!whitelistedRewardTokens[_rewardTokens[i]]) {
-                revert Errors.RewardTokenNotSupported();
-            }
-        }
-
-        _new =
-            InfraredVaultDeployer.deploy(_asset, _rewardTokens, rewardsDuration);
-        vaultRegistry[_asset] = IInfraredVault(_new);
-        emit NewVault(msg.sender, _asset, _new, _rewardTokens);
+        vault = IInfraredVault(vaultStorage.registerVault(_asset));
+        emit NewVault(msg.sender, _asset, address(vault));
     }
 
-    /// @inheritdoc IInfrared
-    function registerVault(address _asset, address[] memory _rewardTokens)
-        external
-        onlyKeeper
-        whenInitialized
-        returns (IInfraredVault)
-    {
-        if (_asset == address(0)) revert Errors.ZeroAddress();
-        address vault = _registerVault(_asset, _rewardTokens);
-        return IInfraredVault(vault);
+    function addReward(
+        address _stakingToken,
+        address _rewardsToken,
+        uint256 _rewardsDuration
+    ) external onlyGovernor whenInitialized {
+        vaultStorage.addReward(_stakingToken, _rewardsToken, _rewardsDuration);
     }
 
     /*//////////////////////////////////////////////////////////////
                         ADMIN
     //////////////////////////////////////////////////////////////*/
-
-    /// @notice Updates whitelisted reward tokens
-    function _updateWhiteListedRewardTokens(address _token, bool _whitelisted)
-        private
-    {
-        emit WhiteListedRewardTokensUpdated(
-            msg.sender, _token, whitelistedRewardTokens[_token], _whitelisted
-        );
-        whitelistedRewardTokens[_token] = _whitelisted;
-    }
 
     /// @inheritdoc IInfrared
     function updateWhiteListedRewardTokens(address _token, bool _whitelisted)
@@ -298,7 +214,11 @@ contract Infrared is InfraredUpgradeable, IInfrared {
         onlyGovernor
         whenInitialized
     {
-        _updateWhiteListedRewardTokens(_token, _whitelisted);
+        bool previousStatus = whitelistedRewardTokens(_token);
+        vaultStorage.updateWhitelistedRewardTokens(_token, _whitelisted);
+        emit WhiteListedRewardTokensUpdated(
+            msg.sender, _token, previousStatus, _whitelisted
+        );
     }
 
     /// @inheritdoc IInfrared
@@ -307,32 +227,17 @@ contract Infrared is InfraredUpgradeable, IInfrared {
         onlyGovernor
         whenInitialized
     {
-        if (_rewardsDuration == 0) {
-            revert Errors.ZeroAmount();
-        }
+        uint256 oldRewardsDuration = rewardsDuration();
+        vaultStorage.updateRewardsDuration(_rewardsDuration);
+        rewardsStorage.updateRewardsDuration(_rewardsDuration);
         emit RewardsDurationUpdated(
-            msg.sender, rewardsDuration, _rewardsDuration
+            msg.sender, oldRewardsDuration, _rewardsDuration
         );
-        rewardsDuration = _rewardsDuration;
-    }
-
-    /// @inheritdoc IInfrared
-    function updateIredMintRate(uint256 _iredMintRate)
-        external
-        onlyGovernor
-        whenInitialized
-    {
-        emit IredMintRateUpdated(msg.sender, iredMintRate, _iredMintRate);
-        iredMintRate = _iredMintRate;
     }
 
     /// @inheritdoc IInfrared
     function pauseVault(address _asset) external onlyGovernor whenInitialized {
-        IInfraredVault vault = vaultRegistry[_asset];
-        if (vault == IInfraredVault(address(0))) {
-            revert Errors.VaultNotSupported();
-        }
-        vault.togglePause();
+        vaultStorage.pauseVault(_asset);
     }
 
     /// @inheritdoc IInfrared
@@ -355,31 +260,29 @@ contract Infrared is InfraredUpgradeable, IInfrared {
         onlyGovernor
         whenInitialized
     {
-        if (_delegatee == address(0)) revert Errors.ZeroAddress();
-        if (_delegatee == address(this)) revert Errors.InvalidDelegatee();
-        _bgt.delegate(_delegatee);
+        rewardsStorage.delegateBGT(_delegatee);
     }
 
     /// @inheritdoc IInfrared
-    function updateWeight(WeightType _t, uint256 _weight)
+    function updateWeight(ConfigTypes.WeightType _t, uint256 _weight)
         external
         onlyGovernor
         whenInitialized
     {
-        if (_weight > WEIGHT_UNIT) revert Errors.InvalidWeight();
-        emit WeightUpdated(msg.sender, _t, weights[uint256(_t)], _weight);
-        weights[uint256(_t)] = _weight;
+        uint256 prevWeight = weights(uint256(_t));
+        rewardsStorage.updateWeight(_t, _weight);
+        emit WeightUpdated(msg.sender, _t, prevWeight, _weight);
     }
 
     /// @inheritdoc IInfrared
-    function updateFee(FeeType _t, uint256 _fee)
+    function updateFee(ConfigTypes.FeeType _t, uint256 _fee)
         external
         onlyGovernor
         whenInitialized
     {
-        if (_fee > FEE_UNIT) revert Errors.InvalidFee();
-        emit FeeUpdated(msg.sender, _t, fees[uint256(_t)], _fee);
-        fees[uint256(_t)] = _fee;
+        uint256 prevFee = fees(uint256(_t));
+        rewardsStorage.updateFee(_t, _fee);
+        emit FeeUpdated(msg.sender, _t, prevFee, _fee);
     }
 
     /// @inheritdoc IInfrared
@@ -388,11 +291,7 @@ contract Infrared is InfraredUpgradeable, IInfrared {
         onlyGovernor
         whenInitialized
     {
-        if (_amount > protocolFeeAmounts[_token]) {
-            revert Errors.MaxProtocolFeeAmount();
-        }
-        protocolFeeAmounts[_token] -= _amount;
-        IERC20(_token).safeTransfer(_to, _amount);
+        rewardsStorage.claimProtocolFees(_to, _token, _amount);
         emit ProtocolFeesClaimed(msg.sender, _to, _token, _amount);
     }
 
@@ -409,93 +308,46 @@ contract Infrared is InfraredUpgradeable, IInfrared {
         view
         returns (uint256 amtRecipient, uint256 amtVoter, uint256 amtProtocol)
     {
-        amtRecipient = _amt;
-        if (_feeTotal == 0) return (amtRecipient, 0, 0);
-
-        uint256 _amtTotal = Math.mulDiv(amtRecipient, _feeTotal, FEE_UNIT);
-        amtProtocol = Math.mulDiv(_amtTotal, _feeProtocol, FEE_UNIT);
-        amtVoter = _amtTotal - amtProtocol;
-        amtRecipient -= (amtProtocol + amtVoter);
-    }
-
-    function _distributeFeesOnRewards(
-        address _token,
-        uint256 _amtVoter,
-        uint256 _amtProtocol
-    ) internal {
-        // add protocol fees to accumulator for token
-        protocolFeeAmounts[_token] += _amtProtocol;
-
-        // forward voter fees
-        if (_amtVoter > 0) {
-            address voterFeeVault = voter.feeVault();
-            IERC20(_token).safeIncreaseAllowance(voterFeeVault, _amtVoter);
-            IReward(voterFeeVault).notifyRewardAmount(_token, _amtVoter);
-        }
+        return
+            rewardsStorage.chargedFeesOnRewards(_amt, _feeTotal, _feeProtocol);
     }
 
     /// @inheritdoc IInfrared
     function harvestBase() external whenInitialized {
-        uint256 minted = ibgt.totalSupply();
-        uint256 bgtBalance = getBGTBalance();
-        // @dev should never happen but check in case
-        if (bgtBalance <= minted) revert Errors.UnderFlow();
-
-        uint256 bgtAmt = bgtBalance - minted;
-
-        // split bgt amt between wibera vault and validator distributor
-        uint256 w = weights[uint256(WeightType.HarvestBaseWiberaVault)];
-        uint256 bgtAmtVault = Math.mulDiv(bgtAmt, w, WEIGHT_UNIT);
-        uint256 bgtAmtDistributor = bgtAmt - bgtAmtVault;
-
-        // get total and protocol fee rates
-        uint256 feeTotal = fees[uint256(FeeType.HarvestBaseFeeRate)];
-        uint256 feeProtocol = fees[uint256(FeeType.HarvestBaseProtocolRate)];
-
-        _handleBGTRewardsForVault(
-            wiberaVault, bgtAmtVault, feeTotal, feeProtocol
-        );
-        _handleBGTRewardsForDistributor(
-            bgtAmtDistributor, feeTotal, feeProtocol
-        );
-
+        uint256 bgtAmt = rewardsStorage.harvestBase();
         emit BaseHarvested(msg.sender, bgtAmt);
     }
 
     /// @inheritdoc IInfrared
     function harvestVault(address _asset) external whenInitialized {
-        IInfraredVault vault = vaultRegistry[_asset];
-        if (vault == IInfraredVault(address(0))) {
-            revert Errors.VaultNotSupported();
-        }
-
-        uint256 balanceBefore = getBGTBalance();
-        IBerachainRewardsVault rewardsVault = vault.rewardsVault();
-        rewardsVault.getReward(address(vault), address(this));
-
-        uint256 bgtAmt = getBGTBalance() - balanceBefore;
-
-        // get total and protocol fee rates
-        uint256 feeTotal = fees[uint256(FeeType.HarvestVaultFeeRate)];
-        uint256 feeProtocol = fees[uint256(FeeType.HarvestVaultProtocolRate)];
-
-        _handleBGTRewardsForVault(vault, bgtAmt, feeTotal, feeProtocol);
-
+        IInfraredVault vault = vaultRegistry(_asset);
+        uint256 bgtAmt = rewardsStorage.harvestVault(vault);
         emit VaultHarvested(msg.sender, _asset, address(vault), bgtAmt);
     }
 
     /// @inheritdoc IInfrared
-    function harvestBribes(address[] memory _tokens) external whenInitialized {
-        for (uint256 i = 0; i < _tokens.length; i++) {
-            address _token = _tokens[i];
-            if (_token == DataTypes.NATIVE_ASSET) {
-                wbera.deposit{value: address(this).balance}();
-                _token = address(wbera);
+    function harvestBribes(address[] calldata _tokens)
+        external
+        whenInitialized
+    {
+        uint256 len = _tokens.length;
+        bool[] memory whitelisted = new bool[](len);
+        for (uint256 i; i < len; ++i) {
+            if (
+                whitelistedRewardTokens(_tokens[i])
+                    || _tokens[i] == DataTypes.NATIVE_ASSET
+            ) {
+                whitelisted[i] = true;
             }
-            // amount to forward is balance of this address less existing protocol fees
-            uint256 _amount = IERC20(_token).balanceOf(address(this))
-                - protocolFeeAmounts[_token];
-            _handleTokenBribesForReceiver(address(collector), _token, _amount);
+        }
+        (address[] memory tokens, uint256[] memory _amounts) =
+            rewardsStorage.harvestBribes(_tokens, whitelisted);
+        for (uint256 i; i < len; ++i) {
+            if (whitelisted[i]) {
+                emit BribeSupplied(address(collector), tokens[i], _amounts[i]);
+            } else {
+                emit RewardTokenNotSupported(_tokens[i]);
+            }
         }
     }
 
@@ -505,290 +357,43 @@ contract Infrared is InfraredUpgradeable, IInfrared {
         onlyCollector
         whenInitialized
     {
-        if (!whitelistedRewardTokens[_token]) {
+        if (!whitelistedRewardTokens(_token)) {
             revert Errors.RewardTokenNotSupported();
         }
-        IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
-
-        // split collected bribe amount between wibera and ibgt vaults
-        uint256 w = weights[uint256(WeightType.CollectBribesWiberaVault)];
-        uint256 amtWiberaVault = Math.mulDiv(_amount, w, WEIGHT_UNIT);
-        uint256 amtIbgtVault = _amount - amtWiberaVault;
-
-        // get total and protocol fee rates
-        uint256 feeTotal = fees[uint256(FeeType.HarvestBribesFeeRate)];
-        uint256 feeProtocol = fees[uint256(FeeType.HarvestBribesProtocolRate)];
-
-        _handleTokenRewardsForVault(
-            wiberaVault, _token, amtWiberaVault, feeTotal, feeProtocol
-        );
-        _handleTokenRewardsForVault(
-            ibgtVault, _token, amtIbgtVault, feeTotal, feeProtocol
-        );
+        (uint256 amtWiberaVault, uint256 amtIbgtVault) =
+            rewardsStorage.collectBribes(_token, _amount);
 
         emit BribesCollected(msg.sender, _token, amtWiberaVault, amtIbgtVault);
     }
 
     /// @inheritdoc IInfrared
     function harvestBoostRewards() external whenInitialized {
-        IBerachainBGTStaker _bgtStaker = _bgt.staker();
-        address _token = address(_bgtStaker.rewardToken());
-
-        // claim boost reward
-        // @dev not trusting return from bgt staker in case transfer fees
-        uint256 balanceBefore = IERC20(_token).balanceOf(address(this));
-        _bgtStaker.getReward();
-        uint256 _amount =
-            IERC20(_token).balanceOf(address(this)) - balanceBefore;
-
-        // get total and protocol fee rates
-        uint256 feeTotal = fees[uint256(FeeType.HarvestBoostFeeRate)];
-        uint256 feeProtocol = fees[uint256(FeeType.HarvestBoostProtocolRate)];
-
-        _handleTokenRewardsForVault(
-            ibgtVault, _token, _amount, feeTotal, feeProtocol
-        );
-    }
-
-    /**
-     * @notice Handles non-IBGT token rewards to the vault.
-     * @param _vault       IInfraredVault   The address of the vault.
-     * @param _token       address          The reward token.
-     * @param _amount      uint256          The amount of reward token to send to vault.
-     * @param _feeTotal    uint256          The rate to charge for total fees on `_amount`.
-     * @param _feeProtocol uint256          The rate to charge for protocol treasury on total fees.
-     */
-    function _handleTokenRewardsForVault(
-        IInfraredVault _vault,
-        address _token,
-        uint256 _amount,
-        uint256 _feeTotal,
-        uint256 _feeProtocol
-    ) internal {
-        if (!whitelistedRewardTokens[_token]) {
-            emit RewardTokenNotSupported(_token);
-            return; // skip non-whitelisted tokens
-        }
-        if (_amount == 0) return;
-
-        // add reward if not already added
-        (, uint256 _vaultRewardsDuration,,,,) = _vault.rewardData(_token);
-        if (_vaultRewardsDuration == 0) {
-            _vault.addReward(_token, rewardsDuration);
-        }
-
-        uint256 _amtVoter;
-        uint256 _amtProtocol;
-
-        // calculate and distribute fees on rewards
-        (_amount, _amtVoter, _amtProtocol) =
-            chargedFeesOnRewards(_amount, _feeTotal, _feeProtocol);
-        _distributeFeesOnRewards(_token, _amtVoter, _amtProtocol);
-
-        // increase allowance then notify vault of new rewards
-        if (_amount > 0) {
-            IERC20(_token).safeIncreaseAllowance(address(_vault), _amount);
-            _vault.notifyRewardAmount(_token, _amount);
-        }
-
+        (address _vault, address _token, uint256 _amount) =
+            rewardsStorage.harvestBoostRewards();
         emit RewardSupplied(address(_vault), _token, _amount);
-    }
-
-    /**
-     * @notice Handles non-IBGT token bribe rewards to a non-vault receiver address.
-     * @dev Does *not* take protocol fee on bribe coin, as taken on bribe collector payout token in eventual callback.
-     * @param _recipient address  The address of the recipient.
-     * @param _token     address  The address of the token to forward to recipient.
-     */
-    function _handleTokenBribesForReceiver(
-        address _recipient,
-        address _token,
-        uint256 _amount
-    ) internal {
-        if (!whitelistedRewardTokens[_token]) {
-            emit RewardTokenNotSupported(_token);
-            return; // skip non-whitelisted tokens
-        }
-        if (_amount == 0) return;
-
-        // transfer rewards to recipient
-        IERC20(_token).safeTransfer(_recipient, _amount);
-        emit BribeSupplied(_recipient, _token, _amount);
-    }
-
-    /**
-     * @notice Handles BGT token rewards, minting IBGT and supplying to the vault.
-     * @param _vault       address         The address of the vault.
-     * @param _bgtAmt      uint256         The BGT reward amount.
-     * @param _feeTotal    uint256         The rate to charge for total fees on iBGT `_bgtAmt`.
-     * @param _feeProtocol uint256         The rate to charge for protocol treasury on total iBGT fees.
-     */
-    function _handleBGTRewardsForVault(
-        IInfraredVault _vault,
-        uint256 _bgtAmt,
-        uint256 _feeTotal,
-        uint256 _feeProtocol
-    ) internal {
-        // pass if no bgt rewards
-        if (_bgtAmt == 0) return;
-
-        // handle bgt rewards by minting and supplying IBGT to vault
-        ibgt.mint(address(this), _bgtAmt);
-
-        // mint IRED rewards for associated IBGT mint based on protocol set mint rate
-        uint256 _iredAmt = Math.mulDiv(_bgtAmt, iredMintRate, RATE_UNIT);
-        ired.mint(address(this), _iredAmt);
-
-        // for both ired and ibgt, take protocol fee cut and notify vault of reward
-        // indices: 0: ibgt, 1: ired
-        address[] memory _tokens = new address[](2);
-        uint256[] memory _amts = new uint256[](2);
-        uint256[] memory _feeTotals = new uint256[](2);
-        uint256[] memory _feeProtocols = new uint256[](2);
-
-        // ibgt attrs. feeTotal and feeProtocol charged on minted ibgt
-        _tokens[0] = address(ibgt);
-        _amts[0] = _bgtAmt;
-        _feeTotals[0] = _feeTotal;
-        _feeProtocols[0] = _feeProtocol;
-
-        // ired attrs. zero fee rates charged on newly minted ired
-        _tokens[1] = address(ired);
-        _amts[1] = _iredAmt;
-
-        for (uint256 i = 0; i < _tokens.length; i++) {
-            address _token = _tokens[i];
-            uint256 _amt = _amts[i];
-
-            uint256 _amtVoter;
-            uint256 _amtProtocol;
-
-            // calculate and distribute fees on rewards
-            (_amt, _amtVoter, _amtProtocol) =
-                chargedFeesOnRewards(_amt, _feeTotals[i], _feeProtocols[i]);
-            _distributeFeesOnRewards(_token, _amtVoter, _amtProtocol);
-
-            // send token rewards less fee to vault
-            if (_amt > 0) {
-                IERC20(_token).safeIncreaseAllowance(address(_vault), _amt);
-                _vault.notifyRewardAmount(_token, _amt);
-            }
-        }
-
-        emit IBGTSupplied(address(_vault), _bgtAmt, _iredAmt);
-    }
-
-    /**
-     * @notice Handles BGT base rewards supplied to validator distributor.
-     * @param _bgtAmt      uint256         The BGT reward amount.
-     * @param _feeTotal    uint256         The rate to charge for total fees on `_bgtAmt`.
-     * @param _feeProtocol uint256         The rate to charge for protocol treasury on total fees.
-     */
-    function _handleBGTRewardsForDistributor(
-        uint256 _bgtAmt,
-        uint256 _feeTotal,
-        uint256 _feeProtocol
-    ) internal {
-        // pass if no bgt rewards
-        if (_bgtAmt == 0) return;
-
-        // handle bgt rewards by minting and supplying to distributor
-        ibgt.mint(address(this), _bgtAmt);
-
-        address _token = address(ibgt);
-        uint256 _amt = _bgtAmt;
-
-        uint256 _amtVoter;
-        uint256 _amtProtocol;
-
-        // calculate and distribute fees on rewards
-        (_amt, _amtVoter, _amtProtocol) =
-            chargedFeesOnRewards(_amt, _feeTotal, _feeProtocol);
-        _distributeFeesOnRewards(_token, _amtVoter, _amtProtocol);
-
-        // send token rewards less fee to vault
-        if (_amt > 0) {
-            IERC20(_token).safeIncreaseAllowance(address(distributor), _amt);
-            distributor.notifyRewardAmount(_amt);
-        }
-        emit IBGTDistributed(address(distributor), _amt);
     }
 
     /*//////////////////////////////////////////////////////////////
                             VALIDATORS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Gets the validator ID for associated CL pubkey
-    /// @param pubkey The CL pubkey of validator
-    function _getValidatorId(bytes memory pubkey)
-        internal
-        pure
-        returns (bytes32)
-    {
-        return keccak256(pubkey);
-    }
-
-    /// @notice Adds validator pubkey to validator set
-    /// @dev Reverts if already exists in set
-    function _addValidatorToSet(bytes memory pubkey) private {
-        bytes32 id = _getValidatorId(pubkey);
-        if (!_infraredValidatorIds.add(id)) {
-            revert Errors.InvalidValidator();
-        }
-        _infraredValidatorPubkeys[id] = pubkey;
-    }
-
-    /// @notice Removes validator pubkey from validator set
-    /// @dev Reverts if does not already exist in set
-    function _removeValidatorFromSet(bytes memory pubkey) private {
-        bytes32 id = _getValidatorId(pubkey);
-        if (!_infraredValidatorIds.remove(id)) {
-            revert Errors.InvalidValidator();
-        }
-        delete _infraredValidatorPubkeys[id];
-    }
-
     /// @inheritdoc IInfrared
-    function addValidators(Validator[] memory _validators)
+    function addValidators(ValidatorTypes.Validator[] calldata _validators)
         external
         onlyGovernor
         whenInitialized
     {
-        for (uint256 i = 0; i < _validators.length; i++) {
-            Validator memory v = _validators[i];
-
-            // update infrared validator sets
-            _addValidatorToSet(v.pubkey);
-
-            // add pubkey to those elligible for iBGT rewards
-            distributor.add(v.pubkey, v.addr);
-
-            // update commission validator charges
-            // TODO: update for validator queue => activate commission flow
-            // _updateValidatorCommission(v.pubkey, v.commission);
-        }
+        validatorStorage.addValidators(_validators);
         emit ValidatorsAdded(msg.sender, _validators);
     }
 
     /// @inheritdoc IInfrared
-    function removeValidators(bytes[] memory _pubkeys)
+    function removeValidators(bytes[] calldata _pubkeys)
         external
         onlyGovernor
         whenInitialized
     {
-        for (uint256 i = 0; i < _pubkeys.length; i++) {
-            bytes memory pubkey = _pubkeys[i];
-
-            // update infrared validator sets
-            _removeValidatorFromSet(pubkey);
-
-            // remove pubkey from those elligible for iBGT rewards
-            distributor.remove(pubkey);
-
-            // update commission validator charges to zero
-            // TODO: update for validator queue => activate commission flow
-            // _updateValidatorCommission(pubkey, 0);
-        }
+        validatorStorage.removeValidators(_pubkeys);
         emit ValidatorsRemoved(msg.sender, _pubkeys);
     }
 
@@ -798,64 +403,9 @@ contract Infrared is InfraredUpgradeable, IInfrared {
         onlyGovernor
         whenInitialized
     {
-        uint256 _commission = _getValidatorCommission(_current);
-        address _addr = _getValidatorAddress(_current);
-
-        // remove current from set
-        _removeValidatorFromSet(_current);
-        distributor.remove(_current);
-
-        // TODO: update for validator queue => activate commission flow
-        // _updateValidatorCommission(_current, 0);
-
-        // add new to set
-        _addValidatorToSet(_new);
-        distributor.add(_new, _addr);
-
-        // TODO: fix for queue => activate commission change
-        // _updateValidatorCommission(_new, _commission);
-
+        validatorStorage.replaceValidator(_current, _new);
         emit ValidatorReplaced(msg.sender, _current, _new);
     }
-
-    /// @notice Gets the current validator commission rate by calling BGT.
-    function _getValidatorCommission(bytes memory _pubkey)
-        internal
-        view
-        returns (uint256 rate)
-    {
-        rate = _bgt.commissions(_pubkey);
-    }
-
-    /// @notice Gets the validator address for claiming on distributor associated with pubkey
-    function _getValidatorAddress(bytes memory _pubkey)
-        internal
-        view
-        returns (address)
-    {
-        return distributor.validators(_pubkey);
-    }
-
-    /* TODO: update for queue => activate with commissions
-
-    /// @notice Updates validator commission rate calling BGT to set.
-    function _updateValidatorCommission(bytes memory _pubkey, uint256 _commission) private {
-        if (_commission > COMMISSION_MAX) revert Errors.InvalidCommissionRate();
-        emit ValidatorCommissionUpdated(msg.sender, _pubkey, _getValidatorCommission(_pubkey), _commission);
-        // _bgt.setCommission(_pubkey, _commission);
-    }
-
-    /// @inheritdoc IInfrared
-    function updateValidatorCommission(bytes calldata _pubkey, uint256 _commission)
-        external
-        onlyGovernor
-        whenInitialized
-    {
-        if (!isInfraredValidator(_pubkey)) revert Errors.InvalidValidator();
-        _updateValidatorCommission(_pubkey, _commission);
-    }
-
-    */
 
     /// @inheritdoc IInfrared
     function queueNewCuttingBoard(
@@ -872,64 +422,45 @@ contract Infrared is InfraredUpgradeable, IInfrared {
     //////////////////////////////////////////////////////////////*/
 
     /// @inheritdoc IInfrared
-    function queueBoosts(bytes[] memory _pubkeys, uint128[] memory _amts)
+    function queueBoosts(bytes[] calldata _pubkeys, uint128[] calldata _amts)
         external
         onlyKeeper
         whenInitialized
     {
-        if (_pubkeys.length != _amts.length) {
-            revert Errors.InvalidArrayLength();
-        }
-        for (uint256 i = 0; i < _pubkeys.length; i++) {
-            if (!isInfraredValidator(_pubkeys[i])) {
-                revert Errors.InvalidValidator();
-            }
-            if (_amts[i] == 0) revert Errors.ZeroAmount();
-            _bgt.queueBoost(_pubkeys[i], _amts[i]);
-        }
+        validatorStorage.queueBoosts(_pubkeys, _amts);
         emit QueuedBoosts(msg.sender, _pubkeys, _amts);
     }
 
     /// @inheritdoc IInfrared
-    function cancelBoosts(bytes[] memory _pubkeys, uint128[] memory _amts)
+    function cancelBoosts(bytes[] calldata _pubkeys, uint128[] calldata _amts)
         external
         onlyKeeper
         whenInitialized
     {
-        if (_pubkeys.length != _amts.length) {
-            revert Errors.InvalidArrayLength();
-        }
-        for (uint256 i = 0; i < _pubkeys.length; i++) {
-            if (_amts[i] == 0) revert Errors.ZeroAmount();
-            _bgt.cancelBoost(_pubkeys[i], _amts[i]);
-        }
+        validatorStorage.cancelBoosts(_pubkeys, _amts);
         emit CancelledBoosts(msg.sender, _pubkeys, _amts);
     }
 
     /// @inheritdoc IInfrared
-    function activateBoosts(bytes[] memory _pubkeys) external whenInitialized {
-        for (uint256 i = 0; i < _pubkeys.length; i++) {
-            if (!isInfraredValidator(_pubkeys[i])) {
-                revert Errors.InvalidValidator();
-            }
-            _bgt.activateBoost(address(this), _pubkeys[i]);
-        }
+    function activateBoosts(bytes[] calldata _pubkeys)
+        external
+        whenInitialized
+    {
+        validatorStorage.activateBoosts(_pubkeys);
         emit ActivatedBoosts(msg.sender, _pubkeys);
     }
 
-    /* TODO: fix for queueing => activate drop boost updates
     /// @inheritdoc IInfrared
-    function dropBoosts(bytes[] memory _pubkeys, uint128[] memory _amts) external onlyKeeper whenInitialized {
-        if (_pubkeys.length != _amts.length) {
-            revert Errors.InvalidArrayLength();
-        }
-        for (uint256 i = 0; i < _pubkeys.length; i++) {
-            if (_amts[i] == 0) revert Errors.ZeroAmount();
-            _bgt.dropBoost(address(this), _pubkeys[i], _amts[i]);
-        }
-        emit DroppedBoosts(msg.sender, _pubkeys, _amts);
-    }
-    */
+    function updateValidatorCommission(
+        bytes calldata _pubkey,
+        uint256 _commission
+    ) external override {}
+
+    /// @inheritdoc IInfrared
+    function dropBoosts(bytes[] calldata _pubkeys, uint128[] calldata _amts)
+        external
+        override
+    {}
 
     /*//////////////////////////////////////////////////////////////
                             HELPERS
@@ -940,33 +471,23 @@ contract Infrared is InfraredUpgradeable, IInfrared {
         public
         view
         virtual
-        returns (Validator[] memory validators)
+        returns (ValidatorTypes.Validator[] memory validators)
     {
-        bytes32[] memory ids = _infraredValidatorIds.values();
-        validators = new Validator[](ids.length);
-
-        for (uint256 i = 0; i < ids.length; i++) {
-            bytes memory pubkey = _infraredValidatorPubkeys[ids[i]];
-            validators[i] = Validator({
-                pubkey: pubkey,
-                addr: _getValidatorAddress(pubkey),
-                commission: _getValidatorCommission(pubkey)
-            });
-        }
+        return validatorStorage.infraredValidators();
     }
 
     /// @inheritdoc IInfrared
     function numInfraredValidators() external view returns (uint256) {
-        return _infraredValidatorIds.length();
+        return validatorStorage.numInfraredValidators();
     }
 
     /// @inheritdoc IInfrared
-    function isInfraredValidator(bytes memory _validator)
+    function isInfraredValidator(bytes calldata _validator)
         public
         view
         returns (bool)
     {
-        return _infraredValidatorIds.contains(_getValidatorId(_validator));
+        return validatorStorage.isValidator(_validator);
     }
 
     /// @inheritdoc IInfrared
@@ -974,13 +495,68 @@ contract Infrared is InfraredUpgradeable, IInfrared {
         return _bgt.balanceOf(address(this));
     }
 
-    function updateValidatorCommission(
-        bytes calldata _pubkey,
-        uint256 _commission
-    ) external override {}
+    /**
+     * @notice Mapping of tokens that are whitelisted to be used as rewards or accepted as bribes
+     * @dev serves as central source of truth for whitelisted reward tokens for all Infrared contracts
+     */
+    function whitelistedRewardTokens(address token)
+        public
+        view
+        returns (bool)
+    {
+        return vaultStorage.isWhitelisted(token);
+    }
 
-    function dropBoosts(bytes[] memory _pubkeys, uint128[] memory _amts)
+    /**
+     * @notice Mapping of staking token addresses to their corresponding InfraredVault
+     * @dev Each staking token can only have one vault
+     */
+    function vaultRegistry(address _stakingToken)
+        public
+        view
+        returns (IInfraredVault vault)
+    {
+        vault = vaultStorage.vaultRegistry[_stakingToken];
+    }
+
+    /**
+     * @notice Sets new vault registration paused or not
+     * @param pause True to pause, False to un pause
+     */
+    function setVaultRegistrationPauseStatus(bool pause)
         external
-        override
-    {}
+        onlyGovernor
+    {
+        vaultStorage.setVaultRegistrationPauseStatus(pause);
+        emit VaultRegistrationPauseStatus(pause);
+    }
+
+    /// @inheritdoc IInfrared
+    function rewardsDuration() public view returns (uint256 duration) {
+        return vaultStorage.rewardsDuration;
+    }
+
+    /// @inheritdoc IInfrared
+    function weights(uint256 t) public view override returns (uint256) {
+        return rewardsStorage.weights[t];
+    }
+
+    /// @inheritdoc IInfrared
+    function fees(uint256 t) public view override returns (uint256) {
+        return rewardsStorage.fees[t];
+    }
+
+    /// @inheritdoc IInfrared
+    function ibgtVault() external view returns (IInfraredVault) {
+        return IInfraredVault(rewardsStorage.ibgtVault);
+    }
+
+    /// @inheritdoc IInfrared
+    function protocolFeeAmounts(address _token)
+        external
+        view
+        returns (uint256)
+    {
+        return rewardsStorage.protocolFeeAmounts[_token];
+    }
 }

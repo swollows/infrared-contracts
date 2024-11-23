@@ -53,8 +53,7 @@ contract Keeper is Test {
         vm.startPrank(keeper);
         address[] memory rewardTokens = new address[](1);
         rewardTokens[0] = ibgt;
-        IInfraredVault v =
-            infrared.registerVault(address(stakingAsset), rewardTokens);
+        IInfraredVault v = infrared.registerVault(address(stakingAsset));
         vm.stopPrank();
 
         console.log("Vault registered: ", address(v));

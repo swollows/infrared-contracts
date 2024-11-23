@@ -8,17 +8,13 @@ library InfraredVaultDeployer {
      * @notice Deploys a new `InfraredVault` or `IBGTVault` contract.
      * @dev If _stakingToken == IBGT, then deploys `IBGTVault`.
      * @param _stakingToken address The address of the staking token.
-     * @param _rewardTokens The reward tokens for the vault.
      * @param _rewardsDuration The duration of the rewards for the vault.
      * @return _new address The address of the new `InfraredVault` contract.
      */
-    function deploy(
-        address _stakingToken,
-        address[] memory _rewardTokens,
-        uint256 _rewardsDuration
-    ) public returns (address _new) {
-        return address(
-            new InfraredVault(_stakingToken, _rewardTokens, _rewardsDuration)
-        );
+    function deploy(address _stakingToken, uint256 _rewardsDuration)
+        public
+        returns (address _new)
+    {
+        return address(new InfraredVault(_stakingToken, _rewardsDuration));
     }
 }

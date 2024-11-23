@@ -37,19 +37,14 @@ contract InfraredVault is MultiRewards, IInfraredVault {
         _;
     }
 
-    constructor(
-        address _stakingToken,
-        address[] memory _rewardTokens,
-        uint256 _rewardsDuration
-    ) MultiRewards(_stakingToken) {
+    constructor(address _stakingToken, uint256 _rewardsDuration)
+        MultiRewards(_stakingToken)
+    {
         // infrared factory/coordinator
         infrared = msg.sender;
 
         if (_stakingToken == address(0)) revert Errors.ZeroAddress();
         if (_rewardsDuration == 0) revert Errors.ZeroAmount();
-        if (_rewardTokens.length > MAX_NUM_REWARD_TOKENS) {
-            revert Errors.MaxNumberOfRewards();
-        }
 
         // set the berachain rewards vault and operator as infrared
         rewardsVault = _createRewardsVaultIfNecessary(infrared, _stakingToken);
@@ -57,20 +52,8 @@ contract InfraredVault is MultiRewards, IInfraredVault {
 
         // add initial reward tokens requiring at least IBGT and IRED
         address _ibgt = address(IInfrared(infrared).ibgt());
-        address _ired = address(IInfrared(infrared).ired());
 
-        bool hasIBGT;
-        bool hasIRED;
-        for (uint256 i = 0; i < _rewardTokens.length; i++) {
-            if (_rewardTokens[i] == address(0)) {
-                revert Errors.ZeroAddress();
-            }
-            _addReward(_rewardTokens[i], infrared, _rewardsDuration);
-            if (!hasIBGT) hasIBGT = (_rewardTokens[i] == _ibgt);
-            if (!hasIRED) hasIRED = (_rewardTokens[i] == _ired);
-        }
-        if (!hasIBGT) revert Errors.IBGTNotRewardToken();
-        if (!hasIRED) revert Errors.IREDNotRewardToken();
+        _addReward(_ibgt, infrared, _rewardsDuration);
     }
 
     /**

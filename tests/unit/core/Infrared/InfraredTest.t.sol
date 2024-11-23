@@ -119,11 +119,11 @@ contract InfraredTest is Helper {
 
     function testCollectBribesSuccess() public {
         // Step 0. Update the weight of `uint256(WeightType.CollectBribesWiberaVault)`.
-        vm.startPrank(infraredGovernance);
-        infrared.updateWeight(
-            IInfrared.WeightType.CollectBribesWiberaVault, 1e6 / 2
-        );
-        vm.stopPrank();
+        // vm.startPrank(infraredGovernance);
+        // infrared.updateWeight(
+        //     ConfigTypes.WeightType.CollectBribesWiberaVault, 1e6 / 2
+        // );
+        // vm.stopPrank();
 
         // 1. Mint some native tokens to the collector.
         vm.deal(address(collector), 100 ether);
@@ -139,14 +139,9 @@ contract InfraredTest is Helper {
         );
         vm.stopPrank();
 
-        address wiberaVault = address(infrared.wiberaVault());
         address ibgtVault = address(infrared.ibgtVault());
 
         // Step 6. Assure that the vaults received the collected bribes.
-        console.log(
-            "[reward] wiberaVault balance before: ",
-            wbera.balanceOf(address(wiberaVault))
-        );
         console.log(
             "[reward] ibgtVault balance before: ",
             wbera.balanceOf(address(ibgtVault))
@@ -167,10 +162,6 @@ contract InfraredTest is Helper {
 
         // Step 6. Display the updated balances of the vaults and infrared after they received the collected bribes.
         console.log(
-            "[reward] wiberaVault balance after: ",
-            wbera.balanceOf(address(wiberaVault))
-        );
-        console.log(
             "[reward] ibgtVault balance after: ",
             wbera.balanceOf(address(ibgtVault))
         );
@@ -181,11 +172,7 @@ contract InfraredTest is Helper {
 
         // Step 7. Assure that the vaults received the collected bribes.
         assertTrue(
-            wbera.balanceOf(address(wiberaVault)) == 1.5 ether,
-            "WiberaVault should have 1.5 ether"
-        );
-        assertTrue(
-            wbera.balanceOf(address(ibgtVault)) == 1.5 ether,
+            wbera.balanceOf(address(ibgtVault)) == 3 ether,
             "IBGTVault should have 1.5 ether"
         );
         assertTrue(
@@ -242,12 +229,13 @@ contract InfraredTest is Helper {
 
         // 3. Add a validator to the validator set.
         vm.startPrank(infraredGovernance);
-        IInfrared.Validator memory validator_str = IInfrared.Validator({
+        ValidatorTypes.Validator memory validator_str = ValidatorTypes.Validator({
             pubkey: "0x1234567890abcdef",
             addr: address(validator),
             commission: 1 ether
         });
-        IInfrared.Validator[] memory validators = new IInfrared.Validator[](1);
+        ValidatorTypes.Validator[] memory validators =
+            new ValidatorTypes.Validator[](1);
         validators[0] = validator_str;
         bytes[] memory pubkeys = new bytes[](1);
         pubkeys[0] = validator_str.pubkey;
@@ -398,16 +386,16 @@ contract InfraredTest is Helper {
 
         vm.stopPrank();
 
-        address wiberaVault = address(infrared.wiberaVault());
         address ibgtVault = address(infrared.ibgtVault());
 
         vm.startPrank(infraredGovernance);
-        IInfrared.Validator memory validator_str = IInfrared.Validator({
+        ValidatorTypes.Validator memory validator_str = ValidatorTypes.Validator({
             pubkey: "0x1234567890abcdef",
             addr: address(validator),
             commission: 1
         });
-        IInfrared.Validator[] memory validators = new IInfrared.Validator[](1);
+        ValidatorTypes.Validator[] memory validators =
+            new ValidatorTypes.Validator[](1);
         validators[0] = validator_str;
 
         bytes[] memory pubkeys = new bytes[](1);
@@ -514,6 +502,44 @@ contract InfraredTest is Helper {
             ibgtVaultWberaBalanceAfter > ibgtVaultWberaBalanceBefore,
             "Vault should have more wBera after harvest"
         );
+    }
+
+    function testRegisterVault() public {
+        // pause staking
+        vm.prank(infraredGovernance);
+        infrared.setVaultRegistrationPauseStatus(true);
+
+        // assert revert during pause
+        vm.expectRevert(Errors.RegistrationPaused.selector);
+        InfraredVault vault1 =
+            InfraredVault(address(infrared.registerVault(address(honey))));
+
+        // un-pause staking
+        vm.prank(infraredGovernance);
+        infrared.setVaultRegistrationPauseStatus(false);
+
+        // assert anyone can register a new vault
+        InfraredVault vault2 =
+            InfraredVault(address(infrared.registerVault(address(honey))));
+    }
+
+    function testAddReward() public {
+        // assert anyone can register a new vault
+        InfraredVault vault2 =
+            InfraredVault(address(infrared.registerVault(address(honey))));
+
+        // assert only gov can add rewards through infrared
+        vm.expectRevert();
+        vault2.addReward(address(wibera), 10 days);
+        vm.expectRevert();
+        vm.prank(address(10));
+        infrared.addReward(address(honey), address(wibera), 10 days);
+
+        vm.prank(infraredGovernance);
+        infrared.addReward(address(honey), address(wibera), 10 days);
+
+        address _rewardToken = vault2.rewardTokens(1);
+        assertEq(_rewardToken, address(wibera));
     }
 
     /* TODO: fix

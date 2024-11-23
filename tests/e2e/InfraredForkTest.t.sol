@@ -69,9 +69,7 @@ contract InfraredForkTest is HelperForkTest {
                         address(rewardsFactory),
                         address(beraChef),
                         payable(address(wbera)),
-                        address(honey),
-                        address(ired),
-                        address(wibera)
+                        address(honey)
                     )
                 )
             )
@@ -105,14 +103,8 @@ contract InfraredForkTest is HelperForkTest {
         // grant infrared ibgt minter role
         ibgt.grantRole(ibgt.MINTER_ROLE(), address(infrared));
 
-        // deploy an infrared vault for berachain whitelisted lp token
-        address[] memory _rewardTokens = new address[](3);
-        _rewardTokens[0] = address(ibgt);
-        _rewardTokens[1] = address(ired);
-        _rewardTokens[2] = address(honey);
-
         vm.prank(admin);
-        lpVault = infrared.registerVault(address(lpToken), _rewardTokens);
+        lpVault = infrared.registerVault(address(lpToken));
     }
 
     function setupProxy(address implementation)
@@ -126,7 +118,6 @@ contract InfraredForkTest is HelperForkTest {
         super.testSetUp();
 
         assertEq(address(infrared.ibgt()), address(ibgt));
-        assertEq(address(infrared.ired()), address(ired));
 
         assertEq(address(infrared.collector()), address(collector));
         assertEq(address(infrared.distributor()), address(distributor));
@@ -136,15 +127,9 @@ contract InfraredForkTest is HelperForkTest {
         assertEq(address(_ibgtVault), address(infrared.ibgtVault()));
         assertEq(address(_ibgtVault.infrared()), address(infrared));
 
-        IInfraredVault _wiberaVault = infrared.vaultRegistry(address(wibera));
-        assertTrue(address(_wiberaVault) != address(0));
-        assertEq(address(_wiberaVault), address(infrared.wiberaVault()));
-        assertEq(address(_wiberaVault.infrared()), address(infrared));
-
-        address[] memory _rewardTokens = new address[](3);
+        address[] memory _rewardTokens = new address[](2);
         _rewardTokens[0] = address(ibgt);
-        _rewardTokens[1] = address(ired);
-        _rewardTokens[2] = address(honey);
+        _rewardTokens[1] = address(honey);
 
         for (uint256 i = 0; i < _rewardTokens.length; i++) {
             address rewardToken = _rewardTokens[i];
@@ -153,10 +138,6 @@ contract InfraredForkTest is HelperForkTest {
             (, uint256 rewardDurationIbgt,,,,) =
                 IMultiRewards(address(_ibgtVault)).rewardData(rewardToken);
             assertTrue(rewardDurationIbgt > 0);
-
-            (, uint256 rewardDurationWibera,,,,) =
-                IMultiRewards(address(_wiberaVault)).rewardData(rewardToken);
-            assertTrue(rewardDurationWibera > 0);
         }
 
         assertTrue(infrared.hasRole(infrared.DEFAULT_ADMIN_ROLE(), admin));

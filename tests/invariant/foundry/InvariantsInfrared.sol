@@ -104,9 +104,7 @@ contract InvariantsInfrared is Test {
                         address(rewardsFactory),
                         address(chef),
                         payable(address(mockWbera)),
-                        address(honey),
-                        address(ired),
-                        address(wibera)
+                        address(honey)
                     )
                 )
             )

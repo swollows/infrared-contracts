@@ -78,9 +78,7 @@ abstract contract Base is Test {
                         address(rewardsFactory),
                         address(chef),
                         payable(address(WBERA)),
-                        address(honey),
-                        address(ired),
-                        address(wibera)
+                        address(honey)
                     )
                 )
             )
@@ -146,7 +144,7 @@ abstract contract Base is Test {
 
         for (uint256 i = 0; i < _tokens.length; i++) {
             vm.startPrank(keeper);
-            infrared.registerVault(_tokens[i], rewardTokens);
+            infrared.registerVault(_tokens[i]);
             vm.stopPrank();
         }
     }

@@ -62,7 +62,7 @@ abstract contract Helper is POLTest {
     address stakingAsset;
     address poolAddress;
 
-    InfraredVault public ibgtVault;
+    IInfraredVault public ibgtVault;
     InfraredVault public infraredVault;
 
     address validator = address(888);
@@ -73,9 +73,6 @@ abstract contract Helper is POLTest {
 
     function setUp() public virtual override {
         super.setUp();
-        // Mock non transferable token BGT token
-        // bgt = new MockERC20("BGT", "BGT", 18);
-        // Mock contract instantiations
 
         ibgt = new IBGT(address(bgt));
         ired = new MockERC20("IRED", "IRED", 18);
@@ -100,10 +97,6 @@ abstract contract Helper is POLTest {
         beraVault = factory.createRewardVault(stakingAsset);
         // rewardsFactory.increaseRewardsForVault(stakingAsset, 1000 ether);
 
-        // Set up the chef
-        // TODO: fix mock chef
-        // chef = new MockBeraChef();
-
         // initialize Infrared contracts
         infrared = Infrared(
             setupProxy(
@@ -113,9 +106,7 @@ abstract contract Helper is POLTest {
                         address(factory),
                         address(chef),
                         payable(address(wbera)),
-                        address(honey),
-                        address(ired),
-                        address(wibera)
+                        address(honey)
                     )
                 )
             )
@@ -155,12 +146,10 @@ abstract contract Helper is POLTest {
         bgt.whitelistSender(address(factory), true);
         vm.stopPrank();
 
-        address[] memory _rewardTokens = new address[](2);
-        _rewardTokens[0] = address(ibgt); // all Infrared vaults will only receive ibgt as rewards
-        _rewardTokens[1] = address(ired);
-        infraredVault = InfraredVault(
-            address(infrared.registerVault(stakingAsset, _rewardTokens))
-        );
+        infraredVault =
+            InfraredVault(address(infrared.registerVault(stakingAsset)));
+
+        ibgtVault = infrared.ibgtVault();
 
         labelContracts();
     }

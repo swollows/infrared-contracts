@@ -34,9 +34,6 @@ contract InfraredInitializationTest is Helper {
             "Incorrect Admin address"
         );
         assertEq(
-            address(infrared.ired()), address(ired), "Incorrect iRED address"
-        );
-        assertEq(
             infrared.rewardsDuration(), 1 days, "Incorrect rewards duration"
         );
     }
@@ -69,7 +66,7 @@ contract InfraredInitializationTest is Helper {
                 infrared.KEEPER_ROLE()
             )
         );
-        infrared.registerVault(address(stakingAsset), rewardTokens);
+        infrared.registerVault(address(stakingAsset));
 
         vm.expectRevert(
             abi.encodeWithSelector(

@@ -27,8 +27,7 @@ contract InfraredRegisterVaultTest is Helper {
         */
 
         // Register the vault and capture the return value
-        IInfraredVault newVault =
-            infrared.registerVault(stakingAsset, _rewardTokens);
+        IInfraredVault newVault = infrared.registerVault(stakingAsset);
         address newVaultAddress = address(newVault);
 
         // Validate that the returned vault address matches the expected new vault address
@@ -54,7 +53,7 @@ contract InfraredRegisterVaultTest is Helper {
 
         // Expect a revert due to passing a zero asset address to registerVault
         vm.expectRevert(Errors.ZeroAddress.selector);
-        try infrared.registerVault(address(0), _rewardTokens) {
+        try infrared.registerVault(address(0)) {
             revert("Zero address should revert");
         } catch {
             revert();
@@ -76,7 +75,7 @@ contract InfraredRegisterVaultTest is Helper {
 
         // Expect a revert due to invalid (unsupported) reward tokens
         vm.expectRevert(Errors.RewardTokenNotSupported.selector);
-        infrared.registerVault(assetAddress, _rewardTokens);
+        infrared.registerVault(assetAddress);
         vm.expectRevert(Errors.RewardTokenNotSupported.selector);
     }
 
@@ -96,7 +95,7 @@ contract InfraredRegisterVaultTest is Helper {
         );
 
         // Updated to match the new function signature
-        try infrared.registerVault(address(stakingAsset), _rewardTokens) {
+        try infrared.registerVault(address(stakingAsset)) {
             revert("Unauthorized address should revert");
         } catch {
             revert();
@@ -112,55 +111,7 @@ contract InfraredRegisterVaultTest is Helper {
 
         // Because stakingAsset is already registered, expect a revert
         vm.expectRevert(Errors.DuplicateAssetAddress.selector);
-        infrared.registerVault(address(stakingAsset), _rewardTokens);
-    }
-
-    function testVaultRegistrationWithEmpty_rewardTokens() public {
-        address[] memory empty_rewardTokens = new address[](0); // Empty array for reward tokens
-        infrared.grantRole(infrared.KEEPER_ROLE(), address(this));
-
-        MockERC20 mockAsset = new MockERC20("MockAsset", "MAS", 18);
-
-        // Assuming mockAsset has been initialized and represents the asset being staked
-        address assetAddress = address(mockAsset);
-
-        // Register the vault with an empty array of reward tokens
-        vm.expectRevert(Errors.IBGTNotRewardToken.selector);
-        infrared.registerVault(assetAddress, empty_rewardTokens);
-    }
-
-    function testVaultRegistrationWithoutIBGTRewardToken() public {
-        address[] memory _rewardTokens = new address[](2); // Empty array for reward tokens
-        _rewardTokens[0] = address(ired); // Example reward token address
-        _rewardTokens[1] = address(wbera); // Example reward token address
-
-        infrared.grantRole(infrared.KEEPER_ROLE(), address(this));
-
-        MockERC20 mockAsset = new MockERC20("MockAsset", "MAS", 18);
-
-        // Assuming mockAsset has been initialized and represents the asset being staked
-        address assetAddress = address(mockAsset);
-
-        // Register the vault with an empty array of reward tokens
-        vm.expectRevert(Errors.IBGTNotRewardToken.selector);
-        infrared.registerVault(assetAddress, _rewardTokens);
-    }
-
-    function testVaultRegistrationWithoutIREDRewardToken() public {
-        address[] memory _rewardTokens = new address[](2); // Empty array for reward tokens
-        _rewardTokens[0] = address(ibgt); // Example reward token address
-        _rewardTokens[1] = address(wbera); // Example reward token address
-
-        infrared.grantRole(infrared.KEEPER_ROLE(), address(this));
-
-        MockERC20 mockAsset = new MockERC20("MockAsset", "MAS", 18);
-
-        // Assuming mockAsset has been initialized and represents the asset being staked
-        address assetAddress = address(mockAsset);
-
-        // Register the vault with an empty array of reward tokens
-        vm.expectRevert(Errors.IREDNotRewardToken.selector);
-        infrared.registerVault(assetAddress, _rewardTokens);
+        infrared.registerVault(address(stakingAsset));
     }
 
     function testRolePersistencePostVaultRegistration() public {
@@ -174,7 +125,7 @@ contract InfraredRegisterVaultTest is Helper {
         _rewardTokens[1] = address(ired);
 
         // Register the vault without specifying a pool address, adhering to the updated function signature
-        infrared.registerVault(address(mockAsset), _rewardTokens);
+        infrared.registerVault(address(mockAsset));
 
         // Assert that the test contract still holds the KEEPER_ROLE after registering the vault
         assertTrue(

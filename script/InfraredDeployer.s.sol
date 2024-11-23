@@ -44,8 +44,6 @@ contract InfraredDeployer is Script {
         vm.startBroadcast(deployerPrivateKey);
 
         ibgt = new IBGT(_bgt);
-        ired = new ERC20PresetMinterPauser("Infrared Token", "iRED"); // TODO: fix for actual IRED implementation
-        ibera = new ERC20PresetMinterPauser("Infrared Bera", "iBERA"); // TODO: fix for actual IBERA implementation
 
         infrared = Infrared(
             setupProxy(
@@ -55,9 +53,7 @@ contract InfraredDeployer is Script {
                         _berachainRewardsFactory,
                         _beraChef,
                         payable(_wbera),
-                        _honey,
-                        address(ired),
-                        address(ibera)
+                        _honey
                     )
                 )
             )

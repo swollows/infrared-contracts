@@ -138,10 +138,9 @@ contract Voter is IVoter, InfraredUpgradeable, ReentrancyGuardUpgradeable {
         maxVotingNum = 30;
 
         // adaptation to create fee vault for global fees amongst all voters
-        address[] memory _rewards = new address[](3);
+        address[] memory _rewards = new address[](2);
         _rewards[0] = address(infrared.ibgt());
-        _rewards[1] = address(infrared.ired());
-        _rewards[2] = address(infrared.honey());
+        _rewards[1] = address(infrared.honey());
 
         feeVault = address(new BribeVotingReward(address(this), _rewards));
 
@@ -479,12 +478,12 @@ contract Voter is IVoter, InfraredUpgradeable, ReentrancyGuardUpgradeable {
             uint256 _totalWeight
         )
     {
-        uint256 length = stakingTokens.length;
-        _weights = new uint256[](length);
-        _stakingTokens = new address[](length);
+        uint256 _length = stakingTokens.length;
+        _weights = new uint256[](_length);
+        _stakingTokens = new address[](_length);
         uint256 count = 0;
 
-        for (uint256 i = 0; i < length; i++) {
+        for (uint256 i = 0; i < _length; i++) {
             address token = stakingTokens[i];
 
             _weights[count] = weights[token];

@@ -140,7 +140,6 @@ contract InfraredVaultTest is Helper {
             vm.expectRevert(Errors.ZeroAddress.selector);
             new InfraredVault(
                 constructorParams[0], // Staking Token
-                rewardTokens,
                 1 days
             );
         }
@@ -267,7 +266,7 @@ contract InfraredVaultTest is Helper {
         uint256 rewardsDuration = 30 days;
 
         vm.startPrank(address(infrared));
-        for (uint160 i = 0; i < 8; i++) {
+        for (uint160 i = 0; i < 9; i++) {
             infraredVault.addReward(address(i + 900), rewardsDuration);
         }
         // Now reached max reward tokens

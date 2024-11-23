@@ -26,6 +26,7 @@ library Errors {
     error IBGTNotStakingToken();
     error StakedInRewardsVault();
     error NoRewardsVault();
+    error RegistrationPaused();
 
     // InfraredValidators errors.
     error InvalidValidator();
