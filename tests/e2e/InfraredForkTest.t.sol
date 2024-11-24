@@ -46,7 +46,6 @@ contract InfraredForkTest is HelperForkTest {
     IInfraredVault public lpVault;
 
     uint256 internal constant FEE_UNIT = 1e6;
-    uint256 internal constant COMMISSION_MAX = 1e3;
 
     function setUp() public virtual override {
         super.setUp();

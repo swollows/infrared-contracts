@@ -273,16 +273,6 @@ interface IInfrared is IInfraredUpgradeable {
         external;
 
     /**
-     * @notice Updates a validator commission rate in the set of `InfraredValidators`.
-     * @param _pubkey     bytes   The pubkey of the validator to update commission rate for.
-     * @param _commission uint256 The commission rate to update to.
-     */
-    function updateValidatorCommission(
-        bytes calldata _pubkey,
-        uint256 _commission
-    ) external;
-
-    /**
      * @notice Queue `_amts` of tokens to `_validators` for boosts.
      * @param _pubkeys     bytes[] memory The pubkeys of the validators to queue boosts for.
      * @param _amts        uint128[] memory The amount of BGT to boost with.
@@ -586,17 +576,6 @@ interface IInfrared is IInfraredUpgradeable {
      * @param _new The pubkey of the new validator.
      */
     event ValidatorReplaced(address _sender, bytes _current, bytes _new);
-
-    /**
-     * @notice Emitted when a validator commission rate is updated.
-     * @param _sender The address that initated the update.
-     * @param _pubkey The pubkey of the validator whose commission rate is being updated.
-     * @param _current The current commission rate being updated.
-     * @param _new The new commission rate being updated to.
-     */
-    event ValidatorCommissionUpdated(
-        address _sender, bytes _pubkey, uint256 _current, uint256 _new
-    );
 
     /**
      * @notice Emitted when BGT tokens are queued for boosts to validators.

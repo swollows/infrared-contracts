@@ -231,8 +231,7 @@ contract InfraredTest is Helper {
         vm.startPrank(infraredGovernance);
         ValidatorTypes.Validator memory validator_str = ValidatorTypes.Validator({
             pubkey: "0x1234567890abcdef",
-            addr: address(validator),
-            commission: 1 ether
+            addr: address(validator)
         });
         ValidatorTypes.Validator[] memory validators =
             new ValidatorTypes.Validator[](1);
@@ -391,8 +390,7 @@ contract InfraredTest is Helper {
         vm.startPrank(infraredGovernance);
         ValidatorTypes.Validator memory validator_str = ValidatorTypes.Validator({
             pubkey: "0x1234567890abcdef",
-            addr: address(validator),
-            commission: 1
+            addr: address(validator)
         });
         ValidatorTypes.Validator[] memory validators =
             new ValidatorTypes.Validator[](1);

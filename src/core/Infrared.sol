@@ -99,12 +99,6 @@ contract Infrared is InfraredUpgradeable, IInfrared {
     IVoter public voter;
 
     /**
-     * @notice Commission rate in units of 1 bip
-     * @dev Maximum commission rate that can be set (1e3)
-     */
-    uint256 internal constant COMMISSION_MAX = 1e3;
-
-    /**
      * @dev Ensures that only the collector contract can call the function
      * Reverts if the caller is not the collector
      */
@@ -449,12 +443,6 @@ contract Infrared is InfraredUpgradeable, IInfrared {
         validatorStorage.activateBoosts(_pubkeys);
         emit ActivatedBoosts(msg.sender, _pubkeys);
     }
-
-    /// @inheritdoc IInfrared
-    function updateValidatorCommission(
-        bytes calldata _pubkey,
-        uint256 _commission
-    ) external override {}
 
     /// @inheritdoc IInfrared
     function dropBoosts(bytes[] calldata _pubkeys, uint128[] calldata _amts)

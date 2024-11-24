@@ -16,7 +16,6 @@ import "@mocks/MockInfrared.sol";
 import "@berachain/pol/rewards/RewardVaultFactory.sol";
 import {IRewardVault as IBerachainRewardsVault} from
     "@berachain/pol/interfaces/IRewardVault.sol";
-import "@mocks/MockBerachainRewardsVaultFactory.sol";
 import "@berachain/../test/mock/pol/MockRewardVault.sol";
 
 import {stdStorage, StdStorage} from "forge-std/Test.sol";
@@ -24,17 +23,9 @@ import {stdStorage, StdStorage} from "forge-std/Test.sol";
 import {Helper} from "./Infrared/Helper.sol";
 
 contract InfraredVaultTest is Helper {
-    // WBERA public stakingToken;
-    // MockERC20 public rewardsToken;
     IBGT public rewardsToken;
 
-    // MockERC20 public bgt;
     MockERC20 public stakingToken;
-    MockBerachainRewardsVaultFactory public rewardsFactory;
-    // MockRewardVault public rewardsVault;
-
-    // MockERC20 public rewardsToken;
-    // address[] rewardTokens;
 
     // address constant admin = address(1);
     address constant pool = address(3);
@@ -53,71 +44,6 @@ contract InfraredVaultTest is Helper {
         // stakingToken = wbera;
         // rewardsToken = address(ibgt);
     }
-
-    /*//////////////////////////////////////////////////////////////
-                        Constructor
-    //////////////////////////////////////////////////////////////*/
-
-    // function testSuccessfulDeployment() public {
-    //     NOTE: done in InfraredTest.t.sol or Helper.t.sol
-    //     infrared.grantRole(infrared.KEEPER_ROLE(), address(this));
-
-    //     // Act: Deploy the contract with valid parameters
-    //     // vm.startPrankprank(infrared);
-
-    //     // Assert: Check if the contract is deployed successfully
-    //     assertTrue(
-    //         address(infraredVault) != address(0),
-    //         "Contract should be successfully deployed"
-    //     );
-
-    //     assertEq(infraredVault.rewardTokens(0), rewardTokens[0]);
-
-    //     (address _distributor, uint256 _duration,,,,) =
-    //         infraredVault.rewardData(rewardTokens[0]);
-    //     // assertEq(_distributor, infrared);
-    //     // assertEq(_duration, 1 days);
-
-    //     // check immutables set
-    //     // assertEq(infraredVault.infrared(), infrared);
-    //     // assertEq(infraredVault.stakingToken(), stakingAsset);
-
-    //     // // check withdraw address set on rewards, distribution modules to infrared
-    //     // assertEq(infraredVault.rewardsVault().operator(address(infraredVault)), infrared);
-    // }
-
-    // function testSuccessfulDeploymentCreatesRewardsVault() public {
-    //     NOTE done in InfraredTest.t.sol or Helper.t.sol
-    //     assertEq(factory.getVault(address(rewardsToken)), address(0));
-
-    //     // Act: Deploy the contract with valid parameters
-    //     // vm.startPrank(address(infrared));
-
-    //     // Assert: Check if the contract is deployed successfully
-    //     assertTrue(
-    //         address(infraredVault) != address(0),
-    //         "Contract should be successfully deployed"
-    //     );
-
-    //     assertEq(infraredVault.rewardTokens(0), rewardTokens[0]);
-
-    //     (address _distributor, uint256 _duration,,,,) =
-    //         infraredVault.rewardData(rewardTokens[0]);
-    //     assertEq(_distributor, address(infrared));
-    //     assertEq(_duration, 1 days);
-
-    //     // check immutables set
-    //     assertEq(infraredVault.infrared(), address(infrared));
-
-    //     // check rewards infraredVault created
-    //     address _rv = factory.getVault(address(rewardsToken));
-    //     assertTrue(_rv != address(0), "Rewards infraredVault should have been created");
-    //     assertEq(address(infraredVault.rewardsVault()), _rv);
-    //     // assertEq(infraredVault.stakingToken(), address(stakingToken));
-
-    //     // // check withdraw address set on rewards, distribution modules to infrared
-    //     assertEq(IRewardVault(_rv).operator(address(infraredVault)), address(infrared));
-    // }
 
     function testRevertWithZeroAddressesInConstructor() public {
         // Test each parameter with zero address
@@ -151,91 +77,11 @@ contract InfraredVaultTest is Helper {
 
     event Harvest(address _sender, address _pool, uint256 _bgtAmount);
 
-    // function testSuccessfulGetRewardByOperator() public {
-    //     // NOTE  MOVED TO InfraredTest.t.sol
-    //     // deal some reward tokens to the rewardsVault
-    //     ibgt.mint(address(rewardsVault), 5000 ether);
-    //     ired.mint(address(rewardsVault), 5000 ether);
-
-    //     uint256 bgtBalanceBefore = ibgt.balanceOf(address(infrared));
-
-    //     uint256 amt = 100 ether;
-    //     // rewardsFactory.increaseRewardsForVault(address(stakingToken), amt);
-
-    //     // TODO:  implement staking of staking token into InfraredVault\
-    //     // deal(address(wbera), user, 1000 ether);
-    //     vm.deal(user, 1000 ether);
-    //     vm.startPrank(user);
-    //     wbera.deposit{value: 1000 ether}();
-    //     // vm.startPrank(user);
-    //     wbera.approve(address(infraredVault), 1000 ether);
-    //     infraredVault.stake(1000 ether);
-    //     vm.stopPrank();
-
-    //     vm.startPrank(address(infrared));
-    //     // vm.expectEmit();
-    //     // emit MockBerachainRewardsVault.RewardsClaimedByOperator(
-    //     //     infrared, address(infraredVault), 99999999999999964000
-    //     // );
-
-    //     skip(10 days);
-    //     uint256 rewardsBalance = rewardsVault.balanceOf(address(infraredVault));
-    //     console.log("rewardsBalance", rewardsBalance);
-    //     rewardsVault.getReward(address(infraredVault), address(infrared));
-    //     vm.stopPrank();
-
-    //     uint256 bgtBalanceAfter = ibgt.balanceOf(address(infrared));
-    //     assertTrue(bgtBalanceAfter > bgtBalanceBefore); //  adjust for rounding percision
-    // }
-
-    // function testRevertNotInfraredForHarvest() public {
-    //     vm.expectRevert(
-    //         abi.encodeWithSelector(Errors.Unauthorized.selector, address(this))
-    //     );
-    //     infraredVault.harvest();
-    // }
-
     /*//////////////////////////////////////////////////////////////
                         addReward
     //////////////////////////////////////////////////////////////*/
 
     event RewardStored(address rewardsToken, uint256 rewardsDuration);
-
-    // function testSuccessfulRewardAddition() public {
-    //     uint256 rewardsDuration = 30 days;
-    //     uint256 rewardAmount = 1000 ether;
-    //     TODO use mock here instead of already added rewardsToken
-
-    //     vm.startPrank(address(infrared));
-
-    //     vm.expectEmit();
-    //     emit RewardStored(address(rewardsToken), rewardsDuration);
-
-    //     // Add reward
-    //     infraredVault.addReward(address(0x3), rewardsDuration);
-
-    //     // check reward token added to list
-    //     assertEq(
-    //         infraredVault.rewardTokens(rewardTokens.length),
-    //         address(0x3)
-    //     );
-
-    //     // check reward data updated for reward token
-    //     (address _rewardsDistributor, uint256 _rewardsDuration,,,,) =
-    //         getRewardData(address(infraredVault), address(rewardsToken));
-    //     assertEq(_rewardsDistributor, infraredVault.infrared());
-    //     assertEq(_rewardsDuration, rewardsDuration);
-
-    //     deal(address(0x3), address(infrared), rewardAmount);
-    //     rewardsToken.approve(address(infraredVault), rewardAmount);
-
-    //     // Notify reward amount to set periodFinish
-    //     infraredVault.notifyRewardAmount(address(rewardsToken), rewardAmount);
-
-    //     (,, uint256 periodFinish,,,) =
-    //         getRewardData(address(infraredVault), address(rewardsToken));
-    //     assertTrue(periodFinish > block.timestamp, "Reward addition failed");
-    // }
 
     function testRevertWithZeroAddressForTokenAddReward() public {
         uint256 rewardsDuration = 30 days;
@@ -280,42 +126,6 @@ contract InfraredVaultTest is Helper {
     //////////////////////////////////////////////////////////////*/
 
     event RewardAdded(uint256 amount);
-
-    // function testSuccessfulNotification() public {
-    //     uint256 rewardAmount = 1000 ether;
-    //     TODO use mock here instead of already added rewardsToken
-
-    //     vm.startPrank(address(infrared));
-    //     infraredVault.addReward(address(0x3), 30 days);
-
-    //     deal(address(rewardsToken), address(infrared), rewardAmount);
-    //     rewardsToken.approve(address(infraredVault), rewardAmount);
-
-    //     vm.expectEmit();
-    //     emit RewardAdded(rewardAmount);
-
-    //     infraredVault.notifyRewardAmount(address(rewardsToken), rewardAmount);
-
-    //     (
-    //         ,
-    //         ,
-    //         uint256 periodFinish,
-    //         uint256 rewardRate,
-    //         uint256 lastUpdateTime,
-    //         uint256 rewardPerTokenStored
-    //     ) = getRewardData(address(infraredVault), address(rewardsToken));
-    //     assertTrue(periodFinish > block.timestamp, "Reward notification failed");
-
-    //     // check reward data updated on notify
-    //     assertEq(rewardRate, rewardAmount / (30 days));
-    //     assertEq(lastUpdateTime, block.timestamp);
-    //     assertEq(periodFinish, block.timestamp + 30 days);
-    //     assertEq(rewardPerTokenStored, 0);
-
-    //     // check balance transfer
-    //     assertEq(rewardsToken.balanceOf(address(infraredVault)), rewardAmount);
-    //     assertEq(rewardsToken.balanceOf(address(infrared)), 0);
-    // }
 
     function testRevertWithZeroAddressForToken() public {
         uint256 rewardAmount = 1000 ether;

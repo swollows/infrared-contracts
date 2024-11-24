@@ -155,8 +155,7 @@ library ValidatorManagerLib {
             bytes memory pubkey = $.validatorPubkeys[ids[i]];
             validators[i] = ValidatorTypes.Validator({
                 pubkey: pubkey,
-                addr: _getValidatorAddress($, pubkey),
-                commission: _getValidatorCommission($, pubkey)
+                addr: _getValidatorAddress($, pubkey)
             });
         }
     }
@@ -176,13 +175,5 @@ library ValidatorManagerLib {
         bytes memory pubkey
     ) internal view returns (address) {
         return IInfraredDistributor($.distributor).validators(pubkey);
-    }
-
-    // Helper function to retrieve validator commission from distributor
-    function _getValidatorCommission(
-        ValidatorStorage storage $,
-        bytes memory pubkey
-    ) internal view returns (uint256) {
-        return IBerachainBGT($.bgt).commissions(pubkey);
     }
 }

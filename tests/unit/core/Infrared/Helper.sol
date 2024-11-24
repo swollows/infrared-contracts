@@ -27,8 +27,6 @@ import "@interfaces/IInfrared.sol";
 // mocks
 import "@mocks/MockERC20.sol";
 import "@berachain/pol/rewards/RewardVaultFactory.sol";
-// import "@mocks/MockBeaco nDepositContract.sol";
-// TODO: fix import "@mocks/MockBerachef.sol";
 import {POLTest} from "@berachain/../test/pol/POL.t.sol";
 
 abstract contract Helper is POLTest {
@@ -52,8 +50,6 @@ abstract contract Helper is POLTest {
     address public beraVault;
 
     MockERC20 public mockPool;
-    // MockBerachainRewardsVaultFactory public rewardsFactory;
-    // MockBeraChef public chef; // TODO: fix for chef
     address public chef = makeAddr("chef");
 
     string vaultName;
@@ -84,18 +80,14 @@ abstract contract Helper is POLTest {
         keeper = address(1);
         infraredGovernance = address(2);
 
-        // TODO: mock contracts
-        // mockPool = new MockERC20("Mock Asset", "MAS", 18);
         stakingAsset = address(wbera);
 
         // deploy a rewards vault for IBGT
-        // rewardsFactory = new MockBerachainRewardsVaultFactory(address(bgt));
         address rewardsVault = factory.createRewardVault(address(ibgt));
         assertEq(rewardsVault, factory.getVault(address(ibgt)));
 
         // Set up bera bgt distribution for mockPool
         beraVault = factory.createRewardVault(stakingAsset);
-        // rewardsFactory.increaseRewardsForVault(stakingAsset, 1000 ether);
 
         // initialize Infrared contracts
         infrared = Infrared(
@@ -159,7 +151,6 @@ abstract contract Helper is POLTest {
         vm.label(address(infrared), "infrared");
         vm.label(address(ibgt), "ibgt");
         vm.label(address(bgt), "bgt");
-        // vm.label(address(mockPool), "mockPool");
         vm.label(address(wbera), "wbera");
         vm.label(admin, "admin");
         vm.label(keeper, "keeper");

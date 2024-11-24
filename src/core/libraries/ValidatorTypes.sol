@@ -6,9 +6,7 @@ library ValidatorTypes {
     struct Validator {
         /// pubkey of the validator for beacon deposit contract
         bytes pubkey;
-        /// address of the validator for claiming infrared commission rewards
+        /// address of the validator for claiming infrared rewards
         address addr;
-        /// commission for validator to charge at core berachain level
-        uint256 commission;
     }
 }
