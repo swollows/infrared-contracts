@@ -142,6 +142,48 @@ library ValidatorManagerLib {
         }
     }
 
+    function queueDropBoosts(
+        ValidatorStorage storage $,
+        bytes[] memory _pubkeys,
+        uint128[] memory _amts
+    ) internal {
+        if (_pubkeys.length != _amts.length) {
+            revert Errors.InvalidArrayLength();
+        }
+        for (uint256 i = 0; i < _pubkeys.length; i++) {
+            if (!$.validatorIds.contains(keccak256(_pubkeys[i]))) {
+                revert Errors.InvalidValidator();
+            }
+            if (_amts[i] == 0) revert Errors.ZeroAmount();
+            IBerachainBGT($.bgt).queueDropBoost(_pubkeys[i], _amts[i]);
+        }
+    }
+
+    function cancelDropBoosts(
+        ValidatorStorage storage $,
+        bytes[] memory _pubkeys,
+        uint128[] memory _amts
+    ) internal {
+        if (_pubkeys.length != _amts.length) {
+            revert Errors.InvalidArrayLength();
+        }
+        for (uint256 i = 0; i < _pubkeys.length; i++) {
+            if (_amts[i] == 0) revert Errors.ZeroAmount();
+            IBerachainBGT($.bgt).cancelDropBoost(_pubkeys[i], _amts[i]);
+        }
+    }
+
+    function dropBoosts(ValidatorStorage storage $, bytes[] memory _pubkeys)
+        internal
+    {
+        for (uint256 i = 0; i < _pubkeys.length; i++) {
+            if (!$.validatorIds.contains(keccak256(_pubkeys[i]))) {
+                revert Errors.InvalidValidator();
+            }
+            IBerachainBGT($.bgt).dropBoost(address(this), _pubkeys[i]);
+        }
+    }
+
     function infraredValidators(ValidatorStorage storage $)
         public
         view

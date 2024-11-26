@@ -445,10 +445,28 @@ contract Infrared is InfraredUpgradeable, IInfrared {
     }
 
     /// @inheritdoc IInfrared
-    function dropBoosts(bytes[] calldata _pubkeys, uint128[] calldata _amts)
-        external
-        override
-    {}
+    function queueDropBoosts(
+        bytes[] calldata _pubkeys,
+        uint128[] calldata _amts
+    ) external onlyKeeper whenInitialized {
+        validatorStorage.queueDropBoosts(_pubkeys, _amts);
+        emit QueueDropBoosts(msg.sender, _pubkeys, _amts);
+    }
+
+    /// @inheritdoc IInfrared
+    function cancelDropBoosts(
+        bytes[] calldata _pubkeys,
+        uint128[] calldata _amts
+    ) external onlyKeeper whenInitialized {
+        validatorStorage.cancelDropBoosts(_pubkeys, _amts);
+        emit CancelDropBoosts(msg.sender, _pubkeys, _amts);
+    }
+
+    /// @inheritdoc IInfrared
+    function dropBoosts(bytes[] calldata _pubkeys) external whenInitialized {
+        validatorStorage.dropBoosts(_pubkeys);
+        emit DroppedBoosts(msg.sender, _pubkeys);
+    }
 
     /*//////////////////////////////////////////////////////////////
                             HELPERS

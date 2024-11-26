@@ -296,12 +296,31 @@ interface IInfrared is IInfraredUpgradeable {
     function activateBoosts(bytes[] memory _pubkeys) external;
 
     /**
-     * @notice Removes boost `_amt` of BGT boost from `_pubkey`.
-     * @param _pubkeys     address[] memory The pubkeys of the validator to remove boost from.
-     * @param _amts        uint128[] memory The amounts of BGT to remove from the boost.
+     * @notice Queues a drop boost of the validators removing an amount of BGT for sender.
+     * @dev Reverts if `user` does not have enough boosted balance to cover amount.
+     * @param pubkeys     bytes[] memory The pubkeys of the validators to remove boost from.
+     * @param amounts Amounts of BGT to remove from the queued drop boosts.
      */
-    function dropBoosts(bytes[] memory _pubkeys, uint128[] memory _amts)
-        external;
+    function queueDropBoosts(
+        bytes[] calldata pubkeys,
+        uint128[] calldata amounts
+    ) external;
+
+    /**
+     * @notice Cancels a queued drop boost of the validator removing an amount of BGT for sender.
+     * @param pubkeys     bytes[] memory The pubkeys of the validators to remove boost from.
+     * @param amounts Amounts of BGT to remove from the queued drop boosts.
+     */
+    function cancelDropBoosts(
+        bytes[] calldata pubkeys,
+        uint128[] calldata amounts
+    ) external;
+
+    /**
+     * @notice Drops an amount of BGT from an existing boost of validators by user.
+     * @param pubkeys     bytes[] memory The pubkeys of the validators to remove boost from.
+     */
+    function dropBoosts(bytes[] calldata pubkeys) external;
 
     /**
      * @notice Queues a new cutting board on BeraChef for reward weight distribution for validator
@@ -601,12 +620,31 @@ interface IInfrared is IInfraredUpgradeable {
     event ActivatedBoosts(address _sender, bytes[] _pubkeys);
 
     /**
-     * @notice Emitted when boost is removed from a validator.
+     * @notice Emitted when an user queues a drop boost for a validator.
+     * @param user The address of the user.
+     * @param pubkeys The addresses of the validators to which tokens were queued for boosts.
+     * @param amounts The amounts of tokens to remove from boosts.
+     */
+    event QueueDropBoosts(
+        address indexed user, bytes[] indexed pubkeys, uint128[] amounts
+    );
+
+    /**
+     * @notice Emitted when an user cancels a queued drop boost for a validator.
+     * @param user The address of the user.
+     * @param pubkeys The addresses of the validators to which tokens were queued for boosts.
+     * @param amounts The amounts of tokens to remove from boosts.
+     */
+    event CancelDropBoosts(
+        address indexed user, bytes[] indexed pubkeys, uint128[] amounts
+    );
+
+    /**
+     * @notice Emitted when sender removes an amount of BGT boost from a validator
      * @param _sender The address that initiated the cancellation.
      * @param _pubkeys The addresses of the validators to which tokens were queued for boosts.
-     * @param _amts The amounts of tokens to remove from boosts.
      */
-    event DroppedBoosts(address _sender, bytes[] _pubkeys, uint128[] _amts);
+    event DroppedBoosts(address indexed _sender, bytes[] _pubkeys);
 
     /**
      * @notice Emitted when tokens are undelegated from a validator.
