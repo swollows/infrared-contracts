@@ -8,6 +8,7 @@ import {IRewardVaultFactory as IBerachainRewardsVaultFactory} from
     "@berachain/pol/interfaces/IRewardVaultFactory.sol";
 
 import {IVoter} from "@voting/interfaces/IVoter.sol";
+import {IIBERA} from "@interfaces/IIBERA.sol";
 
 import {IWBERA} from "@interfaces/IWBERA.sol";
 import {IERC20Mintable} from "@interfaces/IERC20Mintable.sol";
@@ -81,13 +82,6 @@ interface IInfrared is IInfraredUpgradeable {
         returns (uint256);
 
     /**
-     * @notice Weights for various harvest function distributions
-     * @param i The index of the weight
-     * @return uint256 The weight value
-     */
-    function weights(uint256 i) external view returns (uint256);
-
-    /**
      * @notice Protocol fee rates to charge for various harvest function distributions
      * @param i The index of the fee rate
      * @return uint256 The fee rate
@@ -123,6 +117,12 @@ interface IInfrared is IInfraredUpgradeable {
      * @return IVoter instance of the voter contract address
      */
     function voter() external view returns (IVoter);
+
+    /**
+     * @notice collects all iBERA realted fees and revenue
+     * @return returns IIBERAFeeReceivor instanace of iBeraFeeReceivor
+     */
+    function ibera() external view returns (IIBERA);
 
     /**
      * @notice The rewards duration
@@ -187,6 +187,7 @@ interface IInfrared is IInfraredUpgradeable {
         address _collector,
         address _distributor,
         address _voter,
+        address _iBeraFeeReceivor,
         uint256 _rewardsDuration
     ) external;
 
@@ -197,12 +198,10 @@ interface IInfrared is IInfraredUpgradeable {
     function delegateBGT(address _delegatee) external;
 
     /**
-     * @notice Updates the weight for a weight type.
-     * @param _t WeightType The weight type
+     * @notice Updates the weight for iBERA bribes
      * @param _weight uint256 The weight value
      */
-    function updateWeight(ConfigTypes.WeightType _t, uint256 _weight)
-        external;
+    function updateIBERABribesWeight(uint256 _weight) external;
 
     /**
      * @notice Updates the fee rate charged on different harvest functions
@@ -383,10 +382,13 @@ interface IInfrared is IInfraredUpgradeable {
 
     /**
      * @notice Emitted when IBGT tokens are supplied to distributor.
+     * @param _ibera token the rewards are denominated in
      * @param _distributor The address of the distributor receiving the IBGT tokens.
-     * @param _ibgtAmt The amount of IBGT tokens supplied to distributor.
+     * @param _amt The amount of WBERA tokens supplied to distributor.
      */
-    event IBGTDistributed(address indexed _distributor, uint256 _ibgtAmt);
+    event OperatorRewardsDistributed(
+        address indexed _ibera, address indexed _distributor, uint256 _amt
+    );
 
     /**
      * @notice Emitted when IBGT tokens are supplied to a vault.
@@ -487,15 +489,11 @@ interface IInfrared is IInfraredUpgradeable {
     /**
      * @notice Emitted when a weight is updated.
      * @param _sender The address that initiated the update.
-     * @param _weightType The weight type updated.
      * @param _oldWeight The old value of the weight.
      * @param _newWeight The new value of the weight.
      */
-    event WeightUpdated(
-        address _sender,
-        ConfigTypes.WeightType _weightType,
-        uint256 _oldWeight,
-        uint256 _newWeight
+    event IBERABribesWeightUpdated(
+        address _sender, uint256 _oldWeight, uint256 _newWeight
     );
 
     /**

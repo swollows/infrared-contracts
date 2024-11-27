@@ -28,7 +28,7 @@ interface IIBERA is IERC20, IAccessControl {
     );
     event Sweep(uint256 amount);
     event Register(bytes pubkey, int256 delta, uint256 stake);
-    event SetFeeProtocol(uint16 from, uint16 to);
+    event SetFeeShareholders(uint16 from, uint16 to);
     event SetDepositSignature(bytes pubkey, bytes from, bytes to);
     event WithdrawalFlagSet(bool flag);
 
@@ -66,9 +66,10 @@ interface IIBERA is IERC20, IAccessControl {
         view
         returns (bytes memory);
 
-    /// @notice Fee taken by the protocol on yield from EL coinbase priority fees + MEV, represented as an integer denominator (1/x)%
-    /// @return The fee taken by protocol
-    function feeProtocol() external view returns (uint16);
+    /// @notice Fee taken by the shareholders on yield from EL coinbase priority fees + MEV, represented as an integer denominator (1/x)%
+    /// @notice additional fees include POL base rewards, POL comission, POL bribes
+    /// @return The fee taken by shareholders as an integer denominator (1/x)%, (25% = 4), (50% = 2), (100% = 1)
+    function feeShareholders() external view returns (uint16);
 
     /// @notice Pending deposits yet to be forwarded to CL
     /// @return The amount of BERA yet to be deposited to CL
@@ -90,6 +91,24 @@ interface IIBERA is IERC20, IAccessControl {
     /// @return Whether pubkey in Infrared validator set
     function validator(bytes calldata pubkey) external view returns (bool);
 
+    /// @notice Previews the amount of IBERA shares that would be minted for a given BERA amount
+    /// @param beraAmount The amount of BERA to simulate depositing
+    /// @return shares The amount of IBERA shares that would be minted, returns 0 if the operation would fail
+    /// @return fee The fee that would be charged for the mint operation
+    function previewMint(uint256 beraAmount)
+        external
+        view
+        returns (uint256 shares, uint256 fee);
+
+    /// @notice Previews the amount of BERA that would be received for burning IBERA shares
+    /// @param shares The amount of IBERA shares to simulate burning
+    /// @return beraAmount The amount of BERA that would be received, returns 0 if the operation would fail
+    /// @return fee The fee that would be charged for the burn operation
+    function previewBurn(uint256 shares)
+        external
+        view
+        returns (uint256 beraAmount, uint256 fee);
+
     /// @notice Initializes IBERA to allow for future mints and burns
     /// @dev Must be called before IBERA can offer deposits and withdraws
     function initialize() external payable;
@@ -102,6 +121,11 @@ interface IIBERA is IERC20, IAccessControl {
     /// @notice Sweeps received funds in `msg.value` as yield into deposits
     /// @dev Fee receivor must call this function in its sweep function for autocompounding
     function sweep() external payable;
+
+    /// @notice Collects yield from fee receivor and mints ibera shares to Infrared
+    /// @dev Only Infrared can call this function
+    /// @return sharesMinted The amount of ibera shares minted
+    function collect() external returns (uint256 sharesMinted);
 
     /// @notice Mints ibera shares to receiver for bera paid in by sender
     /// @param receiver Address of the receiver of ibera
@@ -129,9 +153,9 @@ interface IIBERA is IERC20, IAccessControl {
     /// @param delta The change in the amount of BERA staked/unstaked (+/-) at CL
     function register(bytes calldata pubkey, int256 delta) external;
 
-    /// @notice Sets the fee protocol taken on yield from EL coinbase priority fees + MEV
-    /// @param to The new fee protocol represented as an integer denominator (1/x)%
-    function setFeeProtocol(uint16 to) external;
+    /// @notice Sets the fee shareholders taken on yield from EL coinbase priority fees + MEV
+    /// @param to The new fee shareholders represented as an integer denominator (1/x)%
+    function setFeeShareholders(uint16 to) external;
 
     /// @notice Sets the deposit signature to be used when depositing to pubkey
     /// @param pubkey The pubkey of the validator receiving the deposit

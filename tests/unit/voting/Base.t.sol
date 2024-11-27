@@ -5,6 +5,8 @@ import {ERC1967Proxy} from
     "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import "@mocks/MockWbera.sol";
 import "@mocks/MockERC20.sol";
+import "@mocks/MockDistributor.sol";
+import "@mocks/MockCollector.sol";
 import "@berachain/pol/rewards/RewardVaultFactory.sol";
 
 import "@voting/VotingEscrow.sol";
@@ -33,6 +35,7 @@ abstract contract Base is Test {
 
     RewardVaultFactory public rewardsFactory;
     address public chef = makeAddr("chef"); // TODO: actual chef
+    MockERC20 public ibera;
 
     uint256 constant TOKEN_1 = 1e18;
     uint256 constant TOKEN_10K = 1e22; // 1e4 = 10K tokens with 18 decimals
@@ -65,7 +68,7 @@ abstract contract Base is Test {
         ibgt = new IBGT(bgt);
         WBERA = new MockWbera();
         honey = new MockERC20("HONEY", "HONEY", 18);
-        address wibera = address(new MockERC20("WIBERA", "WIBERA", 18));
+        ibera = new MockERC20("iBERA", "iBERA", 18);
 
         rewardsFactory = new RewardVaultFactory();
 
@@ -84,8 +87,8 @@ abstract contract Base is Test {
             )
         );
 
-        address collector = makeAddr("collector");
-        address distributor = makeAddr("distributor");
+        address collector = address(new MockCollector(address(WBERA)));
+        address distributor = address(new MockDistributor(address(ibera)));
 
         // IRED voting
         voter = Voter(setupProxy(address(new Voter(address(infrared)))));
@@ -94,7 +97,12 @@ abstract contract Base is Test {
         );
 
         infrared.initialize(
-            address(this), collector, distributor, address(voter), 1 days
+            address(this),
+            collector,
+            distributor,
+            address(voter),
+            address(ibera),
+            1 days
         ); // make helper contract the admin
         voter.initialize(address(escrow));
 

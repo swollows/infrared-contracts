@@ -15,7 +15,7 @@ import {IInfraredDistributor} from "@interfaces/IInfraredDistributor.sol";
 import {Errors} from "@utils/Errors.sol";
 
 /// @title InfraredDistributor
-/// @notice A contract for distributing rewards in a single ERC20 token (iBGT) to validators
+/// @notice A contract for distributing rewards in a single ERC20 token (iBERA) to validators
 contract InfraredDistributor is InfraredUpgradeable, IInfraredDistributor {
     using SafeERC20 for IERC20;
 
@@ -35,8 +35,8 @@ contract InfraredDistributor is InfraredUpgradeable, IInfraredDistributor {
         if (_infrared == address(0)) revert Errors.ZeroAddress();
     }
 
-    function initialize() external initializer {
-        token = IERC20(address(infrared.ibgt()));
+    function initialize(address _token) external initializer {
+        token = IERC20(_token);
 
         // claim amounts calculated via differences so absolute amount not relevant
         amountsCumulative++;

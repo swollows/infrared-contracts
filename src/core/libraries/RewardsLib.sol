@@ -7,6 +7,7 @@ import {
     IERC20,
     SafeERC20
 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 import {IInfraredDistributor} from "@interfaces/IInfraredDistributor.sol";
 import {IBerachainBGTStaker} from "@interfaces/IBerachainBGTStaker.sol";
 import {IERC20Mintable} from "@interfaces/IERC20Mintable.sol";
@@ -18,6 +19,7 @@ import {IVoter} from "@voting/interfaces/IVoter.sol";
 import {DataTypes} from "@utils/DataTypes.sol";
 import {IWBERA} from "@interfaces/IWBERA.sol";
 import {IIBGT} from "@interfaces/IIBGT.sol";
+import {IIBERA} from "@interfaces/IIBERA.sol";
 import {Errors} from "@utils/Errors.sol";
 
 library RewardsLib {
@@ -31,12 +33,12 @@ library RewardsLib {
         address ibgt;
         address voter;
         address ibgtVault;
-        address wiberaVault;
+        address ibera;
         address ired;
         mapping(address => uint256) protocolFeeAmounts; // Tracks accumulated protocol fees per token
         uint256 iredMintRate; // Rate for minting IRED tokens
         uint256 rewardsDuration; // Duration for reward programs
-        mapping(uint256 => uint256) weights; // Weight configuration
+        uint256 collectBribesWeight;
         mapping(uint256 => uint256) fees; // Fee configuration
     }
 
@@ -45,12 +47,6 @@ library RewardsLib {
      * @dev Used as the denominator when calculating weighted distributions (1e6)
      */
     uint256 internal constant WEIGHT_UNIT = 1e6;
-
-    /**
-     * @notice IRED mint rate in hundredths of 1 bip
-     * @dev Used as the denominator when calculating IRED minting (1e6)
-     */
-    uint256 internal constant RATE_UNIT = 1e6;
 
     /**
      * @notice Protocol fee rate in hundredths of 1 bip
@@ -69,10 +65,9 @@ library RewardsLib {
         pure
         returns (uint256 amtRecipient, uint256 amtVoter, uint256 amtProtocol)
     {
-        amtRecipient = _amt;
-        if (_feeTotal == 0) return (amtRecipient, 0, 0);
+        if (_feeTotal == 0) return (_amt, 0, 0);
 
-        uint256 _amtTotal = amtRecipient * _feeTotal / FEE_UNIT; // FEE_UNIT = 1e6
+        uint256 _amtTotal = _amt * _feeTotal / FEE_UNIT; // FEE_UNIT = 1e6
         amtProtocol = _amtTotal * _feeProtocol / FEE_UNIT; // Protocol's share
         amtVoter = _amtTotal - amtProtocol; // Remainder for voter
         amtRecipient -= (amtProtocol + amtVoter); // Deduct fees from recipient
@@ -106,13 +101,10 @@ library RewardsLib {
 
         bgtAmt = bgtBalance - minted;
 
-        // get total and protocol fee rates
-        uint256 feeTotal =
-            $.fees[uint256(ConfigTypes.FeeType.HarvestBaseFeeRate)];
-        uint256 feeProtocol =
-            $.fees[uint256(ConfigTypes.FeeType.HarvestBaseProtocolRate)];
-
-        _handleBGTRewardsForDistributor($, bgtAmt, feeTotal, feeProtocol);
+        // Redeem BGT for BERA and send to IBERA receivor
+        // No fee deduction needed here as fees will be handled by
+        // subsequent harvest calls through the IBERA receiver's logic
+        IBerachainBGT($.bgt).redeem(IIBERA($.ibera).receivor(), bgtAmt);
     }
 
     function harvestVault(RewardsStorage storage $, IInfraredVault vault)
@@ -164,14 +156,19 @@ library RewardsLib {
         }
     }
 
-    function collectBribes(
-        RewardsStorage storage $,
-        address _token,
-        uint256 _amount
-    ) internal returns (uint256 amtWiberaVault, uint256 amtIbgtVault) {
-        IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
+    function collectBribesInWBERA(RewardsStorage storage $, uint256 _amount)
+        external
+        returns (uint256 amtIBERA, uint256 amtIbgtVault)
+    {
+        IERC20($.wbera).safeTransferFrom(msg.sender, address(this), _amount);
 
-        amtIbgtVault = _amount;
+        // determine proportion of bribe amount designated for IBERA
+        amtIBERA = Math.mulDiv(_amount, $.collectBribesWeight, WEIGHT_UNIT);
+        amtIbgtVault = _amount - amtIBERA;
+
+        // Redeem WBERA for BERA and send to IBERA receivor
+        (bool success,) = IIBERA($.ibera).receivor().call{value: amtIBERA}("");
+        if (!success) revert Errors.ETHTransferFailed();
 
         // get total and protocol fee rates
         uint256 feeTotal =
@@ -182,7 +179,7 @@ library RewardsLib {
         _handleTokenRewardsForVault(
             $,
             IInfraredVault($.ibgtVault),
-            _token,
+            $.wbera,
             amtIbgtVault,
             feeTotal,
             feeProtocol
@@ -217,6 +214,22 @@ library RewardsLib {
             feeTotal,
             feeProtocol
         );
+    }
+
+    function harvestOperatorRewards(RewardsStorage storage $)
+        external
+        returns (uint256 _amt)
+    {
+        uint256 iBERAShares = IIBERA($.ibera).collect();
+
+        if (iBERAShares == 0) return 0;
+
+        uint256 feeTotal =
+            $.fees[uint256(ConfigTypes.FeeType.HarvestOperatorFeeRate)];
+        uint256 feeProtocol =
+            $.fees[uint256(ConfigTypes.FeeType.HarvestOperatorProtocolRate)];
+
+        _amt = _handleRewardsForOperators($, iBERAShares, feeTotal, feeProtocol);
     }
 
     /**
@@ -310,31 +323,27 @@ library RewardsLib {
 
     /**
      * @notice Handles BGT base rewards supplied to validator distributor.
-     * @param _bgtAmt      uint256         The BGT reward amount.
-     * @param _feeTotal    uint256         The rate to charge for total fees on `_bgtAmt`.
+     * @param _iBERAShares      uint256         The BGT reward amount.
+     * @param _feeTotal    uint256         The rate to charge for total fees on `_iBERAShares`.
      * @param _feeProtocol uint256         The rate to charge for protocol treasury on total fees.
      */
-    function _handleBGTRewardsForDistributor(
+    function _handleRewardsForOperators(
         RewardsStorage storage $,
-        uint256 _bgtAmt,
+        uint256 _iBERAShares,
         uint256 _feeTotal,
         uint256 _feeProtocol
-    ) internal {
+    ) internal returns (uint256 _amt) {
         // pass if no bgt rewards
-        if (_bgtAmt == 0) return;
+        if (_iBERAShares == 0) return 0;
 
-        // handle bgt rewards by minting and supplying to distributor
-        IIBGT($.ibgt).mint(address(this), _bgtAmt);
-
-        address _token = $.ibgt;
-        uint256 _amt = _bgtAmt;
+        address _token = $.ibera;
 
         uint256 _amtVoter;
         uint256 _amtProtocol;
 
         // calculate and distribute fees on rewards
         (_amt, _amtVoter, _amtProtocol) =
-            chargedFeesOnRewards($, _amt, _feeTotal, _feeProtocol);
+            chargedFeesOnRewards($, _iBERAShares, _feeTotal, _feeProtocol);
         _distributeFeesOnRewards($, _token, _amtVoter, _amtProtocol);
 
         // send token rewards less fee to vault
@@ -352,13 +361,11 @@ library RewardsLib {
         IBerachainBGT($.bgt).delegate(_delegatee);
     }
 
-    function updateWeight(
-        RewardsStorage storage $,
-        ConfigTypes.WeightType _t,
-        uint256 _weight
-    ) internal {
+    function updateIBERABribesWeight(RewardsStorage storage $, uint256 _weight)
+        internal
+    {
         if (_weight > WEIGHT_UNIT) revert Errors.InvalidWeight();
-        $.weights[uint256(_t)] = _weight;
+        $.collectBribesWeight = _weight;
     }
 
     function updateFee(

@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {IBerachainBGT} from "@interfaces/IBerachainBGT.sol";
+import {IIBGT} from "@interfaces/IIBGT.sol";
 import {Errors} from "@utils/Errors.sol";
 import {ValidatorTypes} from "./ValidatorTypes.sol";
 import {IInfraredDistributor} from "@interfaces/IInfraredDistributor.sol";
@@ -16,6 +17,7 @@ library ValidatorManagerLib {
         mapping(bytes32 => bytes) validatorPubkeys; // Maps validator ID to public key
         address distributor; // Address of the distributor contract
         address bgt;
+        address ibgt;
     }
 
     // Public function to check if a validator exists, accessible to any external contract or account
@@ -108,11 +110,30 @@ library ValidatorManagerLib {
         if (_pubkeys.length != _amts.length) {
             revert Errors.InvalidArrayLength();
         }
+        // check if sum of boosts is less than or equal to totalSpupply of iBGT
+        uint256 _totalBoosts = 0;
         for (uint256 i = 0; i < _pubkeys.length; i++) {
             if (!$.validatorIds.contains(keccak256(_pubkeys[i]))) {
                 revert Errors.InvalidValidator();
             }
             if (_amts[i] == 0) revert Errors.ZeroAmount();
+            _totalBoosts += _amts[i];
+        }
+
+        // make that new boost plus the existing boosts and queued boosts
+        // are less than or equal to the total supply of iBGT
+        if (
+            _totalBoosts
+                > IIBGT($.ibgt).totalSupply()
+                    - (
+                        IBerachainBGT($.bgt).boosts(address(this))
+                            + IBerachainBGT($.bgt).queuedBoost(address(this))
+                    )
+        ) {
+            revert Errors.BoostExceedsSupply();
+        }
+        // check if all pubkeys are valid
+        for (uint256 i = 0; i < _pubkeys.length; i++) {
             IBerachainBGT($.bgt).queueBoost(_pubkeys[i], _amts[i]);
         }
     }

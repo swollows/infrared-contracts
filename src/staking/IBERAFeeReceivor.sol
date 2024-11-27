@@ -5,7 +5,7 @@ import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 
 import {IIBERA} from "@interfaces/IIBERA.sol";
 import {IIBERAFeeReceivor} from "@interfaces/IIBERAFeeReceivor.sol";
-
+import {IInfrared} from "@interfaces/IInfrared.sol";
 import {IBERAConstants} from "./IBERAConstants.sol";
 
 /// @title IBERAFeeReceivor
@@ -16,11 +16,14 @@ contract IBERAFeeReceivor is IIBERAFeeReceivor {
     /// @inheritdoc IIBERAFeeReceivor
     address public immutable IBERA;
 
-    /// @inheritdoc IIBERAFeeReceivor
-    uint256 public protocolFees;
+    IInfrared public immutable infrared;
 
-    constructor() {
+    /// @inheritdoc IIBERAFeeReceivor
+    uint256 public shareholderFees;
+
+    constructor(address _infrared) {
         IBERA = msg.sender;
+        infrared = IInfrared(_infrared);
     }
 
     /// @inheritdoc IIBERAFeeReceivor
@@ -29,12 +32,12 @@ contract IBERAFeeReceivor is IIBERAFeeReceivor {
         view
         returns (uint256 amount, uint256 fees)
     {
-        amount = (address(this).balance - protocolFees);
-        uint16 feeProtocol = IIBERA(IBERA).feeProtocol();
+        amount = (address(this).balance - shareholderFees);
+        uint16 feeShareholders = IIBERA(IBERA).feeShareholders();
 
         // take protocol fees
-        if (feeProtocol > 0) {
-            fees = amount / uint256(feeProtocol);
+        if (feeShareholders > 0) {
+            fees = amount / uint256(feeShareholders);
             amount -= fees;
         }
     }
@@ -48,21 +51,28 @@ contract IBERAFeeReceivor is IIBERAFeeReceivor {
         if (amount < min) return (0, 0);
 
         // add to protocol fees and sweep amount back to ibera to deposit
-        if (fees > 0) protocolFees += fees;
+        if (fees > 0) shareholderFees += fees;
         if (amount > 0) IIBERA(IBERA).sweep{value: amount}();
         emit Sweep(IBERA, amount, fees);
     }
 
     /// @inheritdoc IIBERAFeeReceivor
-    function collect(address receiver) external {
-        if (!IIBERA(IBERA).governor(msg.sender)) revert Unauthorized();
-        uint256 pf = protocolFees;
-        if (pf == 0) revert InvalidAmount();
+    function collect() external returns (uint256 sharesMinted) {
+        if (msg.sender != IBERA) revert Unauthorized();
+        uint256 shf = shareholderFees;
+        uint256 min =
+            IBERAConstants.MINIMUM_DEPOSIT + IBERAConstants.MINIMUM_DEPOSIT_FEE;
+        if (shf == 0 || shf < min) {
+            revert InvalidAmount();
+        }
 
-        uint256 amount = pf - 1; // gas savings on sweep
-        protocolFees -= amount;
-        if (amount > 0) SafeTransferLib.safeTransferETH(receiver, amount);
-        emit Collect(receiver, amount);
+        uint256 amount = shf - 1; // gas savings on sweep
+        shareholderFees -= amount;
+        if (amount > 0) {
+            (, sharesMinted) =
+                IIBERA(IBERA).mint{value: amount}(address(infrared));
+        }
+        emit Collect(address(infrared), amount, sharesMinted);
     }
 
     receive() external payable {}

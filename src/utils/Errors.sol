@@ -50,4 +50,6 @@ library Errors {
     error InvalidDelegatee();
     error InvalidWeight();
     error MaxProtocolFeeAmount();
+    error BoostExceedsSupply();
+    error ETHTransferFailed();
 }

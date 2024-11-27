@@ -10,6 +10,7 @@ import {BGTStaker} from "@berachain/pol/BGTStaker.sol";
 import "@berachain/pol/rewards/RewardVaultFactory.sol";
 import {IRewardVault as IBerachainRewardsVault} from
     "@berachain/pol/interfaces/IRewardVault.sol";
+import {IIBERAFeeReceivor} from "@interfaces/IIBERAFeeReceivor.sol";
 
 contract InfraredTest is Helper {
     // MockBerachainRewardsVaultFactory public factory
@@ -215,19 +216,20 @@ contract InfraredTest is Helper {
     }
 
     function testharvestBaseSuccess() public {
-        // 1. Mint ibgt to some random address, such that total supply of ibgt is 100 ether.
+        // 1. Mint ibgt to some random address, such that total supply of ibgt is 100 ether
+        ibgt.mint(address(12), 100 ether);
         vm.startPrank(address(blockRewardController));
-        ibgt.mint(address(infraredGovernance), 100 ether);
-
         // 2. Mint bgt to the Infrared, to simulate the rewards.
         bgt.mint(address(infrared), 110 ether);
         vm.stopPrank();
+        deal(address(bgt), 110 ether);
+
         assertTrue(
             bgt.balanceOf(address(infrared)) > ibgt.totalSupply(),
-            "Infrared should have more BGT than total supply of IBGT."
+            "Infrared should have more BERA than total supply of IBGT"
         );
 
-        // 3. Add a validator to the validator set.
+        // 3. Add a validator to the validator set
         vm.startPrank(infraredGovernance);
         ValidatorTypes.Validator memory validator_str = ValidatorTypes.Validator({
             pubkey: "0x1234567890abcdef",
@@ -241,51 +243,41 @@ contract InfraredTest is Helper {
         infrared.addValidators(validators);
         vm.stopPrank();
 
-        console.log(
-            "Distributor balance of [ibgt] before harvest: ",
-            ibgt.balanceOf(address(infrared.distributor()))
-        );
-        // 4. Call `harvestBase` to distribute the rewards.
+        // Store initial balances
+        uint256 receivorBalanceBefore = ibera.receivor().balance;
+
+        // 4. Call harvestBase to distribute the rewards
         infrared.harvestBase();
-        console.log(
-            "Distributor balance of [ibgt] after harvest: ",
-            ibgt.balanceOf(address(infrared.distributor()))
-        );
+
+        // Check that ETH was sent to IBERA receivor
+        uint256 receivorBalanceAfter = ibera.receivor().balance;
         assertTrue(
-            ibgt.balanceOf(address(infrared.distributor())) > 0,
-            "Infrared should have distributed rewards."
+            receivorBalanceAfter > receivorBalanceBefore,
+            "IBERA receivor should have received ETH"
         );
 
-        console.log(
-            "Validator balance of [ibgt] before claim: ",
-            ibgt.balanceOf(address(validator))
+        // 5. Call harvestOperatorRewards to distribute the rewards
+        // 5.1 mint some ibera shares to randrom contract
+        deal(address(this), 2 ether);
+        ibera.mint{value: 1 ether}(address(this));
+
+        // 5.2 call harvestOperatorRewards to distribute the rewards
+        infrared.harvestOperatorRewards();
+        assertTrue(
+            ibera.balanceOf(address(infrared.distributor())) > 0,
+            "Infrared should have received operator rewards"
         );
-        // 5. Claim the rewards as validator.
+
+        // 6. Claim rewards as validator (if needed in new system)
         vm.startPrank(validator);
         infrared.distributor().claim(validator_str.pubkey, validator_str.addr);
         vm.stopPrank();
 
-        console.log(
-            "Validator balance of [ibgt] after claim: ",
-            ibgt.balanceOf(address(validator))
-        );
+        // Verify validator received expected rewards
         assertTrue(
-            ibgt.balanceOf(address(validator)) == 10 ether,
-            "Validator should have claimed rewards."
+            ibera.balanceOf(address(validator)) > 0,
+            "Validator should have received rewards"
         );
-    }
-
-    function testharvestBaseNoValidators() public {
-        vm.startPrank(address(blockRewardController));
-
-        ibgt.mint(address(infraredGovernance), 100 ether);
-
-        bgt.mint(address(infrared), 101 ether);
-
-        vm.stopPrank();
-
-        vm.expectRevert(abi.encodeWithSignature("InvalidValidator()"));
-        infrared.harvestBase();
     }
 
     function testharvestBaseNoMinted() public {

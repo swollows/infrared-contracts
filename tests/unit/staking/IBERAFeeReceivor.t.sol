@@ -6,6 +6,8 @@ import {IBERAConstants} from "@staking/IBERAConstants.sol";
 
 import {IBERABaseTest} from "./IBERABase.t.sol";
 
+import {console2} from "@forge-std/console2.sol";
+
 contract IBERAFeeReceivorTest is IBERABaseTest {
     function testDistributionReturnsWhenFeeZero() public {
         uint256 value = 1 ether;
@@ -18,10 +20,10 @@ contract IBERAFeeReceivorTest is IBERABaseTest {
     }
 
     function testDistributionReturnsWhenFeeGreaterThanZero() public {
-        uint16 feeProtocol = 4; // 25% fee
+        uint16 feeShareholders = 4; // 25% fee
         vm.prank(governor);
-        ibera.setFeeProtocol(feeProtocol);
-        assertEq(ibera.feeProtocol(), feeProtocol);
+        ibera.setFeeShareholders(feeShareholders);
+        assertEq(ibera.feeShareholders(), feeShareholders);
 
         uint256 value = 1 ether;
         payable(address(receivor)).transfer(value);
@@ -30,9 +32,10 @@ contract IBERAFeeReceivorTest is IBERABaseTest {
         (uint256 amount, uint256 fees) = receivor.distribution();
         assertEq(
             amount,
-            address(receivor).balance - address(receivor).balance / feeProtocol
+            address(receivor).balance
+                - address(receivor).balance / feeShareholders
         );
-        assertEq(fees, address(receivor).balance / feeProtocol);
+        assertEq(fees, address(receivor).balance / feeShareholders);
     }
 
     function testDistributionReturnsWhenAccumulatedFeesGreaterThanZero()
@@ -40,32 +43,32 @@ contract IBERAFeeReceivorTest is IBERABaseTest {
     {
         testDistributionReturnsWhenFeeGreaterThanZero();
         uint256 balanceReceivor = address(receivor).balance;
-        uint16 feeProtocol = ibera.feeProtocol();
-        uint256 protocolFees = receivor.protocolFees();
+        uint16 feeShareholders = ibera.feeShareholders();
+        uint256 shareholderFees = receivor.shareholderFees();
 
         (uint256 amount_, uint256 fees_) = receivor.sweep();
-        assertEq(amount_, balanceReceivor - balanceReceivor / feeProtocol);
-        assertEq(fees_, balanceReceivor / feeProtocol);
+        assertEq(amount_, balanceReceivor - balanceReceivor / feeShareholders);
+        assertEq(fees_, balanceReceivor / feeShareholders);
 
-        uint256 protocolFees_ = receivor.protocolFees();
-        assertEq(receivor.protocolFees(), protocolFees + fees_);
+        uint256 shareholderFees_ = receivor.shareholderFees();
+        assertEq(receivor.shareholderFees(), shareholderFees + fees_);
 
         // add in some more fees
         uint256 value = 0.5 ether;
         payable(address(receivor)).transfer(value);
-        assertEq(address(receivor).balance, value + protocolFees_);
+        assertEq(address(receivor).balance, value + shareholderFees_);
 
         // should not include already swept distribution in fees charged
         (uint256 amount, uint256 fees) = receivor.distribution();
-        assertEq(amount, value - value / feeProtocol);
-        assertEq(fees, value / feeProtocol);
+        assertEq(amount, value - value / feeShareholders);
+        assertEq(fees, value / feeShareholders);
     }
 
     function testSweepUpdatesProtocolFees() public {
-        uint16 feeProtocol = 4; // 25% fee
+        uint16 feeShareholders = 4; // 25% fee
         vm.prank(governor);
-        ibera.setFeeProtocol(feeProtocol);
-        assertEq(ibera.feeProtocol(), feeProtocol);
+        ibera.setFeeShareholders(feeShareholders);
+        assertEq(ibera.feeShareholders(), feeShareholders);
 
         uint256 value = 1 ether;
         payable(address(receivor)).transfer(value);
@@ -74,10 +77,10 @@ contract IBERAFeeReceivorTest is IBERABaseTest {
         (, uint256 fees) = receivor.distribution();
         assertTrue(fees > 0);
 
-        uint256 protocolFees_ = receivor.protocolFees();
+        uint256 shareholderFees_ = receivor.shareholderFees();
         (, uint256 fees_) = receivor.sweep();
         assertEq(fees_, fees);
-        assertEq(receivor.protocolFees(), protocolFees_ + fees);
+        assertEq(receivor.shareholderFees(), shareholderFees_ + fees);
 
         // check distribution zeros
         (uint256 amountAfter, uint256 feesAfter) = receivor.distribution();
@@ -93,10 +96,10 @@ contract IBERAFeeReceivorTest is IBERABaseTest {
         (, uint256 fees) = receivor.distribution();
         assertTrue(fees == 0);
 
-        uint256 protocolFees_ = receivor.protocolFees();
+        uint256 shareholderFees_ = receivor.shareholderFees();
         (, uint256 fees_) = receivor.sweep();
         assertEq(fees_, 0);
-        assertEq(receivor.protocolFees(), protocolFees_);
+        assertEq(receivor.shareholderFees(), shareholderFees_);
 
         // check distribution zeros
         (uint256 amountAfter, uint256 feesAfter) = receivor.distribution();
@@ -112,26 +115,26 @@ contract IBERAFeeReceivorTest is IBERABaseTest {
         assertTrue(amount > 0);
         assertTrue(fees > 0);
 
-        uint256 protocolFees = receivor.protocolFees();
+        uint256 shareholderFees = receivor.shareholderFees();
         (uint256 amount_, uint256 fees_) = receivor.sweep();
         assertEq(amount_, amount);
         assertEq(fees_, fees);
-        assertEq(receivor.protocolFees(), protocolFees + fees);
+        assertEq(receivor.shareholderFees(), shareholderFees + fees);
     }
 
     function testSweepTransfersETH() public {
-        uint16 feeProtocol = 4; // 25% fee
+        uint16 feeShareholders = 4; // 25% fee
         vm.prank(governor);
-        ibera.setFeeProtocol(feeProtocol);
-        assertEq(ibera.feeProtocol(), feeProtocol);
+        ibera.setFeeShareholders(feeShareholders);
+        assertEq(ibera.feeShareholders(), feeShareholders);
 
         uint256 value = 1 ether;
         payable(address(receivor)).transfer(value);
         assertEq(address(receivor).balance, value);
 
         (uint256 amount, uint256 fees) = receivor.distribution();
-        assertEq(amount, value - value / feeProtocol);
-        assertEq(fees, value / feeProtocol);
+        assertEq(amount, value - value / feeShareholders);
+        assertEq(fees, value / feeShareholders);
 
         uint256 balanceDepositor = address(depositor).balance;
         uint256 balanceReceivor = address(receivor).balance;
@@ -182,18 +185,18 @@ contract IBERAFeeReceivorTest is IBERABaseTest {
     }
 
     function testSweepEmitsSweep() public {
-        uint16 feeProtocol = 4; // 25% fee
+        uint16 feeShareholders = 4; // 25% fee
         vm.prank(governor);
-        ibera.setFeeProtocol(feeProtocol);
-        assertEq(ibera.feeProtocol(), feeProtocol);
+        ibera.setFeeShareholders(feeShareholders);
+        assertEq(ibera.feeShareholders(), feeShareholders);
 
         uint256 value = 1 ether;
         payable(address(receivor)).transfer(value);
         assertEq(address(receivor).balance, value);
 
         (uint256 amount, uint256 fees) = receivor.distribution();
-        assertEq(amount, value - value / feeProtocol);
-        assertEq(fees, value / feeProtocol);
+        assertEq(amount, value - value / feeShareholders);
+        assertEq(fees, value / feeShareholders);
 
         vm.expectEmit();
         emit IIBERAFeeReceivor.Sweep(address(ibera), amount, fees);
@@ -215,7 +218,7 @@ contract IBERAFeeReceivorTest is IBERABaseTest {
 
         uint256 balanceDepositor = address(depositor).balance;
         uint256 balanceReceivor = address(receivor).balance;
-        uint256 protocolFees = receivor.protocolFees();
+        uint256 shareholderFees = receivor.shareholderFees();
 
         (uint256 amount_, uint256 fees_) = receivor.sweep();
         assertEq(amount_, 0);
@@ -223,49 +226,119 @@ contract IBERAFeeReceivorTest is IBERABaseTest {
 
         assertEq(address(depositor).balance, balanceDepositor);
         assertEq(address(receivor).balance, balanceReceivor);
-        assertEq(protocolFees, receivor.protocolFees());
+        assertEq(shareholderFees, receivor.shareholderFees());
     }
+
+    // todo: refactor  receivor.collect();
 
     function testCollectUpdatesProtocolFees() public {
         testSweepTransfersETHWhenAccumulatedFeesGreaterThanZero();
-        uint256 protocolFees = receivor.protocolFees();
-        assertTrue(protocolFees > 0);
+        uint256 shareholderFees = receivor.shareholderFees();
+        assertTrue(shareholderFees > 0);
 
-        vm.prank(governor);
-        receivor.collect(alice);
-        assertEq(receivor.protocolFees(), 1);
+        vm.prank(address(ibera));
+        receivor.collect();
+        assertEq(receivor.shareholderFees(), 1);
     }
 
-    function testCollectTransfersETH() public {
+    function testCollectMintingShares() public {
         testSweepTransfersETHWhenAccumulatedFeesGreaterThanZero();
-        uint256 protocolFees = receivor.protocolFees();
-        assertTrue(protocolFees > 0);
+        uint256 shareholderFees = receivor.shareholderFees();
+        assertTrue(shareholderFees > 0);
 
-        uint256 balanceAlice = address(alice).balance;
         uint256 balanceReceivor = address(receivor).balance;
+        uint256 infraredBalance = ibera.balanceOf(address(infrared));
 
-        vm.prank(governor);
-        receivor.collect(alice);
+        vm.prank(address(ibera));
+        uint256 sharesMinted = receivor.collect();
 
-        assertEq(address(alice).balance, balanceAlice + protocolFees - 1);
-        assertEq(address(receivor).balance, balanceReceivor - protocolFees + 1);
+        // Check shares were minted to Infrared
+        assertEq(
+            ibera.balanceOf(address(infrared)), infraredBalance + sharesMinted
+        );
+        // Check ETH was transferred from receivor
+        assertEq(
+            address(receivor).balance, balanceReceivor - (shareholderFees - 1)
+        );
+        // Check shareholderFees was updated
+        assertEq(receivor.shareholderFees(), 1);
     }
 
     function testCollectRevertsWhenNotGovernor() public {
         testSweepTransfersETHWhenAccumulatedFeesGreaterThanZero();
-        uint256 protocolFees = receivor.protocolFees();
-        assertTrue(protocolFees > 0);
+        uint256 shareholderFees = receivor.shareholderFees();
+        assertTrue(shareholderFees > 0);
 
         vm.expectRevert(IIBERAFeeReceivor.Unauthorized.selector);
-        receivor.collect(alice);
+        receivor.collect();
     }
 
-    function testCollectRevertsWhenProtocolFeesZero() public {
-        uint256 protocolFees = receivor.protocolFees();
-        assertTrue(protocolFees == 0);
+    function testCollectRevertsWhenShareholderFeesZero() public {
+        uint256 shareholderFees = receivor.shareholderFees();
+        assertTrue(shareholderFees == 0);
 
         vm.expectRevert(IIBERAFeeReceivor.InvalidAmount.selector);
-        vm.prank(governor);
-        receivor.collect(alice);
+        vm.prank(address(ibera));
+        receivor.collect();
+    }
+
+    function testRoundingLossIsMinimal() public {
+        // Test with common fee denominators
+        uint16[] memory denominators = new uint16[](4);
+        denominators[0] = 3; // 33.33%
+        denominators[1] = 4; // 25%
+        denominators[2] = 5; // 20%
+        denominators[3] = 10; // 10%
+
+        // Test with different amounts
+        uint256[] memory amounts = new uint256[](4);
+        amounts[0] = 1e15; // 0.001 ETH
+        amounts[1] = 1e16; // 0.01 ETH
+        amounts[2] = 1e17; // 0.1 ETH
+        amounts[3] = 1e18; // 1 ETH
+
+        for (uint256 i = 0; i < denominators.length; i++) {
+            vm.prank(governor);
+            ibera.setFeeShareholders(denominators[i]);
+
+            for (uint256 j = 0; j < amounts.length; j++) {
+                uint256 amount = amounts[j];
+
+                // Calculate exact division
+                uint256 fee = amount / denominators[i];
+                uint256 remainder = amount % denominators[i];
+
+                // Verify with actual contract
+                vm.deal(address(receivor), 0);
+                payable(address(receivor)).transfer(amount);
+                (uint256 actualAmount, uint256 actualFees) =
+                    receivor.distribution();
+
+                assertEq(fee, actualFees, "Fee calculation matches");
+                assertEq(
+                    remainder,
+                    amount - (fee * denominators[i]),
+                    "Remainder calculation matches"
+                );
+                assertTrue(
+                    remainder < denominators[i],
+                    "Remainder is always less than denominator"
+                );
+
+                // For denominator 3 we know there's 1 wei remainder
+                if (denominators[i] == 3) {
+                    assertEq(
+                        remainder, 1, "Denominator 3 always has 1 wei remainder"
+                    );
+                } else {
+                    // For powers of 2 and 5 we expect no remainder
+                    assertEq(
+                        remainder,
+                        0,
+                        "No remainder for power of 2 and 5 denominators"
+                    );
+                }
+            }
+        }
     }
 }

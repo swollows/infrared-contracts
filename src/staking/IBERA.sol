@@ -53,7 +53,7 @@ contract IBERA is ERC20, AccessControl, IIBERA {
     mapping(bytes => bytes) public signatures;
 
     /// @inheritdoc IIBERA
-    uint16 public feeProtocol;
+    uint16 public feeShareholders;
 
     /// @notice Whether initial mint to address(this) has happened
     bool private _initialized;
@@ -63,7 +63,7 @@ contract IBERA is ERC20, AccessControl, IIBERA {
         depositor = address(new IBERADepositor());
         withdrawor = address(new IBERAWithdrawor()); // -or is more fun
         claimor = address(new IBERAClaimor());
-        receivor = address(new IBERAFeeReceivor());
+        receivor = address(new IBERAFeeReceivor(_infrared));
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
@@ -220,10 +220,10 @@ contract IBERA is ERC20, AccessControl, IIBERA {
     }
 
     /// @inheritdoc IIBERA
-    function setFeeProtocol(uint16 to) external {
+    function setFeeShareholders(uint16 to) external {
         if (!governor(msg.sender)) revert Unauthorized();
-        emit SetFeeProtocol(feeProtocol, to);
-        feeProtocol = to;
+        emit SetFeeShareholders(feeShareholders, to);
+        feeShareholders = to;
     }
 
     /// @inheritdoc IIBERA
@@ -235,5 +235,95 @@ contract IBERA is ERC20, AccessControl, IIBERA {
         if (signature.length != 96) revert InvalidSignature();
         emit SetDepositSignature(pubkey, signatures[pubkey], signature);
         signatures[pubkey] = signature;
+    }
+
+    /// @inheritdoc IIBERA
+    function collect() external returns (uint256 sharesMinted) {
+        if (msg.sender != address(infrared)) revert Unauthorized();
+        sharesMinted = IIBERAFeeReceivor(receivor).collect();
+    }
+
+    /// @inheritdoc IIBERA
+    function previewMint(uint256 beraAmount)
+        public
+        view
+        returns (uint256 shares, uint256 fee)
+    {
+        if (!_initialized) {
+            return (0, 0);
+        }
+
+        // First simulate compound effects like in actual mint
+        (uint256 compoundAmount,) = IIBERAFeeReceivor(receivor).distribution();
+
+        // Calculate fee
+        fee = IBERAConstants.MINIMUM_DEPOSIT_FEE;
+        uint256 min = IBERAConstants.MINIMUM_DEPOSIT;
+
+        if (beraAmount < min + fee) {
+            return (0, fee);
+        }
+
+        // Calculate shares considering both:
+        // 1. The compound effect (compoundAmount - fee)
+        // 2. The new deposit (beraAmount - fee)
+        uint256 ts = totalSupply();
+        uint256 depositsAfterCompound = deposits;
+
+        // First simulate compound effect on deposits
+        if (compoundAmount > 0) {
+            uint256 compoundFee = IBERAConstants.MINIMUM_DEPOSIT_FEE;
+            if (compoundAmount > compoundFee) {
+                depositsAfterCompound += (compoundAmount - compoundFee);
+            }
+        }
+
+        // Then calculate shares based on user deposit
+        uint256 amount = beraAmount - fee;
+        if (depositsAfterCompound == 0 || ts == 0) {
+            shares = amount;
+        } else {
+            shares = Math.mulDiv(ts, amount, depositsAfterCompound);
+        }
+
+        if (shares == 0) {
+            return (0, fee);
+        }
+    }
+
+    /// @inheritdoc IIBERA
+    function previewBurn(uint256 shareAmount)
+        public
+        view
+        returns (uint256 beraAmount, uint256 fee)
+    {
+        if (!_initialized || shareAmount == 0) {
+            return (0, IBERAConstants.MINIMUM_WITHDRAW_FEE);
+        }
+
+        // First simulate compound effects like in actual burn
+        (uint256 compoundAmount,) = IIBERAFeeReceivor(receivor).distribution();
+
+        uint256 ts = totalSupply();
+        if (ts == 0) {
+            return (0, IBERAConstants.MINIMUM_WITHDRAW_FEE);
+        }
+
+        // Calculate amount considering compound effect
+        uint256 depositsAfterCompound = deposits;
+
+        if (compoundAmount > 0) {
+            uint256 compoundFee = IBERAConstants.MINIMUM_DEPOSIT_FEE;
+            if (compoundAmount > compoundFee) {
+                depositsAfterCompound += (compoundAmount - compoundFee);
+            }
+        }
+
+        beraAmount = Math.mulDiv(depositsAfterCompound, shareAmount, ts);
+        fee = IBERAConstants.MINIMUM_WITHDRAW_FEE;
+
+        if (beraAmount == 0) {
+            return (0, fee);
+        }
     }
 }

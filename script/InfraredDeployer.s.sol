@@ -73,12 +73,13 @@ contract InfraredDeployer is Script {
 
         // initialize proxies
         collector.initialize(_admin, _wbera, _bribeCollectorPayoutAmount);
-        distributor.initialize();
+        distributor.initialize(address(ibera));
         infrared.initialize(
             _admin,
             address(collector),
             address(distributor),
             address(voter),
+            address(ibera),
             _rewardsDuration
         );
         voter.initialize(address(veIRED));

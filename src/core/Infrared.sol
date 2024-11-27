@@ -10,6 +10,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {EnumerableSet} from
     "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
+import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 
 import {IBeraChef} from "@berachain/pol/interfaces/IBeraChef.sol";
 import {IRewardVault as IBerachainRewardsVault} from
@@ -37,6 +38,7 @@ import {ConfigTypes, IInfrared} from "@interfaces/IInfrared.sol";
 
 import {InfraredUpgradeable} from "@core/InfraredUpgradeable.sol";
 import {InfraredVault} from "@core/InfraredVault.sol";
+import {IIBERA} from "@interfaces/IIBERA.sol";
 
 import {ValidatorManagerLib} from "./libraries/ValidatorManagerLib.sol";
 import {ValidatorTypes} from "./libraries/ValidatorTypes.sol";
@@ -98,6 +100,9 @@ contract Infrared is InfraredUpgradeable, IInfrared {
     /// @inheritdoc IInfrared
     IVoter public voter;
 
+    /// @inheritdoc IInfrared
+    IIBERA public ibera;
+
     /**
      * @dev Ensures that only the collector contract can call the function
      * Reverts if the caller is not the collector
@@ -134,12 +139,14 @@ contract Infrared is InfraredUpgradeable, IInfrared {
         address _collector,
         address _distributor,
         address _voter,
+        address _iBERA,
         uint256 _rewardsDuration
     ) external initializer {
         // whitelist immutable tokens for rewards
         if (
             _admin == address(0) || _collector == address(0)
-                || _distributor == address(0)
+                || _distributor == address(0) || _voter == address(0)
+                || _iBERA == address(0)
         ) revert Errors.ZeroAddress();
         if (_rewardsDuration == 0) revert Errors.ZeroAmount();
 
@@ -158,9 +165,18 @@ contract Infrared is InfraredUpgradeable, IInfrared {
         collector = IBribeCollector(_collector);
         distributor = IInfraredDistributor(_distributor);
         voter = IVoter(_voter);
+        ibera = IIBERA(_iBERA);
+
+        if (collector.payoutToken() != address(wbera)) {
+            revert Errors.RewardTokenNotSupported();
+        }
+        if (address(distributor.token()) != address(ibera)) {
+            revert Errors.RewardTokenNotSupported();
+        }
 
         validatorStorage.distributor = address(distributor);
         validatorStorage.bgt = address(_bgt);
+        validatorStorage.ibgt = address(ibgt);
 
         rewardsStorage.collector = address(collector);
         rewardsStorage.distributor = address(distributor);
@@ -168,6 +184,7 @@ contract Infrared is InfraredUpgradeable, IInfrared {
         rewardsStorage.bgt = address(_bgt);
         rewardsStorage.ibgt = address(ibgt);
         rewardsStorage.voter = address(voter);
+        rewardsStorage.ibera = address(ibera);
         rewardsStorage.rewardsDuration = _rewardsDuration;
 
         rewardsStorage.ibgtVault = vaultStorage.registerVault(address(ibgt));
@@ -266,14 +283,14 @@ contract Infrared is InfraredUpgradeable, IInfrared {
     }
 
     /// @inheritdoc IInfrared
-    function updateWeight(ConfigTypes.WeightType _t, uint256 _weight)
+    function updateIBERABribesWeight(uint256 _weight)
         external
         onlyGovernor
         whenInitialized
     {
-        uint256 prevWeight = weights(uint256(_t));
-        rewardsStorage.updateWeight(_t, _weight);
-        emit WeightUpdated(msg.sender, _t, prevWeight, _weight);
+        uint256 prevWeight = rewardsStorage.collectBribesWeight;
+        rewardsStorage.updateIBERABribesWeight(_weight);
+        emit IBERABribesWeightUpdated(msg.sender, prevWeight, _weight);
     }
 
     /// @inheritdoc IInfrared
@@ -359,13 +376,20 @@ contract Infrared is InfraredUpgradeable, IInfrared {
         onlyCollector
         whenInitialized
     {
-        if (!whitelistedRewardTokens(_token)) {
+        if (_token != address(wbera)) {
             revert Errors.RewardTokenNotSupported();
         }
-        (uint256 amtWiberaVault, uint256 amtIbgtVault) =
-            rewardsStorage.collectBribes(_token, _amount);
+        (uint256 amtIBERA, uint256 amtIbgtVault) =
+            rewardsStorage.collectBribesInWBERA(_amount);
 
-        emit BribesCollected(msg.sender, _token, amtWiberaVault, amtIbgtVault);
+        emit BribesCollected(msg.sender, _token, amtIBERA, amtIbgtVault);
+    }
+
+    function harvestOperatorRewards() external whenInitialized {
+        uint256 _amt = rewardsStorage.harvestOperatorRewards();
+        emit OperatorRewardsDistributed(
+            address(ibera), address(distributor), _amt
+        );
     }
 
     /// @inheritdoc IInfrared
@@ -548,11 +572,6 @@ contract Infrared is InfraredUpgradeable, IInfrared {
     /// @inheritdoc IInfrared
     function rewardsDuration() public view returns (uint256 duration) {
         return vaultStorage.rewardsDuration;
-    }
-
-    /// @inheritdoc IInfrared
-    function weights(uint256 t) public view override returns (uint256) {
-        return rewardsStorage.weights[t];
     }
 
     /// @inheritdoc IInfrared

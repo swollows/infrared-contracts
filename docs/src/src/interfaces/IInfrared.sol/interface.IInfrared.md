@@ -1313,8 +1313,7 @@ Weight type enum for determining how much to weight reward distribution amongst 
 
 ```solidity
 enum WeightType {
-    HarvestBaseWiberaVault,
-    CollectBribesWiberaVault
+    CollectBribesIBERA
 }
 ```
 

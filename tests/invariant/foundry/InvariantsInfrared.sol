@@ -53,7 +53,7 @@ contract InvariantsInfrared is Test {
 
     MockERC20 public bgt;
     MockERC20 public ired;
-    MockERC20 public wibera;
+    MockERC20 public ibera;
     MockERC20 public honey;
     MockWbera public mockWbera;
 
@@ -76,7 +76,7 @@ contract InvariantsInfrared is Test {
         // Mock contract instantiations
         ibgt = new IBGT(address(bgt));
         ired = new MockERC20("IRED", "IRED", 18);
-        wibera = new MockERC20("WIBERA", "WIBERA", 18);
+        ibera = new MockERC20("WIBERA", "WIBERA", 18);
         honey = new MockERC20("HONEY", "HONEY", 18);
         mockWbera = new MockWbera();
 
@@ -123,12 +123,13 @@ contract InvariantsInfrared is Test {
         );
 
         collector.initialize(address(this), address(mockWbera), 10 ether);
-        distributor.initialize();
+        distributor.initialize(address(ibera));
         infrared.initialize(
             address(this),
             address(collector),
             address(distributor),
             address(voter),
+            address(ibera),
             1 days
         ); // make helper contract the admin
 

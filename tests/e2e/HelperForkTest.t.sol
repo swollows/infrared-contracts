@@ -53,6 +53,7 @@ contract HelperForkTest is Test {
         bartioFork = vm.createFork(BARTIO_RPC_URL);
         vm.selectFork(bartioFork);
 
+        vm.roll(247123);
         // store relevant berachain core contract addresses
         bgt = IBerachainBGT(0xbDa130737BDd9618301681329bF2e46A016ff9Ad);
         rewardsFactory = IBerachainRewardsVaultFactory(

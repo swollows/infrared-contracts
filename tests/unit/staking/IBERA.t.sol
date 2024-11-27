@@ -101,7 +101,7 @@ contract IBERATest is IBERABaseTest {
 
         payable(address(receivor)).transfer(value);
         uint256 balanceReceivor = address(receivor).balance;
-        uint256 protocolFeesReceivor = receivor.protocolFees();
+        uint256 protocolFeesReceivor = receivor.shareholderFees();
 
         (uint256 amount, uint256 protocolFee) = receivor.distribution();
         assertTrue(amount >= min + fee);
@@ -109,7 +109,7 @@ contract IBERATest is IBERABaseTest {
         ibera.compound();
 
         assertEq(address(receivor).balance, balanceReceivor - amount);
-        assertEq(receivor.protocolFees(), protocolFeesReceivor + protocolFee);
+        assertEq(receivor.shareholderFees(), protocolFeesReceivor + protocolFee);
 
         assertEq(ibera.deposits(), deposits + amount - fee);
         assertEq(ibera.totalSupply(), totalSupply);
@@ -140,7 +140,7 @@ contract IBERATest is IBERABaseTest {
 
         payable(address(receivor)).transfer(value);
         uint256 balanceReceivor = address(receivor).balance;
-        uint256 protocolFeesReceivor = receivor.protocolFees();
+        uint256 protocolFeesReceivor = receivor.shareholderFees();
 
         (uint256 amount, uint256 protocolFee) = receivor.distribution();
         assertTrue(amount < min + fee);
@@ -148,7 +148,7 @@ contract IBERATest is IBERABaseTest {
         ibera.compound();
 
         assertEq(address(receivor).balance, value);
-        assertEq(receivor.protocolFees(), protocolFeesReceivor);
+        assertEq(receivor.shareholderFees(), protocolFeesReceivor);
 
         assertEq(ibera.deposits(), deposits);
         assertEq(ibera.totalSupply(), totalSupply);
@@ -664,6 +664,155 @@ contract IBERATest is IBERABaseTest {
         _ibera.burn{value: fee}(alice, 1e18);
     }
 
+    function testPreviewMintMatchesActualMint() public {
+        // First test basic mint without compound
+        uint256 min = IBERAConstants.MINIMUM_DEPOSIT;
+        uint256 fee = IBERAConstants.MINIMUM_DEPOSIT_FEE;
+        uint256 value = 1 ether;
+        assertTrue(value > min + fee);
+
+        // Get preview
+        (uint256 previewShares, uint256 previewFee) = ibera.previewMint(value);
+
+        // Do actual mint
+        (uint256 nonce, uint256 actualShares) = ibera.mint{value: value}(alice);
+
+        // Compare results
+        assertEq(
+            previewShares,
+            actualShares,
+            "Preview shares should match actual shares"
+        );
+        assertEq(previewFee, fee, "Preview fee should match actual fee");
+    }
+
+    function testPreviewMintWithCompoundMatchesActualMint() public {
+        uint256 min = IBERAConstants.MINIMUM_DEPOSIT;
+        uint256 fee = IBERAConstants.MINIMUM_DEPOSIT_FEE;
+        payable(address(receivor)).transfer(1 ether);
+
+        (uint256 compAmount, uint256 pf) = receivor.distribution();
+        assertTrue(compAmount >= min + fee);
+
+        uint256 value = 100 ether;
+
+        // Get compound preview before any state changes
+        (uint256 previewShares, uint256 previewFee) = ibera.previewMint(value);
+
+        // Do actual mint which will compound first
+        (uint256 nonce, uint256 actualShares) = ibera.mint{value: value}(alice);
+
+        assertEq(
+            previewShares,
+            actualShares,
+            "Preview shares should match actual shares with compound"
+        );
+        assertEq(
+            previewFee, fee, "Preview fee should match actual fee with compound"
+        );
+    }
+
+    function testPreviewMintReturnsZeroForInvalidAmount() public {
+        uint256 min = IBERAConstants.MINIMUM_DEPOSIT;
+        uint256 fee = IBERAConstants.MINIMUM_DEPOSIT_FEE;
+        uint256 value = 0.001 ether;
+        assertTrue(value < min + fee);
+
+        (uint256 shares, uint256 previewFee) = ibera.previewMint(value);
+        assertEq(shares, 0, "Should return 0 shares for invalid amount");
+        assertEq(previewFee, fee, "Should still return fee amount");
+    }
+
+    function testPreviewBurnMatchesActualBurn() public {
+        // Setup mint first like in testBurn
+        testMintCompoundsPrior();
+
+        vm.startPrank(governor);
+        ibera.setWithdrawalsEnabled(true);
+        ibera.setDepositSignature(pubkey0, signature0);
+        vm.stopPrank();
+        uint256 _reserves = depositor.reserves();
+        vm.prank(keeper);
+        depositor.execute(pubkey0, IBERAConstants.INITIAL_DEPOSIT);
+        vm.prank(keeper);
+        depositor.execute(pubkey0, _reserves - IBERAConstants.INITIAL_DEPOSIT);
+
+        uint256 shares = ibera.balanceOf(alice) / 3;
+        assertTrue(shares > 0);
+
+        // Get preview
+        (uint256 previewAmount, uint256 previewFee) = ibera.previewBurn(shares);
+
+        // Do actual burn
+        vm.prank(alice);
+        (uint256 nonce, uint256 actualAmount) =
+            ibera.burn{value: IBERAConstants.MINIMUM_WITHDRAW_FEE}(bob, shares);
+
+        assertEq(
+            previewAmount,
+            actualAmount,
+            "Preview amount should match actual amount"
+        );
+        assertEq(
+            previewFee,
+            IBERAConstants.MINIMUM_WITHDRAW_FEE,
+            "Preview fee should match withdraw fee"
+        );
+    }
+
+    function testPreviewBurnWithCompoundMatchesActualBurn() public {
+        // Setup compound scenario
+        testMintCompoundsPrior();
+
+        // Setup validator signature like in testBurn
+        vm.startPrank(governor);
+        ibera.setWithdrawalsEnabled(true);
+        ibera.setDepositSignature(pubkey0, signature0);
+        vm.stopPrank();
+        uint256 _reserves = depositor.reserves();
+        vm.prank(keeper);
+        depositor.execute(pubkey0, IBERAConstants.INITIAL_DEPOSIT);
+        vm.prank(keeper);
+        depositor.execute(pubkey0, _reserves - IBERAConstants.INITIAL_DEPOSIT);
+        assertEq(ibera.confirmed(), _reserves);
+        assertEq(depositor.reserves(), 0);
+
+        // Add rewards to test compound
+        payable(address(receivor)).transfer(1 ether);
+
+        uint256 shares = ibera.balanceOf(alice) / 3;
+        assertTrue(shares > 0);
+
+        // Get preview before any state changes
+        (uint256 previewAmount, uint256 previewFee) = ibera.previewBurn(shares);
+
+        // Do actual burn
+        vm.prank(alice);
+        (uint256 nonce, uint256 actualAmount) =
+            ibera.burn{value: IBERAConstants.MINIMUM_WITHDRAW_FEE}(bob, shares);
+
+        assertEq(
+            previewAmount,
+            actualAmount,
+            "Preview amount should match actual amount with compound"
+        );
+        assertEq(
+            previewFee,
+            IBERAConstants.MINIMUM_WITHDRAW_FEE,
+            "Preview fee should match withdraw fee with compound"
+        );
+    }
+
+    function testPreviewBurnReturnsZeroForInvalidShares() public {
+        (uint256 amount, uint256 fee) = ibera.previewBurn(0);
+        assertEq(amount, 0, "Should return 0 amount for 0 shares");
+        assertEq(
+            fee,
+            IBERAConstants.MINIMUM_WITHDRAW_FEE,
+            "Should still return withdraw fee"
+        );
+    }
+
     function testRegisterUpdatesStakeWhenDeltaGreaterThanZero() public {
         uint256 stake = ibera.stakes(pubkey0);
         uint256 amount = 1 ether;
@@ -705,29 +854,29 @@ contract IBERATest is IBERABaseTest {
         ibera.register(pubkey0, delta);
     }
 
-    function testSetFeeProtocolUpdatesFeeProtocol() public {
-        assertEq(ibera.feeProtocol(), 0);
-        uint16 feeProtocol = 4; // 25% of fees
+    function testsetFeeShareholdersUpdatesFeeProtocol() public {
+        assertEq(ibera.feeShareholders(), 0);
+        uint16 feeShareholders = 4; // 25% of fees
         vm.prank(governor);
-        ibera.setFeeProtocol(feeProtocol);
-        assertEq(ibera.feeProtocol(), feeProtocol);
+        ibera.setFeeShareholders(feeShareholders);
+        assertEq(ibera.feeShareholders(), feeShareholders);
     }
 
-    function testSetFeeProtocolEmitsSetFeeProtocol() public {
-        assertEq(ibera.feeProtocol(), 0);
-        uint16 feeProtocol = 4; // 25% of fees
+    function testsetFeeShareholdersEmitssetFeeShareholders() public {
+        assertEq(ibera.feeShareholders(), 0);
+        uint16 feeShareholders = 4; // 25% of fees
 
         vm.expectEmit();
-        emit IIBERA.SetFeeProtocol(0, feeProtocol);
+        emit IIBERA.SetFeeShareholders(0, feeShareholders);
         vm.prank(governor);
-        ibera.setFeeProtocol(feeProtocol);
+        ibera.setFeeShareholders(feeShareholders);
     }
 
-    function testSetFeeProtocolRevertsWhenUnauthorized() public {
-        assertEq(ibera.feeProtocol(), 0);
-        uint16 feeProtocol = 4; // 25% of fees
+    function testsetFeeShareholdersRevertsWhenUnauthorized() public {
+        assertEq(ibera.feeShareholders(), 0);
+        uint16 feeShareholders = 4; // 25% of fees
         vm.expectRevert(IIBERA.Unauthorized.selector);
-        ibera.setFeeProtocol(feeProtocol);
+        ibera.setFeeShareholders(feeShareholders);
     }
 
     function testSetDepositSignatureUpdatesSignature() public {

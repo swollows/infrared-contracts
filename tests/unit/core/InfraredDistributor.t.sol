@@ -33,13 +33,13 @@ contract InfraredDistributorTest is Test {
 
     function setUp() public {
         // Initialize mock contracts
-        token = new MockERC20("iBGT", "iBGT", 18);
+        token = new MockERC20("iBERA", "iBERA", 18);
         infrared = new MockInfrared(address(token), ired, rewardsFactory);
 
         distributor = InfraredDistributor(
             setupProxy(address(new InfraredDistributor(address(infrared))))
         );
-        distributor.initialize();
+        distributor.initialize(address(token));
 
         // Set up initial state for tests
         deal(address(token), user, 1000 ether);

@@ -11,6 +11,7 @@ import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol"
 
 import {Voter} from "@voting/Voter.sol";
 import {VotingEscrow} from "@voting/VotingEscrow.sol";
+import {IBERA} from "@staking/IBERA.sol";
 
 import {InfraredDistributor} from "@core/InfraredDistributor.sol";
 import {BribeCollector} from "@core/BribeCollector.sol";
@@ -28,6 +29,7 @@ import "@interfaces/IInfrared.sol";
 import "@mocks/MockERC20.sol";
 import "@berachain/pol/rewards/RewardVaultFactory.sol";
 import {POLTest} from "@berachain/../test/pol/POL.t.sol";
+import {IBERAConstants} from "@staking/IBERAConstants.sol";
 
 abstract contract Helper is POLTest {
     Infrared public infrared;
@@ -35,6 +37,8 @@ abstract contract Helper is POLTest {
 
     Voter public voter;
     VotingEscrow public veIRED;
+
+    IBERA public ibera;
 
     BribeCollector public collector;
     InfraredDistributor public infraredDistributor;
@@ -103,6 +107,8 @@ abstract contract Helper is POLTest {
                 )
             )
         );
+
+        ibera = new IBERA(address(infrared));
         collector = BribeCollector(
             setupProxy(address(new BribeCollector(address(infrared))))
         );
@@ -117,15 +123,27 @@ abstract contract Helper is POLTest {
         );
 
         collector.initialize(address(this), address(wbera), 10 ether);
-        infraredDistributor.initialize();
+        infraredDistributor.initialize(address(ibera));
         infrared.initialize(
             address(this),
             address(collector),
             address(infraredDistributor),
             address(voter),
+            address(ibera),
             1 days
         ); // make helper contract the admin
         voter.initialize(address(veIRED));
+
+        // initialize IBERA
+        uint256 value =
+            IBERAConstants.MINIMUM_DEPOSIT + IBERAConstants.MINIMUM_DEPOSIT_FEE;
+        ibera.initialize{value: value}();
+
+        ibera.grantRole(ibera.GOVERNANCE_ROLE(), address(this));
+
+        uint16 feeShareholders = 4; // 25% of fees
+        // address(this) is the governor
+        ibera.setFeeShareholders(feeShareholders);
 
         // set access control
         infrared.grantRole(infrared.KEEPER_ROLE(), keeper);

@@ -33,7 +33,7 @@ contract InfraredForkTest is HelperForkTest {
 
     IBGT public ibgt;
     ERC20PresetMinterPauser public ired;
-    ERC20PresetMinterPauser public wibera;
+    ERC20PresetMinterPauser public ibera;
     ERC20PresetMinterPauser public stakingToken;
 
     BribeCollector public collector;
@@ -52,7 +52,7 @@ contract InfraredForkTest is HelperForkTest {
 
         ibgt = new IBGT(address(bgt));
         ired = new ERC20PresetMinterPauser("Infrared Token", "iRED");
-        wibera = new ERC20PresetMinterPauser("Wrapped Infrared Bera", "wiBERA");
+        ibera = new ERC20PresetMinterPauser("iBERA", "iBERA");
 
         stakingToken = new ERC20PresetMinterPauser("Staking Token", "STAKE");
 
@@ -89,12 +89,13 @@ contract InfraredForkTest is HelperForkTest {
 
         // initialize proxies
         collector.initialize(admin, address(wbera), bribeCollectorPayoutAmount);
-        distributor.initialize();
+        distributor.initialize(address(ibera));
         infrared.initialize(
             admin,
             address(collector),
             address(distributor),
             address(voter),
+            address(ibera),
             rewardsDuration
         );
         voter.initialize(address(veIRED));
@@ -160,7 +161,9 @@ contract InfraredForkTest is HelperForkTest {
 
         address distributorImplementation = distributor.currentImplementation();
         vm.expectRevert(Initializable.InvalidInitialization.selector);
-        InfraredDistributor(distributorImplementation).initialize();
+        InfraredDistributor(distributorImplementation).initialize(
+            address(ibera)
+        );
 
         address infraredImplementation = infrared.currentImplementation();
         vm.expectRevert(Initializable.InvalidInitialization.selector);
@@ -169,6 +172,7 @@ contract InfraredForkTest is HelperForkTest {
             address(collector),
             address(distributor),
             address(voter),
+            address(ibera),
             rewardsDuration
         );
     }
