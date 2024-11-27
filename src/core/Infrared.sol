@@ -198,6 +198,14 @@ contract Infrared is InfraredUpgradeable, IInfrared {
         vaultStorage.addReward(_stakingToken, _rewardsToken, _rewardsDuration);
     }
 
+    function addIncentives(
+        address _stakingToken,
+        address _rewardsToken,
+        uint256 _amount
+    ) external whenInitialized {
+        vaultStorage.addIncentives(_stakingToken, _rewardsToken, _amount);
+    }
+
     /*//////////////////////////////////////////////////////////////
                         ADMIN
     //////////////////////////////////////////////////////////////*/

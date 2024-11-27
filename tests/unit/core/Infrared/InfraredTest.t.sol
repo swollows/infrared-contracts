@@ -521,25 +521,6 @@ contract InfraredTest is Helper {
             InfraredVault(address(infrared.registerVault(address(honey))));
     }
 
-    function testAddReward() public {
-        // assert anyone can register a new vault
-        InfraredVault vault2 =
-            InfraredVault(address(infrared.registerVault(address(honey))));
-
-        // assert only gov can add rewards through infrared
-        vm.expectRevert();
-        vault2.addReward(address(wibera), 10 days);
-        vm.expectRevert();
-        vm.prank(address(10));
-        infrared.addReward(address(honey), address(wibera), 10 days);
-
-        vm.prank(infraredGovernance);
-        infrared.addReward(address(honey), address(wibera), 10 days);
-
-        address _rewardToken = vault2.rewardTokens(1);
-        assertEq(_rewardToken, address(wibera));
-    }
-
     /* TODO: fix
     function testEndToEndHarvestValidator() public {
         // Staking by User in IBGT Vault

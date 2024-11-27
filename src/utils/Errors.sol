@@ -27,6 +27,7 @@ library Errors {
     error StakedInRewardsVault();
     error NoRewardsVault();
     error RegistrationPaused();
+    error RewardTokenNotWhitelisted();
 
     // InfraredValidators errors.
     error InvalidValidator();

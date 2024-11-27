@@ -3,12 +3,16 @@ pragma solidity ^0.8.0;
 
 import {EnumerableSet} from
     "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from
+    "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IInfraredVault} from "@interfaces/IInfraredVault.sol";
 import {Errors} from "@utils/Errors.sol";
 import {InfraredVaultDeployer} from "@utils/InfraredVaultDeployer.sol";
 
 library VaultManagerLib {
     using EnumerableSet for EnumerableSet.AddressSet;
+    using SafeERC20 for IERC20;
 
     struct VaultStorage {
         bool pausedVaultRegistration;
@@ -83,9 +87,43 @@ library VaultManagerLib {
         address _stakingToken,
         address _rewardsToken,
         uint256 _rewardsDuration
-    ) internal {
+    ) external {
+        if (_rewardsDuration == 0) revert Errors.ZeroAmount();
+        if (!isWhitelisted($, _rewardsToken)) {
+            revert Errors.RewardTokenNotWhitelisted();
+        }
+        if (address($.vaultRegistry[_stakingToken]) == address(0)) {
+            revert Errors.NoRewardsVault();
+        }
+
         IInfraredVault vault = $.vaultRegistry[_stakingToken];
         vault.addReward(_rewardsToken, _rewardsDuration);
+    }
+
+    function addIncentives(
+        VaultStorage storage $,
+        address _stakingToken,
+        address _rewardsToken,
+        uint256 _amount
+    ) external {
+        if (_amount == 0) revert Errors.ZeroAmount();
+        if (address($.vaultRegistry[_stakingToken]) == address(0)) {
+            revert Errors.NoRewardsVault();
+        }
+
+        IInfraredVault vault = $.vaultRegistry[_stakingToken];
+
+        (, uint256 _vaultRewardsDuration,,,,) = vault.rewardData(_rewardsToken);
+        if (_vaultRewardsDuration == 0) {
+            revert Errors.RewardTokenNotWhitelisted();
+        }
+
+        IERC20(_rewardsToken).safeTransferFrom(
+            msg.sender, address(this), _amount
+        );
+        IERC20(_rewardsToken).safeIncreaseAllowance(address(vault), _amount);
+
+        vault.notifyRewardAmount(_rewardsToken, _amount);
     }
 
     /// @notice Updates the rewards duration for vaults.

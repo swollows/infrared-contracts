@@ -5,6 +5,7 @@ import "./Helper.sol";
 import "@forge-std/console2.sol";
 import "@core/Infrared.sol";
 import "@interfaces/IInfrared.sol";
+import "@interfaces/IMultiRewards.sol";
 import {IRewardVault as IBerachainRewardsVault} from
     "@berachain/pol/interfaces/IRewardVault.sol";
 
@@ -142,6 +143,122 @@ contract InfraredRewardsTest is Helper {
         );
         infrared.recoverERC20(user, address(mockAsset), 10 ether);
         vm.stopPrank();
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                Incentives test
+    //////////////////////////////////////////////////////////////*/
+
+    event RewardStored(address indexed rewardsToken, uint256 rewardsDuration);
+    event RewardAdded(address indexed rewardsToken, uint256 reward);
+
+    function testAddRewardSuccess() public {
+        // Setup new reward token
+        MockERC20 newRewardToken = new MockERC20("NewReward", "NRT", 18);
+        uint256 rewardsDuration = 7 days;
+
+        vm.startPrank(infraredGovernance);
+        // Whitelist the new reward token first
+        infrared.updateWhiteListedRewardTokens(address(newRewardToken), true);
+
+        // The event is emitted from the vault contract
+        vm.expectEmit();
+        emit IMultiRewards.RewardStored(
+            address(newRewardToken), rewardsDuration
+        );
+        infrared.addReward(
+            address(wbera), address(newRewardToken), rewardsDuration
+        );
+        vm.stopPrank();
+
+        // Verify reward was added by checking reward duration
+        (, uint256 duration,,,,) =
+            infraredVault.rewardData(address(newRewardToken));
+        assertEq(duration, rewardsDuration, "Reward duration should match");
+    }
+
+    function testAddRewardFailsWithNonWhitelistedReward() public {
+        vm.expectRevert(abi.encodeWithSignature("RewardTokenNotWhitelisted()"));
+        infrared.addReward(address(wbera), address(ired), 7 days);
+    }
+
+    function testAddRewardFailsWithZeroDuration() public {
+        vm.expectRevert(abi.encodeWithSignature("ZeroAmount()"));
+        infrared.addReward(address(wbera), address(ired), 0);
+    }
+
+    function testAddRewardFailsWithNoVault() public {
+        infrared.updateWhiteListedRewardTokens(address(ired), true);
+        vm.expectRevert(abi.encodeWithSignature("NoRewardsVault()"));
+        infrared.addReward(address(1), address(ired), 7 days);
+    }
+
+    function testAddRewardFailsWithNotAuthorized() public {
+        vm.startPrank(address(1));
+        vm.expectRevert(
+            abi.encodeWithSignature(
+                "AccessControlUnauthorizedAccount(address,bytes32)",
+                address(1),
+                infrared.GOVERNANCE_ROLE()
+            )
+        );
+        infrared.addReward(address(wbera), address(ired), 7 days);
+    }
+
+    function testAddIncentivesSuccess() public {
+        uint256 rewardAmount = 100 ether;
+        MockERC20 newRewardToken = new MockERC20("NewReward", "NRT", 18);
+
+        vm.startPrank(infraredGovernance);
+        infrared.updateWhiteListedRewardTokens(address(newRewardToken), true);
+        infrared.addReward(address(wbera), address(newRewardToken), 7 days);
+        vm.stopPrank();
+
+        // Deal tokens to admin (test contract)
+        deal(address(newRewardToken), address(this), rewardAmount);
+
+        // Approve the Infrared contract to spend tokens
+        newRewardToken.approve(address(infrared), rewardAmount);
+
+        // Expect the event from the vault
+        vm.expectEmit(true, true, true, true, address(infraredVault));
+        emit RewardAdded(address(newRewardToken), rewardAmount);
+
+        // Call addIncentives
+        infrared.addIncentives(
+            address(wbera), address(newRewardToken), rewardAmount
+        );
+
+        // Verify rewards were added
+        (,,, uint256 rewardRate,,) =
+            infraredVault.rewardData(address(newRewardToken));
+        assertTrue(rewardRate > 0, "Reward rate should be set");
+    }
+
+    function testAddIncentivesFailsWithZeroAmount() public {
+        MockERC20 newRewardToken = new MockERC20("NewReward", "NRT", 18);
+
+        vm.startPrank(infraredGovernance);
+        infrared.updateWhiteListedRewardTokens(address(newRewardToken), true);
+        infrared.addReward(address(wbera), address(newRewardToken), 7 days);
+        vm.stopPrank();
+
+        vm.expectRevert(abi.encodeWithSignature("ZeroAmount()"));
+        infrared.addIncentives(address(wbera), address(newRewardToken), 0);
+    }
+
+    function testAddIncentivesFailsWithInvalidVault() public {
+        vm.expectRevert(abi.encodeWithSignature("NoRewardsVault()"));
+        infrared.addIncentives(address(1), address(ibgt), 100 ether);
+    }
+
+    function testAddIncentivesFailsWithNonWhitelistedReward() public {
+        MockERC20 newRewardToken = new MockERC20("NewReward", "NRT", 18);
+
+        vm.expectRevert(abi.encodeWithSignature("RewardTokenNotWhitelisted()"));
+        infrared.addIncentives(
+            address(wbera), address(newRewardToken), 100 ether
+        );
     }
 
     // function testHarvestVault() public {
