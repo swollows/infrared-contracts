@@ -22,6 +22,9 @@ import {IBERAFeeReceivor} from "./IBERAFeeReceivor.sol";
 /// @notice Infrared liquid staking token for BERA
 /// @dev Assumes BERA balances do *not* change at the CL
 contract IBERA is ERC20, AccessControl, IIBERA {
+    /// @inheritdoc IIBERA
+    bool public withdrawalsEnabled;
+
     // Access control constants
     bytes32 public constant KEEPER_ROLE = keccak256("KEEPER_ROLE");
     bytes32 public constant GOVERNANCE_ROLE = keccak256("GOVERNANCE_ROLE");
@@ -62,6 +65,12 @@ contract IBERA is ERC20, AccessControl, IIBERA {
         claimor = address(new IBERAClaimor());
         receivor = address(new IBERAFeeReceivor());
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+    }
+
+    function setWithdrawalsEnabled(bool flag) external {
+        if (!governor(msg.sender)) revert Unauthorized();
+        withdrawalsEnabled = flag;
+        emit WithdrawalFlagSet(flag);
     }
 
     function _deposit(uint256 value)
@@ -173,6 +182,7 @@ contract IBERA is ERC20, AccessControl, IIBERA {
         payable
         returns (uint256 nonce, uint256 amount)
     {
+        if (!withdrawalsEnabled) revert WithdrawalsNotEnabled();
         // compound yield earned from EL rewards first
         compound();
 

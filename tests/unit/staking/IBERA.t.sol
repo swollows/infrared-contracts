@@ -379,6 +379,13 @@ contract IBERATest is IBERABaseTest {
         uint256 shares = sharesAlice / 3;
         assertTrue(shares > 0);
 
+        vm.expectRevert(IIBERA.WithdrawalsNotEnabled.selector);
+        vm.prank(alice);
+        ibera.burn{value: fee}(bob, shares);
+
+        vm.prank(governor);
+        ibera.setWithdrawalsEnabled(true);
+
         vm.prank(alice);
         ibera.burn{value: fee}(bob, shares);
 
@@ -407,6 +414,9 @@ contract IBERATest is IBERABaseTest {
         uint256 shares = sharesAlice / 3;
         assertTrue(shares > 0);
         uint256 amount = Math.mulDiv(deposits, shares, totalSupply);
+
+        vm.prank(governor);
+        ibera.setWithdrawalsEnabled(true);
 
         vm.prank(alice);
         (, uint256 amount_) = ibera.burn{value: fee}(bob, shares);
@@ -441,6 +451,9 @@ contract IBERATest is IBERABaseTest {
 
         uint256 withdraworBalance = address(withdrawor).balance;
         uint256 withdraworFees = withdrawor.fees();
+
+        vm.prank(governor);
+        ibera.setWithdrawalsEnabled(true);
 
         vm.prank(alice);
         (uint256 nonce_,) = ibera.burn{value: fee}(bob, shares);
@@ -505,6 +518,9 @@ contract IBERATest is IBERABaseTest {
         uint256 wf = IBERAConstants.MINIMUM_WITHDRAW_FEE;
         uint256 shares = sharesAlice / 3;
         assertTrue(shares > 0);
+
+        vm.prank(governor);
+        ibera.setWithdrawalsEnabled(true);
 
         vm.expectEmit();
         emit IIBERA.Sweep(comp_);
@@ -581,6 +597,9 @@ contract IBERATest is IBERABaseTest {
         uint256 amount = Math.mulDiv(deposits, shares, totalSupply);
         uint256 nonce = withdrawor.nonceRequest();
 
+        vm.prank(governor);
+        ibera.setWithdrawalsEnabled(true);
+
         vm.expectEmit();
         emit IIBERA.Burn(bob, nonce, amount, shares, fee);
 
@@ -600,6 +619,9 @@ contract IBERATest is IBERABaseTest {
         depositor.execute(pubkey0, _reserves - IBERAConstants.INITIAL_DEPOSIT);
         assertEq(ibera.confirmed(), _reserves);
         assertEq(depositor.reserves(), 0);
+
+        vm.prank(governor);
+        ibera.setWithdrawalsEnabled(true);
 
         uint256 fee = IBERAConstants.MINIMUM_WITHDRAW_FEE;
         vm.expectRevert(IIBERA.InvalidShares.selector);
@@ -624,6 +646,9 @@ contract IBERATest is IBERABaseTest {
         uint256 shares = sharesAlice / 3;
         assertTrue(shares > 0);
 
+        vm.prank(governor);
+        ibera.setWithdrawalsEnabled(true);
+
         vm.expectRevert(IIBERAWithdrawor.InvalidFee.selector);
         vm.prank(alice);
         ibera.burn(bob, shares);
@@ -631,6 +656,9 @@ contract IBERATest is IBERABaseTest {
 
     function testBurnRevertsWhenNotInitialized() public {
         IBERA _ibera = new IBERA(address(infrared));
+        _ibera.grantRole(_ibera.GOVERNANCE_ROLE(), governor);
+        vm.prank(governor);
+        _ibera.setWithdrawalsEnabled(true);
         vm.expectRevert(IIBERA.InvalidShares.selector);
         uint256 fee = IBERAConstants.MINIMUM_WITHDRAW_FEE;
         _ibera.burn{value: fee}(alice, 1e18);

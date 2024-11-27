@@ -54,7 +54,7 @@ contract IBERABaseTest is Test {
         ibera = new IBERA(address(infrared));
 
         depositor = IBERADepositor(ibera.depositor());
-        withdrawor = IBERAWithdrawor(ibera.withdrawor());
+        withdrawor = IBERAWithdrawor(payable(ibera.withdrawor()));
         claimor = IBERAClaimor(ibera.claimor());
         receivor = IBERAFeeReceivor(payable(ibera.receivor()));
 

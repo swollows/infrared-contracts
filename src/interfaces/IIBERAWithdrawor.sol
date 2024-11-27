@@ -12,9 +12,13 @@ interface IIBERAWithdrawor {
     event Queue(address indexed receiver, uint256 nonce, uint256 amount);
     event Execute(bytes pubkey, uint256 start, uint256 end, uint256 amount);
     event Process(address indexed receiver, uint256 nonce, uint256 amount);
+    event Sweep(address indexed receiver, uint256 amount);
 
     /// @notice The address of IBERA
     function IBERA() external view returns (address);
+
+    /// @notice Sweeps forced withdrawals to IBERA to re-stake principal
+    function sweep(uint256 amount, bytes calldata pubkey) external;
 
     /// @notice Outstanding requests for claims on previously burnt ibera
     /// @param nonce The nonce associated with the claim

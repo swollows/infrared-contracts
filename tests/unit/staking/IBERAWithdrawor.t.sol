@@ -1150,4 +1150,17 @@ contract IBERAWithdraworTest is IBERABaseTest {
         vm.expectRevert(IIBERAWithdrawor.InvalidReserves.selector);
         withdrawor.process();
     }
+
+    function testSweep() public {
+        // simulate forced withdrawal
+        vm.deal(address(withdrawor), 32 ether);
+        // test only keeper can access
+        vm.expectRevert(IIBERAWithdrawor.Unauthorized.selector);
+        withdrawor.sweep(32 ether, pubkey0);
+
+        vm.prank(keeper);
+        withdrawor.sweep(32 ether, pubkey0);
+
+        assertEq(address(withdrawor).balance, 0);
+    }
 }

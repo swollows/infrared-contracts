@@ -226,4 +226,32 @@ contract IBERAWithdrawor is IIBERAWithdrawor {
         }
         emit Process(r.receiver, nonce, amount);
     }
+
+    /// @inheritdoc IIBERAWithdrawor
+    function sweep(uint256 amount, bytes calldata pubkey) external {
+        // only callable when withdrawals are not enabled
+        if (IIBERA(IBERA).withdrawalsEnabled()) revert Unauthorized();
+        // onlyKeeper call
+        if (!IIBERA(IBERA).keeper(msg.sender)) revert Unauthorized();
+        // do nothing if IBERA deposit would revert
+        uint256 min =
+            IBERAConstants.MINIMUM_DEPOSIT + IBERAConstants.MINIMUM_DEPOSIT_FEE;
+        if (amount < min) return;
+        // revert if insufficient balance
+        if (amount > address(this).balance) revert InvalidAmount();
+
+        // todo: verfiy forced withdrawal against beacon roots
+
+        // register new validator delta
+        IIBERA(IBERA).register(pubkey, -int256(amount));
+
+        // re-stake amount back to ibera depositor
+        IIBERADepositor(IIBERA(IBERA).depositor()).queue{value: amount}(
+            amount - IBERAConstants.MINIMUM_DEPOSIT_FEE
+        );
+
+        emit Sweep(IBERA, amount);
+    }
+
+    receive() external payable {}
 }

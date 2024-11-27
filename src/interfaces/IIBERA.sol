@@ -10,6 +10,7 @@ interface IIBERA is IERC20, IAccessControl {
     error InvalidShares();
     error InvalidAmount();
     error InvalidSignature();
+    error WithdrawalsNotEnabled();
 
     event Mint(
         address indexed receiver,
@@ -29,6 +30,7 @@ interface IIBERA is IERC20, IAccessControl {
     event Register(bytes pubkey, int256 delta, uint256 stake);
     event SetFeeProtocol(uint16 from, uint16 to);
     event SetDepositSignature(bytes pubkey, bytes from, bytes to);
+    event WithdrawalFlagSet(bool flag);
 
     /// @notice Address of the Infrared operator contract
     function infrared() external view returns (address);
@@ -138,4 +140,10 @@ interface IIBERA is IERC20, IAccessControl {
         bytes calldata pubkey,
         bytes calldata signature
     ) external;
+
+    /**
+     * @notice Flag to show whether withdrawals are currently enabled
+     * @return True if withdrawals are enabled
+     */
+    function withdrawalsEnabled() external view returns (bool);
 }
