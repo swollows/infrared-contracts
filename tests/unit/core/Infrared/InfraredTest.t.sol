@@ -13,6 +13,8 @@ import {IRewardVault as IBerachainRewardsVault} from
 import {IIBERAFeeReceivor} from "@interfaces/IIBERAFeeReceivor.sol";
 
 contract InfraredTest is Helper {
+    using stdStorage for StdStorage;
+
     // MockBerachainRewardsVaultFactory public factory
     /*//////////////////////////////////////////////////////////////
                END TO END TESTS, FULL LIFE CYCLE
@@ -21,7 +23,7 @@ contract InfraredTest is Helper {
     function testEndToEndFlow() public {
         address[] memory rewardTokens = new address[](2);
         rewardTokens[0] = address(ibgt);
-        rewardTokens[1] = address(ired);
+        rewardTokens[1] = address(red);
 
         // Step 1: Vault Registration
         infrared.grantRole(infrared.KEEPER_ROLE(), address(this));
@@ -363,7 +365,7 @@ contract InfraredTest is Helper {
 
         address[] memory rewardTokens = new address[](2);
         rewardTokens[0] = address(ibgt);
-        rewardTokens[1] = address(ired);
+        rewardTokens[1] = address(red);
         // InfraredVault vault = InfraredVault(
         //     address(infrared.registerVault(address(wbera), rewardTokens))
         // );
@@ -511,6 +513,167 @@ contract InfraredTest is Helper {
         // assert anyone can register a new vault
         InfraredVault vault2 =
             InfraredVault(address(infrared.registerVault(address(honey))));
+    }
+
+    function testSetRedSuccess() public {
+        // Create new RED token mock
+        RED newRed = new RED(address(ibgt), address(infrared));
+
+        // Grant MINTER_ROLE to infrared contract
+        newRed.grantRole(newRed.MINTER_ROLE(), address(infrared));
+
+        // Start recording storage access
+        vm.record();
+
+        // Set RED token
+        vm.prank(infraredGovernance);
+        infrared.setRed(address(newRed));
+
+        // Verify slot 19 contains newRed address
+        bytes32 redSlot = vm.load(address(infrared), bytes32(uint256(19)));
+        assertEq(address(uint160(uint256(redSlot))), address(newRed));
+    }
+
+    function testSetRedFailsZeroAddress() public {
+        vm.prank(infraredGovernance);
+        vm.expectRevert(Errors.ZeroAddress.selector);
+        infrared.setRed(address(0));
+    }
+
+    function testSetRedFailsAlreadySet() public {
+        // First set
+        RED newRed = new RED(address(ibgt), address(infrared));
+        newRed.grantRole(newRed.MINTER_ROLE(), address(infrared));
+        vm.prank(infraredGovernance);
+        infrared.setRed(address(newRed));
+
+        // Try to set again
+        RED anotherRed = new RED(address(ibgt), address(infrared));
+        anotherRed.grantRole(anotherRed.MINTER_ROLE(), address(infrared));
+        vm.prank(infraredGovernance);
+        vm.expectRevert(Errors.AlreadySet.selector);
+        infrared.setRed(address(anotherRed));
+    }
+
+    function testSetRedFailsAccessControll() public {
+        // Create RED token without granting MINTER_ROLE
+        RED newRed = new RED(address(ibgt), address(infrared));
+
+        vm.startPrank(address(123));
+        vm.expectRevert(
+            abi.encodeWithSignature(
+                "AccessControlUnauthorizedAccount(address,bytes32)",
+                address(123),
+                infrared.GOVERNANCE_ROLE()
+            )
+        );
+        infrared.setRed(address(newRed));
+    }
+
+    function testSetRedFailsMinterUnauthorized() public {
+        // Create RED token without granting MINTER_ROLE
+        RED newRed = new RED(address(ibgt), address(12));
+        vm.prank(infraredGovernance);
+        vm.expectRevert(
+            abi.encodeWithSignature("Unauthorized(address)", address(infrared))
+        );
+        infrared.setRed(address(newRed));
+    }
+
+    function testUpdateRedMintRateSuccess() public {
+        // Setup: First set RED token
+        RED newRed = new RED(address(ibgt), address(infrared));
+        newRed.grantRole(newRed.MINTER_ROLE(), address(infrared));
+        vm.prank(infraredGovernance);
+        infrared.setRed(address(newRed));
+
+        // Start recording storage access for debugging
+        vm.record();
+
+        // Test case 1: Set rate to 0.5 RED per IBGT
+        uint256 halfRate = 500_000; // 0.5 * 1e6
+        vm.prank(infraredGovernance);
+        infrared.updateRedMintRate(halfRate);
+
+        // Verify redMintRate in internal storage
+        bytes32 redMintRateSlot =
+            vm.load(address(infrared), bytes32(uint256(21)));
+        uint256 redMintRate = uint256(redMintRateSlot);
+        console.log("redMintRate:", redMintRate);
+        assertEq(
+            redMintRate, halfRate, "Internal storage mismatch for half rate"
+        );
+
+        // Test case 2: Set rate to 2 RED per IBGT
+        uint256 doubleRate = 2_000_000; // 2 * 1e6
+        vm.prank(infraredGovernance);
+        infrared.updateRedMintRate(doubleRate);
+
+        // Verify redMintRate in internal storage again
+        redMintRateSlot = vm.load(address(infrared), bytes32(uint256(21)));
+        redMintRate = uint256(redMintRateSlot);
+        console.log("redMintRate:", redMintRate);
+        assertEq(
+            redMintRate, doubleRate, "Internal storage mismatch for double rate"
+        );
+    }
+
+    function testRedMintingRatioHalf() public {
+        // Setup: Set RED token and mint rate to 0.5
+        RED newRed = new RED(address(ibgt), address(infrared));
+        newRed.grantRole(newRed.MINTER_ROLE(), address(infrared));
+        vm.startPrank(infraredGovernance);
+        infrared.setRed(address(newRed));
+        infrared.updateRedMintRate(500_000); // 0.5 * 1e6
+        vm.stopPrank();
+
+        // Setup vault and rewards
+        address user = address(10);
+        uint256 stakeAmount = 1000 ether;
+        stakeInVault(address(ibgtVault), address(ibgt), user, stakeAmount);
+
+        // Simulate BGT rewards
+        vm.startPrank(address(blockRewardController));
+        bgt.mint(address(infrared), 100 ether);
+        vm.stopPrank();
+
+        // Harvest rewards
+        vm.prank(keeper);
+        infrared.harvestVault(address(wbera));
+
+        // Verify RED minting ratio (0.5 RED per IBGT)
+        uint256 redBalance = newRed.balanceOf(address(ibgtVault));
+        uint256 ibgtBalance = ibgt.balanceOf(address(ibgtVault));
+        assertApproxEqRel(redBalance, ibgtBalance / 2, 1e16); // 1% tolerance
+    }
+
+    function testRedMintingRatioDouble() public {
+        // Setup: Set RED token and mint rate to 2.0
+        RED newRed = new RED(address(ibgt), address(infrared));
+        newRed.grantRole(newRed.MINTER_ROLE(), address(infrared));
+        vm.startPrank(infraredGovernance);
+        infrared.setRed(address(newRed));
+        infrared.updateRedMintRate(2_000_000); // 2 * 1e6
+        vm.stopPrank();
+
+        // Setup vault and rewards
+        address user = address(10);
+        uint256 stakeAmount = 1000 ether;
+        stakeInVault(address(ibgtVault), address(ibgt), user, stakeAmount);
+
+        // Simulate BGT rewards
+        vm.startPrank(address(blockRewardController));
+        bgt.mint(address(infrared), 100 ether);
+        vm.stopPrank();
+
+        // Harvest rewards
+        vm.prank(keeper);
+        infrared.harvestVault(address(wbera));
+
+        // Verify RED minting ratio (2 RED per IBGT)
+        uint256 redBalance = newRed.balanceOf(address(ibgtVault));
+        uint256 ibgtBalance = ibgt.balanceOf(address(ibgtVault));
+        assertApproxEqRel(redBalance, ibgtBalance * 2, 1e16); // 1% tolerance
     }
 
     /* TODO: fix

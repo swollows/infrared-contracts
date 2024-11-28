@@ -28,13 +28,13 @@ contract InfraredDistributorTest is Test {
     address public validator2 = makeAddr("validator2");
     bytes public pubkey1 = abi.encodePacked(validator1);
     bytes public pubkey2 = abi.encodePacked(validator2);
-    address public ired = makeAddr("iRED");
+    address public red = makeAddr("iRED");
     address public rewardsFactory = makeAddr("rewardsFactory");
 
     function setUp() public {
         // Initialize mock contracts
         token = new MockERC20("iBERA", "iBERA", 18);
-        infrared = new MockInfrared(address(token), ired, rewardsFactory);
+        infrared = new MockInfrared(address(token), red, rewardsFactory);
 
         distributor = InfraredDistributor(
             setupProxy(address(new InfraredDistributor(address(infrared))))

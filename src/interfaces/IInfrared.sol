@@ -9,6 +9,7 @@ import {IRewardVaultFactory as IBerachainRewardsVaultFactory} from
 
 import {IVoter} from "@voting/interfaces/IVoter.sol";
 import {IIBERA} from "@interfaces/IIBERA.sol";
+import {IRED} from "@interfaces/IRED.sol";
 
 import {IWBERA} from "@interfaces/IWBERA.sol";
 import {IERC20Mintable} from "@interfaces/IERC20Mintable.sol";
@@ -125,6 +126,12 @@ interface IInfrared is IInfraredUpgradeable {
     function ibera() external view returns (IIBERA);
 
     /**
+     * @notice The RED token
+     * @return IRED instance of the RED token contract address
+     */
+    function red() external view returns (IRED);
+
+    /**
      * @notice The rewards duration
      * @dev Used as gloabl variabel to set the rewards duration for all new reward tokens on InfraredVaults
      * @return uint256 The reward duration period, in seconds
@@ -210,6 +217,19 @@ interface IInfrared is IInfraredUpgradeable {
      * @param _fee uint256 The fee rate to update to
      */
     function updateFee(ConfigTypes.FeeType _t, uint256 _fee) external;
+
+    /**
+     * @notice Sets the address of the RED contract
+     * @dev Infrared must be granted MINTER_ROLE on RED to set the address
+     * @param _red The address of the RED contract
+     */
+    function setRed(address _red) external;
+
+    /**
+     * @notice Updates the mint rate for RED
+     * @param _redMintRate The new mint rate for RED
+     */
+    function updateRedMintRate(uint256 _redMintRate) external;
 
     /**
      * @notice Claims accumulated protocol fees in contract
@@ -522,6 +542,14 @@ interface IInfrared is IInfraredUpgradeable {
     );
 
     /**
+     * @notice Emitted when protocol fees are received.
+     * @param _token The address of the token protocol fees in.
+     * @param _amt The amount of protocol fees received.
+     * @param _voterAmt The amount of protocol fees received by the voter.
+     */
+    event ProtocolFees(address indexed _token, uint256 _amt, uint256 _voterAmt);
+
+    /**
      * @notice Emitted when base + commission rewards are harvested.
      * @param _sender The address that initiated the harvest.
      * @param _bgtAmt The amount of BGT harvested.
@@ -660,4 +688,11 @@ interface IInfrared is IInfraredUpgradeable {
      * @param _amt The amount of tokens that were redelegated.
      */
     event Redelegated(address _sender, bytes _from, bytes _to, uint256 _amt);
+
+    /**
+     * @notice Emitted when the RED token is set.
+     * @param _sender The address that initiated the update.
+     * @param _red The address of the RED token.
+     */
+    event RedSet(address _sender, address _red);
 }

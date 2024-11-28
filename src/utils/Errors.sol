@@ -9,6 +9,7 @@ library Errors {
     error OverFlow();
     error UnderFlow();
     error InvalidArrayLength();
+    error AlreadySet();
 
     // ValidatorSet errors.
     error ValidatorAlreadyExists();

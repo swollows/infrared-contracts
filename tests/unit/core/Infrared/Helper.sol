@@ -25,6 +25,7 @@ import {BribeCollector} from "@core/BribeCollector.sol";
 import "@core/Infrared.sol";
 import "@core/InfraredDistributor.sol";
 import "@core/IBGT.sol";
+import "@core/RED.sol";
 import "@core/InfraredVault.sol";
 import "@utils/DataTypes.sol";
 
@@ -38,9 +39,10 @@ import {POLTest} from "@berachain/../test/pol/POL.t.sol";
 abstract contract Helper is POLTest {
     Infrared public infrared;
     IBGT public ibgt;
+    RED public red;
 
     Voter public voter;
-    VotingEscrow public veIRED;
+    VotingEscrow public IRED;
 
     IBERA public ibera;
     IBERADepositor public depositor;
@@ -56,7 +58,6 @@ abstract contract Helper is POLTest {
     address public infraredGovernance;
 
     // MockERC20 public bgt;
-    MockERC20 public ired;
     MockERC20 public wibera;
     MockERC20 public honey;
     address public beraVault;
@@ -83,7 +84,6 @@ abstract contract Helper is POLTest {
         super.setUp();
 
         ibgt = new IBGT(address(bgt));
-        ired = new MockERC20("IRED", "IRED", 18);
         wibera = new MockERC20("WIBERA", "WIBERA", 18);
         honey = new MockERC20("HONEY", "HONEY", 18);
 
@@ -135,10 +135,12 @@ abstract contract Helper is POLTest {
             setupProxy(address(new InfraredDistributor(address(infrared))))
         );
 
+        red = new RED(address(ibgt), address(infrared));
+
         // IRED voting
         voter = Voter(setupProxy(address(new Voter(address(infrared)))));
-        veIRED = new VotingEscrow(
-            address(this), address(ired), address(voter), address(infrared)
+        IRED = new VotingEscrow(
+            address(this), address(red), address(voter), address(infrared)
         );
 
         collector.initialize(address(this), address(wbera), 10 ether);
@@ -151,7 +153,7 @@ abstract contract Helper is POLTest {
             address(ibera),
             1 days
         ); // make helper contract the admin
-        voter.initialize(address(veIRED));
+        voter.initialize(address(IRED));
 
         // initialize ibera proxies
         depositor.initialize(admin, address(ibera));

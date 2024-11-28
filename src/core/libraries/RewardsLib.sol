@@ -10,15 +10,16 @@ import {
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 import {IInfraredDistributor} from "@interfaces/IInfraredDistributor.sol";
 import {IBerachainBGTStaker} from "@interfaces/IBerachainBGTStaker.sol";
-import {IERC20Mintable} from "@interfaces/IERC20Mintable.sol";
 import {IInfraredVault} from "@interfaces/IInfraredVault.sol";
 import {ConfigTypes} from "@core/libraries/ConfigTypes.sol";
 import {IBerachainBGT} from "@interfaces/IBerachainBGT.sol";
+import {IInfrared} from "@interfaces/IInfrared.sol";
 import {IReward} from "@voting/interfaces/IReward.sol";
 import {IVoter} from "@voting/interfaces/IVoter.sol";
 import {DataTypes} from "@utils/DataTypes.sol";
 import {IWBERA} from "@interfaces/IWBERA.sol";
 import {IIBGT} from "@interfaces/IIBGT.sol";
+import {IRED} from "@interfaces/IRED.sol";
 import {IIBERA} from "@interfaces/IIBERA.sol";
 import {Errors} from "@utils/Errors.sol";
 
@@ -34,13 +35,19 @@ library RewardsLib {
         address voter;
         address ibgtVault;
         address ibera;
-        address ired;
+        address red;
         mapping(address => uint256) protocolFeeAmounts; // Tracks accumulated protocol fees per token
-        uint256 iredMintRate; // Rate for minting IRED tokens
+        uint256 redMintRate; // Rate for minting IRED tokens
         uint256 rewardsDuration; // Duration for reward programs
         uint256 collectBribesWeight;
         mapping(uint256 => uint256) fees; // Fee configuration
     }
+
+    /**
+     * @notice RED mint rate in hundredths of 1 bip
+     * @dev Used as the denominator when calculating IRED minting (1e6)
+     */
+    uint256 internal constant RATE_UNIT = 1e6;
 
     /**
      * @notice Weight units when partitioning reward amounts in hundredths of 1 bip
@@ -65,9 +72,10 @@ library RewardsLib {
         pure
         returns (uint256 amtRecipient, uint256 amtVoter, uint256 amtProtocol)
     {
-        if (_feeTotal == 0) return (_amt, 0, 0);
+        amtRecipient = _amt;
+        if (_feeTotal == 0) return (amtRecipient, 0, 0);
 
-        uint256 _amtTotal = _amt * _feeTotal / FEE_UNIT; // FEE_UNIT = 1e6
+        uint256 _amtTotal = amtRecipient * _feeTotal / FEE_UNIT; // FEE_UNIT = 1e6
         amtProtocol = _amtTotal * _feeProtocol / FEE_UNIT; // Protocol's share
         amtVoter = _amtTotal - amtProtocol; // Remainder for voter
         amtRecipient -= (amtProtocol + amtVoter); // Deduct fees from recipient
@@ -88,6 +96,8 @@ library RewardsLib {
             IERC20(_token).safeIncreaseAllowance(voterFeeVault, _amtVoter);
             IReward(voterFeeVault).notifyRewardAmount(_token, _amtVoter);
         }
+
+        emit IInfrared.ProtocolFees(_token, _amtProtocol, _amtVoter);
     }
 
     function harvestBase(RewardsStorage storage $)
@@ -309,15 +319,55 @@ library RewardsLib {
         // handle bgt rewards by minting and supplying IBGT to vault
         IIBGT($.ibgt).mint(address(this), _bgtAmt);
 
-        // calculate and distribute fees on rewards
-        (uint256 _amt, uint256 _amtVoter, uint256 _amtProtocol) =
-            chargedFeesOnRewards($, _bgtAmt, _feeTotal, _feeProtocol);
-        _distributeFeesOnRewards($, $.ibgt, _amtVoter, _amtProtocol);
+        bool redMintingCondition =
+            address($.red) != address(0) && $.redMintRate > 0;
 
-        // send token rewards less fee to vault
-        if (_amt > 0) {
-            IERC20($.ibgt).safeIncreaseAllowance(address(_vault), _amt);
-            _vault.notifyRewardAmount($.ibgt, _amt);
+        // Determine number of tokens to process
+        uint256 numTokens = redMintingCondition ? 2 : 1;
+        address[] memory _tokens = new address[](numTokens);
+        uint256[] memory _amts = new uint256[](numTokens);
+        uint256[] memory _feeTotals = new uint256[](numTokens);
+        uint256[] memory _feeProtocols = new uint256[](numTokens);
+
+        // ibgt attrs. feeTotal and feeProtocol charged on minted ibgt
+        _tokens[0] = $.ibgt;
+        _amts[0] = _bgtAmt;
+        _feeTotals[0] = _feeTotal;
+        _feeProtocols[0] = _feeProtocol;
+
+        // Only handle RED distribution if set
+        if (redMintingCondition) {
+            uint256 _redAmt = Math.mulDiv(_bgtAmt, $.redMintRate, RATE_UNIT);
+            IRED($.red).mint(address(this), _redAmt);
+
+            // red attrs. zero fee rates charged on newly minted red
+            _tokens[1] = $.red;
+            _amts[1] = _redAmt;
+            // _feeTotals[1] and _feeProtocols[1] remain 0
+
+            (, uint256 _redRewardsDuration,,,,) = _vault.rewardData($.red);
+            if (_redRewardsDuration == 0) {
+                // Add RED as a reward token if not already added
+                _vault.addReward($.red, $.rewardsDuration);
+            }
+        }
+
+        for (uint256 i = 0; i < numTokens; i++) {
+            address _token = _tokens[i];
+            uint256 _amt = _amts[i];
+            uint256 _amtVoter;
+            uint256 _amtProtocol;
+
+            // calculate and distribute fees on rewards
+            (_amt, _amtVoter, _amtProtocol) =
+                chargedFeesOnRewards($, _amt, _feeTotals[i], _feeProtocols[i]);
+            _distributeFeesOnRewards($, _token, _amtVoter, _amtProtocol);
+
+            // send token rewards less fee to vault
+            if (_amt > 0) {
+                IERC20(_token).safeIncreaseAllowance(address(_vault), _amt);
+                _vault.notifyRewardAmount(_token, _amt);
+            }
         }
     }
 
@@ -415,9 +465,31 @@ library RewardsLib {
         $.rewardsDuration = newDuration;
     }
 
-    function updateIredMintRate(RewardsStorage storage $, uint256 _iredMintRate)
-        internal
+    function updateRedMintRate(RewardsStorage storage $, uint256 _iredMintRate)
+        external
     {
-        $.iredMintRate = _iredMintRate;
+        // Update the RED minting rate
+        // This rate determines how many RED tokens are minted per IBGT
+
+        // @note The rate can be greater than RATE_UNIT (1e6)
+        // This allows for minting multiple RED tokens per IBGT if desired
+
+        // For example:
+        // - If _iredMintRate = 500,000 (0.5 * RATE_UNIT), 0.5 RED is minted per IBGT
+        // - If _iredMintRate = 2,000,000 (2 * RATE_UNIT), 2 RED are minted per IBGT
+
+        // The actual calculation is done in _handleBGTRewardsForVault:
+        // uint256 _redAmt = Math.mulDiv(_bgtAmt, $.redMintRate, RATE_UNIT);
+
+        $.redMintRate = _iredMintRate;
+    }
+
+    function setRed(RewardsStorage storage $, address _red) external {
+        if (_red == address(0)) revert Errors.ZeroAddress();
+        if ($.red != address(0)) revert Errors.AlreadySet();
+        if (!IRED(_red).hasRole(IRED(_red).MINTER_ROLE(), address(this))) {
+            revert Errors.Unauthorized(address(this));
+        }
+        $.red = _red;
     }
 }

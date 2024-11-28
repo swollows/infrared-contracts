@@ -31,6 +31,7 @@ import {IReward} from "@voting/interfaces/IReward.sol";
 import {IWBERA} from "@interfaces/IWBERA.sol";
 import {IERC20Mintable} from "@interfaces/IERC20Mintable.sol";
 import {IIBGT} from "@interfaces/IIBGT.sol";
+import {IRED} from "@interfaces/IRED.sol";
 import {IBribeCollector} from "@interfaces/IBribeCollector.sol";
 import {IInfraredDistributor} from "@interfaces/IInfraredDistributor.sol";
 import {IInfraredVault} from "@interfaces/IInfraredVault.sol";
@@ -102,6 +103,9 @@ contract Infrared is InfraredUpgradeable, IInfrared {
 
     /// @inheritdoc IInfrared
     IIBERA public ibera;
+
+    /// @inheritdoc IInfrared
+    IRED public red;
 
     /**
      * @dev Ensures that only the collector contract can call the function
@@ -312,6 +316,22 @@ contract Infrared is InfraredUpgradeable, IInfrared {
     {
         rewardsStorage.claimProtocolFees(_to, _token, _amount);
         emit ProtocolFeesClaimed(msg.sender, _to, _token, _amount);
+    }
+
+    /// @inheritdoc IInfrared
+    function setRed(address _red) external onlyGovernor whenInitialized {
+        rewardsStorage.setRed(_red);
+        red = IRED(_red);
+        emit RedSet(msg.sender, _red);
+    }
+
+    /// @inheritdoc IInfrared
+    function updateRedMintRate(uint256 _redMintRate)
+        external
+        onlyGovernor
+        whenInitialized
+    {
+        rewardsStorage.updateRedMintRate(_redMintRate);
     }
 
     /*//////////////////////////////////////////////////////////////

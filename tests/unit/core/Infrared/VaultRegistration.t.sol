@@ -9,14 +9,14 @@ contract InfraredRegisterVaultTest is Helper {
                 Vault Registration Tests (registerVault)
     //////////////////////////////////////////////////////////////*/
     function testSuccessfulVaultRegistration() public {
-        stakingAsset = address(ired); // Assuming you have a mock iRED token
+        stakingAsset = address(red); // Assuming you have a mock iRED token
         // Grant the caller (this test contract) the KEEPER_ROLE to allow vault registration
         infrared.grantRole(infrared.KEEPER_ROLE(), address(this));
 
         // Mock data for the test
         address[] memory _rewardTokens = new address[](2); // Assuming you have reward token addresses
         _rewardTokens[0] = address(ibgt);
-        _rewardTokens[1] = address(ired);
+        _rewardTokens[1] = address(red);
 
         /*
         // Expect the NewVault event to be emitted with correct parameters
@@ -49,7 +49,7 @@ contract InfraredRegisterVaultTest is Helper {
 
         // Define reward tokens assuming you have them set up for the test
         address[] memory _rewardTokens = new address[](1); // Modify as per your test setup
-        _rewardTokens[0] = address(ired); // Example reward token address
+        _rewardTokens[0] = address(red); // Example reward token address
 
         // Expect a revert due to passing a zero asset address to registerVault
         vm.expectRevert(Errors.ZeroAddress.selector);
@@ -84,7 +84,7 @@ contract InfraredRegisterVaultTest is Helper {
 
         address[] memory _rewardTokens; // Assuming you've defined _rewardTokens somewhere
         _rewardTokens[0] = address(ibgt); // Example reward token address
-        _rewardTokens[1] = address(ired);
+        _rewardTokens[1] = address(red);
         // Adjusted to reflect the lack of poolAddress parameter and updated error handling
         vm.expectRevert(
             abi.encodeWithSelector(
@@ -107,7 +107,7 @@ contract InfraredRegisterVaultTest is Helper {
 
         address[] memory _rewardTokens; // Assuming you've defined _rewardTokens somewhere
         _rewardTokens[0] = address(ibgt); // Example reward token address
-        _rewardTokens[1] = address(ired);
+        _rewardTokens[1] = address(red);
 
         // Because stakingAsset is already registered, expect a revert
         vm.expectRevert(Errors.DuplicateAssetAddress.selector);
@@ -122,7 +122,7 @@ contract InfraredRegisterVaultTest is Helper {
         // Prepare the reward tokens array; assuming it's already initialized and filled as needed
         address[] memory _rewardTokens = new address[](2); // example initialization
         _rewardTokens[0] = address(ibgt); // Assuming mockRewardToken has been defined elsewhere
-        _rewardTokens[1] = address(ired);
+        _rewardTokens[1] = address(red);
 
         // Register the vault without specifying a pool address, adhering to the updated function signature
         infrared.registerVault(address(mockAsset));
