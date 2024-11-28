@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.26;
 
-import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
-import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
+
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 
 import {IInfrared} from "@interfaces/IInfrared.sol";
@@ -21,7 +23,12 @@ import {IBERAFeeReceivor} from "./IBERAFeeReceivor.sol";
 /// @author bungabear69420
 /// @notice Infrared liquid staking token for BERA
 /// @dev Assumes BERA balances do *not* change at the CL
-contract IBERA is ERC20, AccessControl, IIBERA {
+contract IBERA is
+    ERC20Upgradeable,
+    AccessControlUpgradeable,
+    UUPSUpgradeable,
+    IIBERA
+{
     /// @inheritdoc IIBERA
     bool public withdrawalsEnabled;
 
@@ -30,15 +37,15 @@ contract IBERA is ERC20, AccessControl, IIBERA {
     bytes32 public constant GOVERNANCE_ROLE = keccak256("GOVERNANCE_ROLE");
 
     /// @inheritdoc IIBERA
-    address public immutable infrared;
+    address public infrared;
     /// @inheritdoc IIBERA
-    address public immutable depositor;
+    address public depositor;
     /// @inheritdoc IIBERA
-    address public immutable withdrawor;
+    address public withdrawor;
     /// @inheritdoc IIBERA
-    address public immutable claimor;
+    address public claimor;
     /// @inheritdoc IIBERA
-    address public immutable receivor;
+    address public receivor;
 
     /// @inheritdoc IIBERA
     uint256 public deposits;
@@ -58,13 +65,34 @@ contract IBERA is ERC20, AccessControl, IIBERA {
     /// @notice Whether initial mint to address(this) has happened
     bool private _initialized;
 
-    constructor(address _infrared) payable ERC20("Infrared BERA", "iBERA") {
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers(); // Ensure the contract cannot be initialized through the logic contract
+    }
+
+    /// @inheritdoc IIBERA
+    function initialize(
+        address admin,
+        address _infrared,
+        address _depositor,
+        address _withdrawor,
+        address _claimor,
+        address _receivor
+    ) external payable initializer {
+        __ERC20_init("Infrared BERA", "iBERA");
+        __AccessControl_init();
+        __UUPSUpgradeable_init();
+
         infrared = _infrared;
-        depositor = address(new IBERADepositor());
-        withdrawor = address(new IBERAWithdrawor()); // -or is more fun
-        claimor = address(new IBERAClaimor());
-        receivor = address(new IBERAFeeReceivor(_infrared));
-        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        depositor = _depositor;
+        withdrawor = _withdrawor;
+        claimor = _claimor;
+        receivor = _receivor;
+        _grantRole(DEFAULT_ADMIN_ROLE, admin);
+
+        // burn minimum amount to mitigate inflation attack with shares
+        _initialized = true;
+        mint(address(this));
     }
 
     function setWithdrawalsEnabled(bool flag) external {
@@ -130,13 +158,6 @@ contract IBERA is ERC20, AccessControl, IIBERA {
     /// @inheritdoc IIBERA
     function validator(bytes calldata pubkey) external view returns (bool) {
         return IInfrared(infrared).isInfraredValidator(pubkey);
-    }
-
-    /// @inheritdoc IIBERA
-    function initialize() external payable {
-        // burn minimum amount to mitigate inflation attack with shares
-        _initialized = true;
-        mint(address(this));
     }
 
     /// @inheritdoc IIBERA
@@ -235,6 +256,41 @@ contract IBERA is ERC20, AccessControl, IIBERA {
         if (signature.length != 96) revert InvalidSignature();
         emit SetDepositSignature(pubkey, signatures[pubkey], signature);
         signatures[pubkey] = signature;
+    }
+
+    function _authorizeUpgrade(address newImplementation)
+        internal
+        override
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {}
+
+    function setDepositor(address _depositor)
+        public
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        depositor = _depositor;
+    }
+
+    function setWithdrawor(address _withdrawor)
+        public
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        withdrawor = _withdrawor;
+    }
+
+    function setClaimor(address _claimor) public onlyRole(DEFAULT_ADMIN_ROLE) {
+        claimor = _claimor;
+    }
+
+    function setReceivor(address _receivor)
+        public
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        receivor = _receivor;
+    }
+
+    function implementation() external view returns (address) {
+        return ERC1967Utils.getImplementation();
     }
 
     /// @inheritdoc IIBERA

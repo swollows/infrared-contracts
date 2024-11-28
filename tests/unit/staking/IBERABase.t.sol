@@ -15,6 +15,7 @@ import {IBERAWithdrawor} from "@staking/IBERAWithdrawor.sol";
 import {IBERAClaimor} from "@staking/IBERAClaimor.sol";
 import {IBERAFeeReceivor} from "@staking/IBERAFeeReceivor.sol";
 import {IBERAConstants} from "@staking/IBERAConstants.sol";
+import {IBERADeployer} from "script/IBERADeployer.s.sol";
 
 contract IBERABaseTest is Test {
     IBERA public ibera;
@@ -22,6 +23,7 @@ contract IBERABaseTest is Test {
     IBERAWithdrawor public withdrawor;
     IBERAClaimor public claimor;
     IBERAFeeReceivor public receivor;
+    IBERADeployer public deployerScript;
 
     BeaconDeposit public depositContract;
     bytes public constant withdrawPrecompile = abi.encodePacked(
@@ -50,13 +52,18 @@ contract IBERABaseTest is Test {
 
     function setUp() public virtual {
         infrared = new MockInfrared(ibgt, ired, rewardsFactory);
-        vm.prank(deployer);
-        ibera = new IBERA(address(infrared));
 
-        depositor = IBERADepositor(ibera.depositor());
-        withdrawor = IBERAWithdrawor(payable(ibera.withdrawor()));
-        claimor = IBERAClaimor(ibera.claimor());
-        receivor = IBERAFeeReceivor(payable(ibera.receivor()));
+        deployerScript = new IBERADeployer();
+
+        // Call deploy script
+        deployerScript.run(address(infrared));
+
+        // Fetch deployed contracts
+        ibera = deployerScript.ibera();
+        depositor = deployerScript.depositor();
+        withdrawor = deployerScript.withdrawor();
+        claimor = deployerScript.claimor();
+        receivor = deployerScript.receivor();
 
         // etch deposit contract at depositor constant deposit contract address
         depositContract = new BeaconDeposit();
@@ -68,9 +75,9 @@ contract IBERABaseTest is Test {
         vm.etch(WITHDRAW_PRECOMPILE, withdrawPrecompile);
 
         // initialize IBERA
-        uint256 value =
-            IBERAConstants.MINIMUM_DEPOSIT + IBERAConstants.MINIMUM_DEPOSIT_FEE;
-        ibera.initialize{value: value}();
+        // uint256 value =
+        //     IBERAConstants.MINIMUM_DEPOSIT + IBERAConstants.MINIMUM_DEPOSIT_FEE;
+        // ibera.initialize{value: value}();
 
         // deal to alice and bob + approve ibera to spend for them
         vm.deal(alice, 1000 ether);
@@ -87,9 +94,9 @@ contract IBERABaseTest is Test {
         // grant roles to keeper and governor
         bytes32 kr = ibera.KEEPER_ROLE();
         bytes32 gr = ibera.GOVERNANCE_ROLE();
-        vm.prank(deployer);
+        // vm.prank(deployer);
         ibera.grantRole(kr, keeper);
-        vm.prank(deployer);
+        // vm.prank(deployer);
         ibera.grantRole(gr, governor);
 
         labelContracts();
@@ -122,7 +129,7 @@ contract IBERABaseTest is Test {
         assertTrue(infrared.isInfraredValidator(pubkey0));
         assertTrue(infrared.isInfraredValidator(pubkey1));
 
-        assertTrue(ibera.hasRole(ibera.DEFAULT_ADMIN_ROLE(), deployer));
+        assertTrue(ibera.hasRole(ibera.DEFAULT_ADMIN_ROLE(), address(this)));
         assertTrue(ibera.keeper(keeper));
         assertTrue(ibera.governor(governor));
 

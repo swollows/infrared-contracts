@@ -2,6 +2,14 @@
 pragma solidity 0.8.26;
 
 import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
+import {Initializable} from
+    "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import {
+    ERC1967Utils,
+    UUPSUpgradeable
+} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import {OwnableUpgradeable} from
+    "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 import {IBeaconDeposit} from "@berachain/pol/interfaces/IBeaconDeposit.sol";
 import {IIBERA} from "@interfaces/IIBERA.sol";
@@ -12,13 +20,18 @@ import {IBERAConstants} from "./IBERAConstants.sol";
 /// @title IBERADepositor
 /// @author bungabear69420
 /// @notice Depositor to deposit BERA to CL for Infrared liquid staking token
-contract IBERADepositor is IIBERADepositor {
+contract IBERADepositor is
+    Initializable,
+    UUPSUpgradeable,
+    OwnableUpgradeable,
+    IIBERADepositor
+{
     uint8 public constant ETH1_ADDRESS_WITHDRAWAL_PREFIX = 0x01;
     address public constant DEPOSIT_CONTRACT =
         0x00000000219ab540356cBB839Cbe05303d7705Fa; // TODO: change if different for berachain
 
     /// @inheritdoc IIBERADepositor
-    address public immutable IBERA;
+    address public IBERA;
 
     struct Slip {
         /// block.timestamp at which deposit slip issued
@@ -40,8 +53,27 @@ contract IBERADepositor is IIBERADepositor {
     /// @inheritdoc IIBERADepositor
     uint256 public nonceSubmit = 1;
 
+    /// @dev Constructor disabled for upgradeable contracts
     constructor() {
-        IBERA = msg.sender;
+        _disableInitializers();
+    }
+
+    /// @notice Ensure that only the governor or the contract itself can authorize upgrades
+    function _authorizeUpgrade(address newImplementation)
+        internal
+        override
+        onlyOwner
+    {}
+
+    /// @notice Initialize the contract (replaces the constructor)
+    /// @param admin Address for admin to upgrade
+    /// @param ibera The initial IBERA address
+    function initialize(address admin, address ibera) public initializer {
+        __Ownable_init(admin);
+        __UUPSUpgradeable_init();
+        IBERA = ibera;
+        nonceSlip = 1;
+        nonceSubmit = 1;
     }
 
     /// @notice Checks whether enough time has passed beyond min delay
@@ -166,5 +198,9 @@ contract IBERADepositor is IIBERADepositor {
         if (fee > 0) SafeTransferLib.safeTransferETH(msg.sender, fee);
 
         emit Execute(pubkey, _nonce, nonce, amount);
+    }
+
+    function implementation() external view returns (address) {
+        return ERC1967Utils.getImplementation();
     }
 }

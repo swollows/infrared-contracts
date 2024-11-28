@@ -13,13 +13,25 @@ import {VotingEscrow} from "@voting/VotingEscrow.sol";
 
 import {IBGT} from "@core/IBGT.sol";
 import {Infrared} from "@core/Infrared.sol";
-import {InfraredDistributor} from "@core/InfraredDistributor.sol";
 import {BribeCollector} from "@core/BribeCollector.sol";
+import {InfraredDistributor} from "@core/InfraredDistributor.sol";
+
+import {IBERA} from "@staking/IBERA.sol";
+import {IBERAClaimor} from "@staking/IBERAClaimor.sol";
+import {IBERADepositor} from "@staking/IBERADepositor.sol";
+import {IBERAWithdrawor} from "@staking/IBERAWithdrawor.sol";
+import {IBERAFeeReceivor} from "@staking/IBERAFeeReceivor.sol";
+import {IBERAConstants} from "@staking/IBERAConstants.sol";
 
 contract InfraredDeployer is Script {
     IBGT public ibgt;
     ERC20PresetMinterPauser public ired;
-    ERC20PresetMinterPauser ibera;
+
+    IBERA public ibera;
+    IBERADepositor public depositor;
+    IBERAWithdrawor public withdrawor;
+    IBERAClaimor public claimor;
+    IBERAFeeReceivor public receivor;
 
     BribeCollector public collector;
     InfraredDistributor public distributor;
@@ -71,6 +83,17 @@ contract InfraredDeployer is Script {
             _votingKeeper, address(ired), address(voter), address(infrared)
         );
 
+        // IBERA
+        ibera = IBERA(setupProxy(address(new IBERA())));
+
+        depositor = IBERADepositor(setupProxy(address(new IBERADepositor())));
+        withdrawor =
+            IBERAWithdrawor(payable(setupProxy(address(new IBERAWithdrawor()))));
+        claimor = IBERAClaimor(setupProxy(address(new IBERAClaimor())));
+        receivor = IBERAFeeReceivor(
+            payable(setupProxy(address(new IBERAFeeReceivor())))
+        );
+
         // initialize proxies
         collector.initialize(_admin, _wbera, _bribeCollectorPayoutAmount);
         distributor.initialize(address(ibera));
@@ -83,6 +106,25 @@ contract InfraredDeployer is Script {
             _rewardsDuration
         );
         voter.initialize(address(veIRED));
+
+        // initialize ibera proxies
+        depositor.initialize(_admin, address(ibera));
+        withdrawor.initialize(_admin, address(ibera));
+        claimor.initialize(_admin);
+        receivor.initialize(_admin, address(ibera), address(infrared));
+
+        // init deposit to avoid inflation attack
+        uint256 _value =
+            IBERAConstants.MINIMUM_DEPOSIT + IBERAConstants.MINIMUM_DEPOSIT_FEE;
+
+        ibera.initialize{value: _value}(
+            _admin,
+            address(infrared),
+            address(depositor),
+            address(withdrawor),
+            address(claimor),
+            address(receivor)
+        );
 
         // grant infrared ibgt minter role
         ibgt.grantRole(ibgt.MINTER_ROLE(), address(infrared));

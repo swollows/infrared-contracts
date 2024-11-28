@@ -11,7 +11,7 @@ import {console2} from "@forge-std/console2.sol";
 contract IBERAFeeReceivorTest is IBERABaseTest {
     function testDistributionReturnsWhenFeeZero() public {
         uint256 value = 1 ether;
-        payable(address(receivor)).transfer(value);
+        address(receivor).call{value: value}("");
         assertEq(address(receivor).balance, value);
 
         (uint256 amount, uint256 fees) = receivor.distribution();
@@ -26,7 +26,7 @@ contract IBERAFeeReceivorTest is IBERABaseTest {
         assertEq(ibera.feeShareholders(), feeShareholders);
 
         uint256 value = 1 ether;
-        payable(address(receivor)).transfer(value);
+        address(receivor).call{value: value}("");
         assertEq(address(receivor).balance, value);
 
         (uint256 amount, uint256 fees) = receivor.distribution();
@@ -55,7 +55,7 @@ contract IBERAFeeReceivorTest is IBERABaseTest {
 
         // add in some more fees
         uint256 value = 0.5 ether;
-        payable(address(receivor)).transfer(value);
+        address(receivor).call{value: value}("");
         assertEq(address(receivor).balance, value + shareholderFees_);
 
         // should not include already swept distribution in fees charged
@@ -71,7 +71,7 @@ contract IBERAFeeReceivorTest is IBERABaseTest {
         assertEq(ibera.feeShareholders(), feeShareholders);
 
         uint256 value = 1 ether;
-        payable(address(receivor)).transfer(value);
+        address(receivor).call{value: value}("");
         assertEq(address(receivor).balance, value);
 
         (, uint256 fees) = receivor.distribution();
@@ -90,7 +90,7 @@ contract IBERAFeeReceivorTest is IBERABaseTest {
 
     function testSweepNotUpdatesProtocolFeesWhenFeesZero() public {
         uint256 value = 1 ether;
-        payable(address(receivor)).transfer(value);
+        address(receivor).call{value: value}("");
         assertEq(address(receivor).balance, value);
 
         (, uint256 fees) = receivor.distribution();
@@ -129,7 +129,7 @@ contract IBERAFeeReceivorTest is IBERABaseTest {
         assertEq(ibera.feeShareholders(), feeShareholders);
 
         uint256 value = 1 ether;
-        payable(address(receivor)).transfer(value);
+        address(receivor).call{value: value}("");
         assertEq(address(receivor).balance, value);
 
         (uint256 amount, uint256 fees) = receivor.distribution();
@@ -149,7 +149,7 @@ contract IBERAFeeReceivorTest is IBERABaseTest {
 
     function testSweepTransfersETHWhenFeesZero() public {
         uint256 value = 1 ether;
-        payable(address(receivor)).transfer(value);
+        address(receivor).call{value: value}("");
         assertEq(address(receivor).balance, value);
 
         (uint256 amount, uint256 fees) = receivor.distribution();
@@ -191,7 +191,7 @@ contract IBERAFeeReceivorTest is IBERABaseTest {
         assertEq(ibera.feeShareholders(), feeShareholders);
 
         uint256 value = 1 ether;
-        payable(address(receivor)).transfer(value);
+        address(receivor).call{value: value}("");
         assertEq(address(receivor).balance, value);
 
         (uint256 amount, uint256 fees) = receivor.distribution();
@@ -205,7 +205,7 @@ contract IBERAFeeReceivorTest is IBERABaseTest {
 
     function testSweepPassesBelowMin() public {
         uint256 value = IBERAConstants.MINIMUM_DEPOSIT;
-        payable(address(receivor)).transfer(value);
+        address(receivor).call{value: value}("");
         assertEq(address(receivor).balance, value);
 
         (uint256 amount, uint256 fees) = receivor.distribution();
@@ -310,7 +310,7 @@ contract IBERAFeeReceivorTest is IBERABaseTest {
 
                 // Verify with actual contract
                 vm.deal(address(receivor), 0);
-                payable(address(receivor)).transfer(amount);
+                address(receivor).call{value: amount}("");
                 (uint256 actualAmount, uint256 actualFees) =
                     receivor.distribution();
 

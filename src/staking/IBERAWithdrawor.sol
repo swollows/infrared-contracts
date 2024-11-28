@@ -2,6 +2,14 @@
 pragma solidity 0.8.26;
 
 import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
+import {Initializable} from
+    "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import {
+    ERC1967Utils,
+    UUPSUpgradeable
+} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import {OwnableUpgradeable} from
+    "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 import {IIBERA} from "@interfaces/IIBERA.sol";
 import {IIBERADepositor} from "@interfaces/IIBERADepositor.sol";
@@ -14,13 +22,18 @@ import {IBERAConstants} from "./IBERAConstants.sol";
 /// @author bungabear69420
 /// @notice Withdrawor to withdraw BERA from CL for Infrared liquid staking token
 /// @dev Assumes ETH returned via withdraw precompile credited to contract so receive unnecessary
-contract IBERAWithdrawor is IIBERAWithdrawor {
+contract IBERAWithdrawor is
+    Initializable,
+    UUPSUpgradeable,
+    OwnableUpgradeable,
+    IIBERAWithdrawor
+{
     uint8 public constant WITHDRAW_REQUEST_TYPE = 0x01;
     address public constant WITHDRAW_PRECOMPILE =
         0x00A3ca265EBcb825B45F985A16CEFB49958cE017; // @dev: EIP7002
 
     /// @inheritdoc IIBERAWithdrawor
-    address public immutable IBERA;
+    address public IBERA;
 
     struct Request {
         /// receiver of withdrawn bera funds
@@ -45,14 +58,35 @@ contract IBERAWithdrawor is IIBERAWithdrawor {
     uint256 public rebalancing;
 
     /// @inheritdoc IIBERAWithdrawor
-    uint256 public nonceRequest = 1;
+    uint256 public nonceRequest;
     /// @inheritdoc IIBERAWithdrawor
-    uint256 public nonceSubmit = 1;
+    uint256 public nonceSubmit;
     /// @inheritdoc IIBERAWithdrawor
-    uint256 public nonceProcess = 1;
+    uint256 public nonceProcess;
 
+    /// @dev Constructor disabled for upgradeable contracts
     constructor() {
-        IBERA = msg.sender;
+        _disableInitializers();
+    }
+
+    /// @notice Ensure that only the governor or the contract itself can authorize upgrades
+    function _authorizeUpgrade(address newImplementation)
+        internal
+        override
+        onlyOwner
+    {}
+
+    /// @notice Initialize the contract (replaces the constructor)
+    /// @param admin Address for admin to upgrade
+    /// @param ibera The initial IBERA address
+    function initialize(address admin, address ibera) public initializer {
+        __Ownable_init(admin);
+        __UUPSUpgradeable_init();
+        IBERA = ibera;
+
+        nonceRequest = 1;
+        nonceSubmit = 1;
+        nonceProcess = 1;
     }
 
     /// @notice Checks whether enough time has passed beyond min delay
@@ -225,6 +259,10 @@ contract IBERAWithdrawor is IIBERAWithdrawor {
             IIBERAClaimor(claimor).queue{value: amount}(r.receiver);
         }
         emit Process(r.receiver, nonce, amount);
+    }
+
+    function implementation() external view returns (address) {
+        return ERC1967Utils.getImplementation();
     }
 
     /// @inheritdoc IIBERAWithdrawor

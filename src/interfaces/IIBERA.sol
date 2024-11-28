@@ -111,7 +111,14 @@ interface IIBERA is IERC20, IAccessControl {
 
     /// @notice Initializes IBERA to allow for future mints and burns
     /// @dev Must be called before IBERA can offer deposits and withdraws
-    function initialize() external payable;
+    function initialize(
+        address admin,
+        address _infrared,
+        address _depositor,
+        address _withdrawor,
+        address _claimor,
+        address _receivor
+    ) external payable;
 
     /// @notice Compounds accumulated EL yield in fee receivor into deposits
     /// @dev Called internally at bof whenever IBERA minted or burned

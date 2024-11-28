@@ -12,6 +12,11 @@ import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol"
 import {Voter} from "@voting/Voter.sol";
 import {VotingEscrow} from "@voting/VotingEscrow.sol";
 import {IBERA} from "@staking/IBERA.sol";
+import {IBERAClaimor} from "@staking/IBERAClaimor.sol";
+import {IBERADepositor} from "@staking/IBERADepositor.sol";
+import {IBERAWithdrawor} from "@staking/IBERAWithdrawor.sol";
+import {IBERAFeeReceivor} from "@staking/IBERAFeeReceivor.sol";
+import {IBERAConstants} from "@staking/IBERAConstants.sol";
 
 import {InfraredDistributor} from "@core/InfraredDistributor.sol";
 import {BribeCollector} from "@core/BribeCollector.sol";
@@ -29,7 +34,6 @@ import "@interfaces/IInfrared.sol";
 import "@mocks/MockERC20.sol";
 import "@berachain/pol/rewards/RewardVaultFactory.sol";
 import {POLTest} from "@berachain/../test/pol/POL.t.sol";
-import {IBERAConstants} from "@staking/IBERAConstants.sol";
 
 abstract contract Helper is POLTest {
     Infrared public infrared;
@@ -39,6 +43,10 @@ abstract contract Helper is POLTest {
     VotingEscrow public veIRED;
 
     IBERA public ibera;
+    IBERADepositor public depositor;
+    IBERAWithdrawor public withdrawor;
+    IBERAClaimor public claimor;
+    IBERAFeeReceivor public receivor;
 
     BribeCollector public collector;
     InfraredDistributor public infraredDistributor;
@@ -108,7 +116,18 @@ abstract contract Helper is POLTest {
             )
         );
 
-        ibera = new IBERA(address(infrared));
+        // ibera = new IBERA(address(infrared));
+        // IBERA
+        ibera = IBERA(setupProxy(address(new IBERA())));
+
+        depositor = IBERADepositor(setupProxy(address(new IBERADepositor())));
+        withdrawor =
+            IBERAWithdrawor(payable(setupProxy(address(new IBERAWithdrawor()))));
+        claimor = IBERAClaimor(setupProxy(address(new IBERAClaimor())));
+        receivor = IBERAFeeReceivor(
+            payable(setupProxy(address(new IBERAFeeReceivor())))
+        );
+
         collector = BribeCollector(
             setupProxy(address(new BribeCollector(address(infrared))))
         );
@@ -134,10 +153,24 @@ abstract contract Helper is POLTest {
         ); // make helper contract the admin
         voter.initialize(address(veIRED));
 
-        // initialize IBERA
-        uint256 value =
+        // initialize ibera proxies
+        depositor.initialize(admin, address(ibera));
+        withdrawor.initialize(admin, address(ibera));
+        claimor.initialize(admin);
+        receivor.initialize(admin, address(ibera), address(infrared));
+
+        // init deposit to avoid inflation attack
+        uint256 _value =
             IBERAConstants.MINIMUM_DEPOSIT + IBERAConstants.MINIMUM_DEPOSIT_FEE;
-        ibera.initialize{value: value}();
+
+        ibera.initialize{value: _value}(
+            admin,
+            address(infrared),
+            address(depositor),
+            address(withdrawor),
+            address(claimor),
+            address(receivor)
+        );
 
         ibera.grantRole(ibera.GOVERNANCE_ROLE(), address(this));
 

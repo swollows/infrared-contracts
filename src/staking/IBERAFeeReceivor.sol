@@ -2,6 +2,14 @@
 pragma solidity 0.8.26;
 
 import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
+import {Initializable} from
+    "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import {
+    ERC1967Utils,
+    UUPSUpgradeable
+} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import {OwnableUpgradeable} from
+    "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 import {IIBERA} from "@interfaces/IIBERA.sol";
 import {IIBERAFeeReceivor} from "@interfaces/IIBERAFeeReceivor.sol";
@@ -12,17 +20,42 @@ import {IBERAConstants} from "./IBERAConstants.sol";
 /// @author bungabear69420
 /// @notice Fee receivor receives coinbase priority fees + MEV credited to contract on EL upon block validation
 /// @dev CL validators should set fee_recipient to the address of this contract
-contract IBERAFeeReceivor is IIBERAFeeReceivor {
+contract IBERAFeeReceivor is
+    Initializable,
+    UUPSUpgradeable,
+    OwnableUpgradeable,
+    IIBERAFeeReceivor
+{
     /// @inheritdoc IIBERAFeeReceivor
-    address public immutable IBERA;
+    address public IBERA;
 
-    IInfrared public immutable infrared;
+    IInfrared public infrared;
 
     /// @inheritdoc IIBERAFeeReceivor
     uint256 public shareholderFees;
 
-    constructor(address _infrared) {
-        IBERA = msg.sender;
+    /// @dev Constructor disabled for upgradeable contracts
+    constructor() {
+        _disableInitializers();
+    }
+
+    /// @notice Ensure that only the governor or the contract itself can authorize upgrades
+    function _authorizeUpgrade(address newImplementation)
+        internal
+        override
+        onlyOwner
+    {}
+
+    /// @notice Initializer function (replaces constructor)
+    /// @param admin Address of the initial admin
+    function initialize(address admin, address ibera, address _infrared)
+        external
+        initializer
+    {
+        __Ownable_init(admin);
+        __UUPSUpgradeable_init();
+
+        IBERA = ibera;
         infrared = IInfrared(_infrared);
     }
 
@@ -76,4 +109,8 @@ contract IBERAFeeReceivor is IIBERAFeeReceivor {
     }
 
     receive() external payable {}
+
+    function implementation() external view returns (address) {
+        return ERC1967Utils.getImplementation();
+    }
 }
