@@ -159,4 +159,40 @@ contract InfraredVault is MultiRewards, IInfraredVault {
         if (_amount == 0) revert Errors.ZeroAmount();
         _recoverERC20(_to, _token, _amount);
     }
+
+    /*//////////////////////////////////////////////////////////////
+                            Getters
+    //////////////////////////////////////////////////////////////*/
+
+    /// @inheritdoc IInfraredVault
+    function getAllRewardTokens() external view returns (address[] memory) {
+        return rewardTokens;
+    }
+
+    /// @inheritdoc IInfraredVault
+    function getAllRewardsForUser(address _user)
+        external
+        view
+        returns (UserReward[] memory)
+    {
+        UserReward[] memory tempRewards = new UserReward[](rewardTokens.length);
+        uint256 count = 0;
+
+        for (uint256 i = 0; i < rewardTokens.length; i++) {
+            uint256 amount = earned(_user, rewardTokens[i]);
+            if (amount > 0) {
+                tempRewards[count] =
+                    UserReward({token: rewardTokens[i], amount: amount});
+                count++;
+            }
+        }
+
+        // Create a new array with the exact size of non-zero rewards
+        UserReward[] memory rewards = new UserReward[](count);
+        for (uint256 j = 0; j < count; j++) {
+            rewards[j] = tempRewards[j];
+        }
+
+        return rewards;
+    }
 }

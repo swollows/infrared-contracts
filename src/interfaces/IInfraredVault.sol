@@ -7,6 +7,32 @@ import {IMultiRewards} from "./IMultiRewards.sol";
 
 interface IInfraredVault is IMultiRewards {
     /**
+     * @notice A struct to hold a user's reward information
+     * @param token The address of the reward token
+     * @param amount The amount of reward tokens
+     */
+    struct UserReward {
+        address token;
+        uint256 amount;
+    }
+
+    /**
+     * @notice Returns all reward tokens
+     * @return An array of reward token addresses
+     */
+    function getAllRewardTokens() external view returns (address[] memory);
+
+    /**
+     * @notice Returns all rewards for a user
+     * @param _user The address of the user
+     * @return An array of UserReward structs
+     */
+    function getAllRewardsForUser(address _user)
+        external
+        view
+        returns (UserReward[] memory);
+
+    /**
      * @notice Returns the Infrared protocol coordinator
      * @return The address of the Infrared contract
      */

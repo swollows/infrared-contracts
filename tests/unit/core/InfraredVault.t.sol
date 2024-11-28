@@ -829,4 +829,183 @@ contract InfraredVaultTest is Helper {
             assertTrue(right - left <= _tolerance, message);
         }
     }
+
+    /*//////////////////////////////////////////////////////////////
+                            Getters
+    //////////////////////////////////////////////////////////////*/
+    function testGetAllRewardTokens() public {
+        // Setup: Add multiple reward tokens
+        MockERC20 rewardToken1 = new MockERC20("Reward1", "RWD1", 18);
+        MockERC20 rewardToken2 = new MockERC20("Reward2", "RWD2", 18);
+
+        vm.startPrank(infraredGovernance);
+        infrared.updateWhiteListedRewardTokens(address(rewardToken1), true);
+        infrared.updateWhiteListedRewardTokens(address(rewardToken2), true);
+
+        infrared.addReward(address(wbera), address(rewardToken1), 7 days);
+        infrared.addReward(address(wbera), address(rewardToken2), 7 days);
+        vm.stopPrank();
+
+        // Get all reward tokens
+        address[] memory allRewards = infraredVault.getAllRewardTokens();
+
+        // Verify results - note that IBGT is already added in setup
+        assertEq(
+            allRewards.length, 3, "Should have 3 reward tokens (including IBGT)"
+        );
+        assertTrue(
+            allRewards[0] == address(ibgt) || allRewards[1] == address(ibgt)
+                || allRewards[2] == address(ibgt),
+            "IBGT should be in rewards"
+        );
+        assertTrue(
+            allRewards[0] == address(rewardToken1)
+                || allRewards[1] == address(rewardToken1)
+                || allRewards[2] == address(rewardToken1),
+            "rewardToken1 should be in rewards"
+        );
+        assertTrue(
+            allRewards[0] == address(rewardToken2)
+                || allRewards[1] == address(rewardToken2)
+                || allRewards[2] == address(rewardToken2),
+            "rewardToken2 should be in rewards"
+        );
+    }
+
+    function testGetAllRewardsForUser() public {
+        address user = address(0x123);
+        uint256 stakeAmount = 100 ether;
+        uint256 rewardAmount = 1000 ether;
+
+        // Setup: Add reward token and distribute rewards
+        MockERC20 rewardToken = new MockERC20("Reward", "RWD", 18);
+
+        vm.startPrank(infraredGovernance);
+        infrared.updateWhiteListedRewardTokens(address(rewardToken), true);
+        infrared.addReward(address(wbera), address(rewardToken), 7 days);
+        vm.stopPrank();
+
+        // Setup: Give user some WBERA to stake
+        deal(address(wbera), user, stakeAmount);
+
+        // Setup: Add rewards
+        deal(address(ibgt), address(infrared), 100 ether);
+        // add ibgt rewards to vault
+        vm.startPrank(address(infrared));
+        ibgt.approve(address(infraredVault), 100 ether);
+        infraredVault.notifyRewardAmount(address(ibgt), 100 ether);
+        vm.stopPrank();
+
+        // add reward token rewards to vault
+        deal(address(rewardToken), address(infrared), rewardAmount);
+        vm.startPrank(address(infrared));
+        rewardToken.approve(address(infraredVault), rewardAmount);
+        infraredVault.notifyRewardAmount(address(rewardToken), rewardAmount);
+        vm.stopPrank();
+
+        // User stakes tokens
+        vm.startPrank(user);
+        wbera.approve(address(infraredVault), stakeAmount);
+        infraredVault.stake(stakeAmount);
+        vm.stopPrank();
+
+        // Simulate passage of time to accrue rewards
+        skip(7 days);
+
+        // Get all rewards for user
+        IInfraredVault.UserReward[] memory rewards =
+            infraredVault.getAllRewardsForUser(user);
+
+        // Verify results
+        assertEq(rewards.length, 2, "Should have 2 reward tokens");
+        assertTrue(rewards[0].amount > 0, "User should have rewards for IBGT");
+        assertTrue(
+            rewards[0].token == address(ibgt),
+            "User should have rewards for rewardToken"
+        );
+        assertTrue(
+            rewards[1].amount > 0, "User should have rewards for rewardToken"
+        );
+        assertTrue(
+            rewards[1].token == address(rewardToken),
+            "User should have rewards for rewardToken"
+        );
+    }
+
+    function testGetAllRewardsForUserOnlyOneRewardToken() public {
+        testGetAllRewardsForUser();
+
+        address user = address(0x123);
+        address user2 = address(0x456);
+
+        // stake for user2
+        deal(address(wbera), user2, 100 ether);
+        vm.startPrank(user2);
+        wbera.approve(address(infraredVault), 100 ether);
+        infraredVault.stake(100 ether);
+        vm.stopPrank();
+
+        // add more ibgt rewards to vault
+        deal(address(ibgt), address(infrared), 100 ether);
+        vm.startPrank(address(infrared));
+        ibgt.approve(address(infraredVault), 100 ether);
+        infraredVault.notifyRewardAmount(address(ibgt), 100 ether);
+        vm.stopPrank();
+
+        // Simulate passage of time to accrue rewards
+        skip(7 days);
+
+        // get rewards for user2
+        IInfraredVault.UserReward[] memory user2Rewards =
+            infraredVault.getAllRewardsForUser(user2);
+        assertEq(user2Rewards.length, 1, "Should have 1 reward token");
+        assertTrue(
+            user2Rewards[0].amount > 0, "User should have rewards for IBGT"
+        );
+        assertTrue(
+            user2Rewards[0].token == address(ibgt),
+            "User should have rewards for IBGT"
+        );
+
+        // get rewards for user and verify amount is greater
+        IInfraredVault.UserReward[] memory userRewards =
+            infraredVault.getAllRewardsForUser(user);
+        assertEq(userRewards.length, 2, "Should have 1 reward token");
+        assertTrue(
+            userRewards[0].amount > user2Rewards[0].amount,
+            "User should have rewards for IBGT"
+        );
+        assertTrue(
+            userRewards[0].token == address(ibgt),
+            "User should have rewards for IBGT"
+        );
+    }
+
+    function testGetAllRewardsForUserWithNoStake() public {
+        address user = address(0x123);
+
+        // Setup: Add reward token without any stakes or rewards
+        MockERC20 rewardToken = new MockERC20("Reward", "RWD", 18);
+
+        vm.startPrank(infraredGovernance);
+        infrared.updateWhiteListedRewardTokens(address(rewardToken), true);
+        infrared.addReward(address(wbera), address(rewardToken), 7 days);
+        vm.stopPrank();
+
+        // add ibgt rewards to vault
+        deal(address(ibgt), address(infrared), 100 ether);
+        vm.startPrank(address(infrared));
+        ibgt.approve(address(infraredVault), 100 ether);
+        infraredVault.notifyRewardAmount(address(ibgt), 100 ether);
+        vm.stopPrank();
+
+        // Get all rewards for user with no stake
+        IInfraredVault.UserReward[] memory rewards =
+            infraredVault.getAllRewardsForUser(user);
+
+        // Verify results
+        assertEq(
+            rewards.length, 0, "Should have 2 reward tokens but zero amounts"
+        );
+    }
 }
