@@ -50,14 +50,11 @@ contract IBERA is
     /// @inheritdoc IIBERA
     uint256 public deposits;
 
-    /// @inheritdoc IIBERA
-    mapping(bytes => uint256) public stakes;
+    mapping(bytes32 pubkeyHash => uint256 stake) internal _stakes;
 
-    /// @inheritdoc IIBERA
-    mapping(bytes => bool) public staked;
+    mapping(bytes32 pubkeyHash => bool isStaked) internal _staked;
 
-    /// @inheritdoc IIBERA
-    mapping(bytes => bytes) public signatures;
+    mapping(bytes32 pubkeyHash => bytes) internal _signatures;
 
     /// @inheritdoc IIBERA
     uint16 public feeShareholders;
@@ -230,12 +227,14 @@ contract IBERA is
             revert Unauthorized();
         }
         // update validator pubkey stake for delta
-        uint256 stake = stakes[pubkey];
+        uint256 stake = _stakes[keccak256(pubkey)];
         if (delta > 0) stake += uint256(delta);
         else stake -= uint256(-delta);
-        stakes[pubkey] = stake;
+        _stakes[keccak256(pubkey)] = stake;
         // update whether have staked to validator before
-        if (delta > 0 && !staked[pubkey]) staked[pubkey] = true;
+        if (delta > 0 && !_staked[keccak256(pubkey)]) {
+            _staked[keccak256(pubkey)] = true;
+        }
 
         emit Register(pubkey, delta, stake);
     }
@@ -254,8 +253,10 @@ contract IBERA is
     ) external {
         if (!governor(msg.sender)) revert Unauthorized();
         if (signature.length != 96) revert InvalidSignature();
-        emit SetDepositSignature(pubkey, signatures[pubkey], signature);
-        signatures[pubkey] = signature;
+        emit SetDepositSignature(
+            pubkey, _signatures[keccak256(pubkey)], signature
+        );
+        _signatures[keccak256(pubkey)] = signature;
     }
 
     function _authorizeUpgrade(address newImplementation)
@@ -381,5 +382,24 @@ contract IBERA is
         if (beraAmount == 0) {
             return (0, fee);
         }
+    }
+
+    /// @inheritdoc IIBERA
+    function stakes(bytes calldata pubkey) external view returns (uint256) {
+        return _stakes[keccak256(pubkey)];
+    }
+
+    /// @inheritdoc IIBERA
+    function staked(bytes calldata pubkey) external view returns (bool) {
+        return _staked[keccak256(pubkey)];
+    }
+
+    /// @inheritdoc IIBERA
+    function signatures(bytes calldata pubkey)
+        external
+        view
+        returns (bytes memory)
+    {
+        return _signatures[keccak256(pubkey)];
     }
 }

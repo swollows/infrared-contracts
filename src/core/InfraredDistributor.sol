@@ -25,11 +25,9 @@ contract InfraredDistributor is InfraredUpgradeable, IInfraredDistributor {
     /// @inheritdoc IInfraredDistributor
     uint256 public amountsCumulative;
 
-    /// @inheritdoc IInfraredDistributor
-    mapping(bytes pubkey => Snapshot) public snapshots;
+    mapping(bytes32 pubkeyHash => Snapshot) internal _snapshots;
 
-    /// @inheritdoc IInfraredDistributor
-    mapping(bytes pubkey => address) public validators;
+    mapping(bytes32 pubkeyHash => address) internal _validators;
 
     constructor(address _infrared) InfraredUpgradeable(_infrared) {
         if (_infrared == address(0)) revert Errors.ZeroAddress();
@@ -50,12 +48,12 @@ contract InfraredDistributor is InfraredUpgradeable, IInfraredDistributor {
         external
         onlyInfrared
     {
-        if (validators[pubkey] != address(0)) {
+        if (_validators[keccak256(pubkey)] != address(0)) {
             revert Errors.ValidatorAlreadyExists();
         }
-        validators[pubkey] = validator;
+        _validators[keccak256(pubkey)] = validator;
 
-        Snapshot storage s = snapshots[pubkey];
+        Snapshot storage s = _snapshots[keccak256(pubkey)];
         uint256 _amountsCumulative = amountsCumulative;
 
         s.amountCumulativeLast = _amountsCumulative;
@@ -66,13 +64,13 @@ contract InfraredDistributor is InfraredUpgradeable, IInfraredDistributor {
 
     /// @inheritdoc IInfraredDistributor
     function remove(bytes calldata pubkey) external onlyInfrared {
-        address validator = validators[pubkey];
+        address validator = _validators[keccak256(pubkey)];
         if (validator == address(0)) revert Errors.ValidatorDoesNotExist();
 
         uint256 _amountsCumulative = amountsCumulative;
         if (_amountsCumulative == 0) revert Errors.ZeroAmount();
 
-        Snapshot storage s = snapshots[pubkey];
+        Snapshot storage s = _snapshots[keccak256(pubkey)];
         s.amountCumulativeFinal = _amountsCumulative;
 
         emit Removed(pubkey, validator, _amountsCumulative);
@@ -80,17 +78,17 @@ contract InfraredDistributor is InfraredUpgradeable, IInfraredDistributor {
 
     /// @inheritdoc IInfraredDistributor
     function purge(bytes calldata pubkey) external {
-        address validator = validators[pubkey];
+        address validator = _validators[keccak256(pubkey)];
         if (validator == address(0)) revert Errors.ValidatorDoesNotExist();
 
-        Snapshot memory s = snapshots[pubkey];
+        Snapshot memory s = _snapshots[keccak256(pubkey)];
         if (s.amountCumulativeLast == 0) revert Errors.ZeroAmount();
         if (s.amountCumulativeLast != s.amountCumulativeFinal) {
             revert Errors.ClaimableRewardsExist();
         }
 
-        delete snapshots[pubkey];
-        delete validators[pubkey];
+        delete _snapshots[keccak256(pubkey)];
+        delete _validators[keccak256(pubkey)];
 
         emit Purged(pubkey, validator);
     }
@@ -112,10 +110,10 @@ contract InfraredDistributor is InfraredUpgradeable, IInfraredDistributor {
 
     /// @inheritdoc IInfraredDistributor
     function claim(bytes calldata pubkey, address recipient) external {
-        address validator = validators[pubkey];
+        address validator = _validators[keccak256(pubkey)];
         if (validator != msg.sender) revert Errors.InvalidValidator();
 
-        Snapshot memory s = snapshots[pubkey];
+        Snapshot memory s = _snapshots[keccak256(pubkey)];
         if (s.amountCumulativeLast == 0) revert Errors.ZeroAmount();
 
         uint256 fin = s.amountCumulativeFinal == 0
@@ -127,9 +125,28 @@ contract InfraredDistributor is InfraredUpgradeable, IInfraredDistributor {
         }
 
         s.amountCumulativeLast = fin;
-        snapshots[pubkey] = s;
+        _snapshots[keccak256(pubkey)] = s;
 
         if (amount > 0) token.safeTransfer(recipient, amount);
         emit Claimed(pubkey, validator, recipient, amount);
+    }
+
+    /// @inheritdoc IInfraredDistributor
+    function snapshots(bytes calldata pubkey)
+        external
+        view
+        returns (uint256 amountCumulativeLast, uint256 amountCumulativeFinal)
+    {
+        Snapshot memory s = _snapshots[keccak256(pubkey)];
+        return (s.amountCumulativeLast, s.amountCumulativeFinal);
+    }
+
+    /// @inheritdoc IInfraredDistributor
+    function validators(bytes calldata pubkey)
+        external
+        view
+        returns (address)
+    {
+        return _validators[keccak256(pubkey)];
     }
 }
