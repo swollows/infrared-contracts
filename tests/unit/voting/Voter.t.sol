@@ -760,7 +760,7 @@ contract VoterTest is Base {
     }
 
     function testCannotVoteUntilAnHourAfterEpochFlips() public {
-        uint256 tokenId = createLock(user1);
+        createLock(user1);
 
         // vote
         address[] memory _stakingTokens = new address[](1);
@@ -1011,8 +1011,6 @@ contract VoterTest is Base {
     }
 
     function testCannotKillBribeVaultIfAlreadyKilled() public {
-        address bribeVault = voter.bribeVaults(stakingTokens[0]);
-
         // address this == governor
         voter.killBribeVault(stakingTokens[0]);
         assertFalse(voter.isAlive(stakingTokens[0]));

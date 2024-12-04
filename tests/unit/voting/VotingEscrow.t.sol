@@ -56,13 +56,13 @@ contract VotingEscrowTest is Base {
         uint256 _ts
     );
 
-    function testInitialState() public {
+    function testInitialState() public view {
         assertEq(escrow.allowedManager(), address(keeper));
         // voter should already have been setup
         assertEq(escrow.voter(), address(voter));
     }
 
-    function testSupportInterfaces() public {
+    function testSupportInterfaces() public view {
         assertTrue(escrow.supportsInterface(type(IERC165).interfaceId));
         assertTrue(escrow.supportsInterface(type(IERC721).interfaceId));
         assertTrue(escrow.supportsInterface(type(IERC721Metadata).interfaceId));

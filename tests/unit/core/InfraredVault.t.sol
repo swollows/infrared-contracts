@@ -149,7 +149,6 @@ contract InfraredVaultTest is Helper {
             uint256 rewardRate,
             uint256 lastUpdateTime,
             uint256 rewardPerTokenStored,
-            uint256 rewardResidual
         ) = getRewardData(address(infraredVault), address(rewardsToken));
         assertTrue(periodFinish > block.timestamp, "Reward notification failed");
         // check reward data updated on notify
@@ -195,8 +194,6 @@ contract InfraredVaultTest is Helper {
     }
 
     function testRewardTokenAlreadyAdded() public {
-        uint256 rewardAmount = 1000 ether;
-
         vm.startPrank(address(infrared));
         vm.expectRevert(bytes(""));
         infraredVault.addReward(address(rewardsToken), 30 days);
@@ -861,7 +858,7 @@ contract InfraredVaultTest is Helper {
         uint256 right,
         uint256 _tolerance,
         string memory message
-    ) internal {
+    ) internal pure {
         if (left > right) {
             assertTrue(left - right <= _tolerance, message);
         } else {
@@ -912,7 +909,7 @@ contract InfraredVaultTest is Helper {
     }
 
     function testGetAllRewardsForUser() public {
-        address user = address(0x123);
+        // address user = address(0x123);
         uint256 stakeAmount = 100 ether;
         uint256 rewardAmount = 1000 ether;
 
@@ -973,9 +970,6 @@ contract InfraredVaultTest is Helper {
 
     function testGetAllRewardsForUserOnlyOneRewardToken() public {
         testGetAllRewardsForUser();
-
-        address user = address(0x123);
-        address user2 = address(0x456);
 
         // stake for user2
         deal(address(wbera), user2, 100 ether);
@@ -1049,7 +1043,7 @@ contract InfraredVaultTest is Helper {
     function testRewardPerTokenPrecisionHandling() public {
         // Setup
         uint256 rewardDuration = 7 days;
-        MockERC20 stakingToken = MockERC20(address(wbera));
+        MockERC20 _stakingToken = MockERC20(address(wbera));
 
         vm.startPrank(address(infrared));
         infraredVault.updateRewardsDuration(
@@ -1059,9 +1053,9 @@ contract InfraredVaultTest is Helper {
 
         // User stakes
         uint256 stakingAmount = 1 ether;
-        deal(address(stakingToken), user, stakingAmount);
+        deal(address(_stakingToken), user, stakingAmount);
         vm.startPrank(user);
-        stakingToken.approve(address(infraredVault), stakingAmount);
+        _stakingToken.approve(address(infraredVault), stakingAmount);
         infraredVault.stake(stakingAmount);
         vm.stopPrank();
 

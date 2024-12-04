@@ -52,7 +52,6 @@ contract User is Test {
 
         address user = users[userIndex];
 
-        IInfraredVault[] memory vs = keeper.getVaults();
         InfraredVault vault =
             InfraredVault(address(keeper.getVaults()[vaultIndex]));
         address stakingToken = address(vault.stakingToken());

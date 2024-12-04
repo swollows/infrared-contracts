@@ -1,5 +1,5 @@
 [profile.default]
-ignored_error_codes = [1878, 5574]
+ignored_error_codes = [1878, 5574, 3860]
 evm_version = 'shanghai'
 solc = '0.8.26'
 cache = true

@@ -11,7 +11,7 @@ import {IBERA} from "@staking/IBERA.sol";
 import {IBERABaseTest} from "./IBERABase.t.sol";
 
 contract IBERATest is IBERABaseTest {
-    function testInitializeMintsToIBERA() public {
+    function testInitializeMintsToIBERA() public view {
         uint256 min = IBERAConstants.MINIMUM_DEPOSIT;
         uint256 fee = IBERAConstants.MINIMUM_DEPOSIT_FEE;
 
@@ -95,7 +95,8 @@ contract IBERATest is IBERABaseTest {
         uint256 pending = ibera.pending();
         uint256 confirmed = ibera.confirmed();
 
-        address(receivor).call{value: 1 ether}("");
+        (bool success,) = address(receivor).call{value: 1 ether}("");
+        assertTrue(success);
         uint256 balanceReceivor = address(receivor).balance;
         uint256 protocolFeesReceivor = receivor.shareholderFees();
 
@@ -146,11 +147,12 @@ contract IBERATest is IBERABaseTest {
         uint256 fee = IBERAConstants.MINIMUM_DEPOSIT_FEE;
         uint256 value = 0.01 ether;
 
-        address(receivor).call{value: value}("");
-        uint256 balanceReceivor = address(receivor).balance;
+        (bool success,) = address(receivor).call{value: value}("");
+        assertTrue(success);
+
         uint256 protocolFeesReceivor = receivor.shareholderFees();
 
-        (uint256 amount, uint256 protocolFee) = receivor.distribution();
+        (uint256 amount,) = receivor.distribution();
         assertTrue(amount < min + fee);
 
         ibera.compound();
@@ -178,9 +180,6 @@ contract IBERATest is IBERABaseTest {
         uint256 deposits = ibera.deposits();
         uint256 totalSupply = ibera.totalSupply();
         uint256 sharesAlice = ibera.balanceOf(alice);
-
-        uint256 depositorBalance = address(depositor).balance;
-        uint256 depositorFees = depositor.fees();
 
         uint256 min = IBERAConstants.MINIMUM_DEPOSIT;
         uint256 fee = IBERAConstants.MINIMUM_DEPOSIT_FEE;
@@ -255,9 +254,10 @@ contract IBERATest is IBERABaseTest {
     }
 
     function testMintCompoundsPrior() public {
-        address(receivor).call{value: 1 ether}("");
+        (bool success,) = address(receivor).call{value: 1 ether}("");
+        assertTrue(success);
 
-        (uint256 comp_, uint256 pf_) = receivor.distribution();
+        (uint256 comp_,) = receivor.distribution();
 
         uint256 totalSupply = ibera.totalSupply();
         uint256 deposits = ibera.deposits();
@@ -364,7 +364,7 @@ contract IBERATest is IBERABaseTest {
 
         // need to donate 1e16 ether to reach this error given min deposit of 0.1 ether
         vm.deal(address(receivor), 1e16 ether);
-        (uint256 comp_, uint256 pf_) = receivor.distribution();
+        (uint256 comp_,) = receivor.distribution();
 
         uint256 shares =
             Math.mulDiv(ibera.totalSupply(), min, ibera.deposits() + comp_);
@@ -395,7 +395,6 @@ contract IBERATest is IBERABaseTest {
 
         uint256 totalSupply = ibera.totalSupply();
         uint256 sharesAlice = ibera.balanceOf(alice);
-        uint256 deposits = ibera.deposits();
 
         uint256 fee = IBERAConstants.MINIMUM_WITHDRAW_FEE;
         uint256 shares = sharesAlice / 3;
@@ -527,7 +526,8 @@ contract IBERATest is IBERABaseTest {
         assertEq(ibera.confirmed(), _reserves);
         assertEq(depositor.reserves(), 0);
 
-        address(receivor).call{value: 1 ether}("");
+        (bool success,) = address(receivor).call{value: 1 ether}("");
+        assertTrue(success);
 
         (uint256 comp_,) = receivor.distribution();
         assertTrue(
@@ -724,7 +724,7 @@ contract IBERATest is IBERABaseTest {
         (uint256 previewShares, uint256 previewFee) = ibera.previewMint(value);
 
         // Do actual mint
-        (uint256 nonce, uint256 actualShares) = ibera.mint{value: value}(alice);
+        (, uint256 actualShares) = ibera.mint{value: value}(alice);
 
         // Compare results
         assertEq(
@@ -738,9 +738,10 @@ contract IBERATest is IBERABaseTest {
     function testPreviewMintWithCompoundMatchesActualMint() public {
         uint256 min = IBERAConstants.MINIMUM_DEPOSIT;
         uint256 fee = IBERAConstants.MINIMUM_DEPOSIT_FEE;
-        address(receivor).call{value: 1 ether}("");
+        (bool success,) = address(receivor).call{value: 1 ether}("");
+        assertTrue(success);
 
-        (uint256 compAmount, uint256 pf) = receivor.distribution();
+        (uint256 compAmount,) = receivor.distribution();
         assertTrue(compAmount >= min + fee);
 
         uint256 value = 100 ether;
@@ -749,7 +750,7 @@ contract IBERATest is IBERABaseTest {
         (uint256 previewShares, uint256 previewFee) = ibera.previewMint(value);
 
         // Do actual mint which will compound first
-        (uint256 nonce, uint256 actualShares) = ibera.mint{value: value}(alice);
+        (, uint256 actualShares) = ibera.mint{value: value}(alice);
 
         assertEq(
             previewShares,
@@ -761,7 +762,7 @@ contract IBERATest is IBERABaseTest {
         );
     }
 
-    function testPreviewMintReturnsZeroForInvalidAmount() public {
+    function testPreviewMintReturnsZeroForInvalidAmount() public view {
         uint256 min = IBERAConstants.MINIMUM_DEPOSIT;
         uint256 fee = IBERAConstants.MINIMUM_DEPOSIT_FEE;
         uint256 value = 0.001 ether;
@@ -794,7 +795,7 @@ contract IBERATest is IBERABaseTest {
 
         // Do actual burn
         vm.prank(alice);
-        (uint256 nonce, uint256 actualAmount) =
+        (, uint256 actualAmount) =
             ibera.burn{value: IBERAConstants.MINIMUM_WITHDRAW_FEE}(bob, shares);
 
         assertEq(
@@ -827,7 +828,8 @@ contract IBERATest is IBERABaseTest {
         assertEq(depositor.reserves(), 0);
 
         // Add rewards to test compound
-        address(receivor).call{value: 1 ether}("");
+        (bool success,) = address(receivor).call{value: 1 ether}("");
+        assertTrue(success);
 
         uint256 shares = ibera.balanceOf(alice) / 3;
         assertTrue(shares > 0);
@@ -837,7 +839,7 @@ contract IBERATest is IBERABaseTest {
 
         // Do actual burn
         vm.prank(alice);
-        (uint256 nonce, uint256 actualAmount) =
+        (, uint256 actualAmount) =
             ibera.burn{value: IBERAConstants.MINIMUM_WITHDRAW_FEE}(bob, shares);
 
         assertEq(
@@ -852,7 +854,7 @@ contract IBERATest is IBERABaseTest {
         );
     }
 
-    function testPreviewBurnReturnsZeroForInvalidShares() public {
+    function testPreviewBurnReturnsZeroForInvalidShares() public view {
         (uint256 amount, uint256 fee) = ibera.previewBurn(0);
         assertEq(amount, 0, "Should return 0 amount for 0 shares");
         assertEq(
@@ -896,7 +898,6 @@ contract IBERATest is IBERABaseTest {
     }
 
     function testRegisterRevertsWhenUnauthorized() public {
-        uint256 stake = ibera.stakes(pubkey0);
         uint256 amount = 1 ether;
         int256 delta = int256(amount);
         vm.expectRevert(IIBERA.Unauthorized.selector);
@@ -935,11 +936,11 @@ contract IBERATest is IBERABaseTest {
         assertEq(ibera.signatures(pubkey0), signature0);
     }
 
-    function testSetDepositSignatureEmitsSetDepositSignature() public {
+    function testSetDepositSignatureEmitsSetDepositSignature() public view {
         assertEq(ibera.signatures(pubkey0).length, 0);
     }
 
-    function testSetDepositSignatureRevertsWhenUnauthorized() public {
+    function testSetDepositSignatureRevertsWhenUnauthorized() public view {
         assertEq(ibera.signatures(pubkey0).length, 0);
     }
 }

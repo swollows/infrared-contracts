@@ -11,7 +11,7 @@ contract InfraredInitializationTest is Helper {
                 Initialization and Setup Tests
     //////////////////////////////////////////////////////////////*/
 
-    function testInitializationParameters() public {
+    function testInitializationParameters() public view {
         assertEq(
             address(infrared.ibgt()), address(ibgt), "Incorrect IBGT address"
         );
@@ -39,7 +39,7 @@ contract InfraredInitializationTest is Helper {
         );
     }
 
-    function testRoleAssignments() public {
+    function testRoleAssignments() public view {
         assertTrue(
             infrared.hasRole(infrared.DEFAULT_ADMIN_ROLE(), admin),
             "Admin should have DEFAULT_ADMIN_ROLE"

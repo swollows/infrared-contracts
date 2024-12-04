@@ -303,9 +303,6 @@ contract InfraredTest is Helper {
         vm.deal(address(infrared), mintNativeAssetAmount);
 
         address collectAddress = address(collector);
-        uint256 collectorMockAssetBalanceBefore =
-            mockAsset.balanceOf(collectAddress);
-        uint256 collectorWberaBalanceBefore = wbera.balanceOf(collectAddress);
 
         uint256 mockAssetFeeAmount =
             infrared.protocolFeeAmounts(address(mockAsset));
@@ -328,10 +325,6 @@ contract InfraredTest is Helper {
         address user = address(10);
         vm.startPrank(user);
         infrared.harvestBribes(tokens);
-
-        uint256 collectorMockAssetBalanceAfter =
-            mockAsset.balanceOf(collectAddress);
-        uint256 collectorWberaBalanceAfter = wbera.balanceOf(collectAddress);
 
         assertEq(
             mockAsset.balanceOf(address(collector)),
@@ -448,7 +441,6 @@ contract InfraredTest is Helper {
         vm.warp(block.timestamp + 10 days); // Simulating 10 days for reward accrual
 
         // Step 5: Harvest Vault - Distributing Rewards
-        uint256 vaultBalanceBefore = ibgt.balanceOf(address(vault));
 
         vm.startPrank(address(vault));
         vault.rewardsVault().setOperator(address(infrared));
@@ -461,8 +453,6 @@ contract InfraredTest is Helper {
         uint128[] memory amounts = new uint128[](1);
         amounts[0] = uint128(bgt.balanceOf(address(infrared)))
             - bgt.queuedBoost(address(infrared)) - bgt.boosts(address(infrared));
-
-        uint256 unboostedBalance = bgt.unboostedBalanceOf(address(infrared));
 
         // Step 7: Queue the boosts.
         vm.startPrank(address(keeper));
@@ -505,16 +495,14 @@ contract InfraredTest is Helper {
 
         // assert revert during pause
         vm.expectRevert(Errors.RegistrationPaused.selector);
-        InfraredVault vault1 =
-            InfraredVault(address(infrared.registerVault(address(honey))));
+        InfraredVault(address(infrared.registerVault(address(honey))));
 
         // un-pause staking
         vm.prank(infraredGovernance);
         infrared.setVaultRegistrationPauseStatus(false);
 
         // assert anyone can register a new vault
-        InfraredVault vault2 =
-            InfraredVault(address(infrared.registerVault(address(honey))));
+        InfraredVault(address(infrared.registerVault(address(honey))));
     }
 
     function testSetRedSuccess() public {

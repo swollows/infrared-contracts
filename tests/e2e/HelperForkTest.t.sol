@@ -94,9 +94,9 @@ contract HelperForkTest is Test {
 
     /// @notice Simulates distribution of POL for current block.number
     /// @param coinbase address  The address of the coinbase to distribute POL for
-    function distributePol(address coinbase) public {
-        uint256 blockNumber = block.number; // TODO: fix for berachain distributor updates
-            /* TODO: fix .. vm.startPrank(berachainDistributor.prover());
+    function distributePol(address coinbase) public view {
+        // uint256 blockNumber = block.number; // TODO: fix for berachain distributor updates
+        /* TODO: fix .. vm.startPrank(berachainDistributor.prover());
         berachainDistributor.distributeFor(coinbase, blockNumber);
         vm.stopPrank();
         */

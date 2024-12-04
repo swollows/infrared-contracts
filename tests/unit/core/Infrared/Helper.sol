@@ -42,7 +42,7 @@ abstract contract Helper is POLTest {
     RED public red;
 
     Voter public voter;
-    VotingEscrow public IRED;
+    VotingEscrow public ired;
 
     IBERA public ibera;
     IBERADepositor public depositor;
@@ -139,7 +139,7 @@ abstract contract Helper is POLTest {
 
         // IRED voting
         voter = Voter(setupProxy(address(new Voter(address(infrared)))));
-        IRED = new VotingEscrow(
+        ired = new VotingEscrow(
             address(this), address(red), address(voter), address(infrared)
         );
 
@@ -153,7 +153,7 @@ abstract contract Helper is POLTest {
             address(ibera),
             1 days
         ); // make helper contract the admin
-        voter.initialize(address(IRED));
+        voter.initialize(address(ired));
 
         // initialize ibera proxies
         depositor.initialize(admin, address(ibera));

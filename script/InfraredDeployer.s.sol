@@ -46,7 +46,7 @@ contract InfraredDeployer is Script {
         address _bgt,
         address _berachainRewardsFactory,
         address _beraChef,
-        address _beaconDeposit,
+        address,
         address _wbera,
         address _honey,
         uint256 _rewardsDuration,

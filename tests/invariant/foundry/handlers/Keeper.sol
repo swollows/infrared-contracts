@@ -47,8 +47,7 @@ contract Keeper is Test {
 
         MockERC20 stakingAsset = new MockERC20("MockPool", "MP", 18);
 
-        address beraVault =
-            rewardsFactory.createRewardVault(address(stakingAsset));
+        rewardsFactory.createRewardVault(address(stakingAsset));
 
         vm.startPrank(keeper);
         address[] memory rewardTokens = new address[](1);

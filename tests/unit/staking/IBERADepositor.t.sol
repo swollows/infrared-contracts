@@ -312,9 +312,8 @@ contract IBERADepositorTest is IBERABaseTest {
         testExecuteUpdatesSlipsNonceFeesWhenFillAmounts();
 
         uint256 nonce = depositor.nonceSubmit();
-        uint256 fees = depositor.fees();
-        (, uint256 feeFirst, uint256 amountFirst) = depositor.slips(nonce);
-        (, uint256 feeSecond, uint256 amountSecond) = depositor.slips(nonce + 1);
+        (,, uint256 amountFirst) = depositor.slips(nonce);
+        (,, uint256 amountSecond) = depositor.slips(nonce + 1);
 
         assertEq(ibera.signatures(pubkey0), signature0);
 
@@ -347,9 +346,9 @@ contract IBERADepositorTest is IBERABaseTest {
         testExecuteUpdatesSlipsNonceFeesWhenFillAmounts();
 
         uint256 nonce = depositor.nonceSubmit();
-        uint256 fees = depositor.fees();
-        (, uint256 feeFirst, uint256 amountFirst) = depositor.slips(nonce);
-        (, uint256 feeSecond, uint256 amountSecond) = depositor.slips(nonce + 1);
+
+        (,, uint256 amountFirst) = depositor.slips(nonce);
+        (,, uint256 amountSecond) = depositor.slips(nonce + 1);
 
         assertEq(ibera.signatures(pubkey0), signature0);
 
@@ -370,7 +369,7 @@ contract IBERADepositorTest is IBERABaseTest {
         testExecuteUpdatesSlipsNonceFeesWhenFillAmounts();
 
         uint256 nonce = depositor.nonceSubmit();
-        uint256 fees = depositor.fees();
+
         (, uint256 feeFirst, uint256 amountFirst) = depositor.slips(nonce);
         (, uint256 feeSecond, uint256 amountSecond) = depositor.slips(nonce + 1);
 
@@ -399,9 +398,9 @@ contract IBERADepositorTest is IBERABaseTest {
         testExecuteUpdatesSlipsNonceFeesWhenFillAmounts();
 
         uint256 nonce = depositor.nonceSubmit();
-        uint256 fees = depositor.fees();
-        (, uint256 feeFirst, uint256 amountFirst) = depositor.slips(nonce);
-        (, uint256 feeSecond, uint256 amountSecond) = depositor.slips(nonce + 1);
+
+        (,, uint256 amountFirst) = depositor.slips(nonce);
+        (,, uint256 amountSecond) = depositor.slips(nonce + 1);
 
         assertEq(ibera.signatures(pubkey0), signature0);
 
@@ -429,9 +428,9 @@ contract IBERADepositorTest is IBERABaseTest {
         testExecuteUpdatesSlipsNonceFeesWhenFillAmounts();
 
         uint256 nonce = depositor.nonceSubmit();
-        uint256 fees = depositor.fees();
-        (, uint256 feeFirst, uint256 amountFirst) = depositor.slips(nonce);
-        (, uint256 feeSecond, uint256 amountSecond) = depositor.slips(nonce + 1);
+
+        (,, uint256 amountFirst) = depositor.slips(nonce);
+        (,, uint256 amountSecond) = depositor.slips(nonce + 1);
 
         assertEq(ibera.signatures(pubkey0), signature0);
 
@@ -447,10 +446,9 @@ contract IBERADepositorTest is IBERABaseTest {
         testExecuteUpdatesSlipsNonceFeesWhenFillAmounts();
 
         uint256 nonce = depositor.nonceSubmit();
-        uint256 fees = depositor.fees();
-        (uint256 timestampFirst, uint256 feeFirst, uint256 amountFirst) =
-            depositor.slips(nonce);
-        (uint256 timestampSecond, uint256 feeSecond, uint256 amountSecond) =
+
+        (,, uint256 amountFirst) = depositor.slips(nonce);
+        (uint256 timestampSecond,, uint256 amountSecond) =
             depositor.slips(nonce + 1);
 
         assertEq(ibera.signatures(pubkey0), signature0);
@@ -472,9 +470,9 @@ contract IBERADepositorTest is IBERABaseTest {
         testExecuteUpdatesSlipsNonceFeesWhenFillAmounts();
 
         uint256 nonce = depositor.nonceSubmit();
-        uint256 fees = depositor.fees();
-        (, uint256 feeFirst, uint256 amountFirst) = depositor.slips(nonce);
-        (, uint256 feeSecond, uint256 amountSecond) = depositor.slips(nonce + 1);
+
+        (,, uint256 amountFirst) = depositor.slips(nonce);
+        (,, uint256 amountSecond) = depositor.slips(nonce + 1);
 
         assertEq(ibera.signatures(pubkey0), signature0);
 
@@ -501,9 +499,9 @@ contract IBERADepositorTest is IBERABaseTest {
         assertEq(ibera.signatures(pubkey0), signature0);
 
         uint256 nonce = depositor.nonceSubmit();
-        uint256 fees = depositor.fees();
-        (, uint256 feeFirst, uint256 amountFirst) = depositor.slips(nonce);
-        (, uint256 feeSecond, uint256 amountSecond) = depositor.slips(nonce + 1);
+
+        (,, uint256 amountFirst) = depositor.slips(nonce);
+        (,, uint256 amountSecond) = depositor.slips(nonce + 1);
 
         uint256 amount = ((amountFirst + amountSecond / 4) / 1 gwei) * 1 gwei;
         assertTrue(amount > 32 ether);
@@ -519,9 +517,9 @@ contract IBERADepositorTest is IBERABaseTest {
         testExecuteUpdatesSlipsNonceFeesWhenFillAmounts();
 
         uint256 nonce = depositor.nonceSubmit();
-        uint256 fees = depositor.fees();
-        (, uint256 feeFirst, uint256 amountFirst) = depositor.slips(nonce);
-        (, uint256 feeSecond, uint256 amountSecond) = depositor.slips(nonce + 1);
+
+        (,, uint256 amountFirst) = depositor.slips(nonce);
+        (,, uint256 amountSecond) = depositor.slips(nonce + 1);
 
         assertEq(ibera.signatures(pubkey1).length, 0);
 

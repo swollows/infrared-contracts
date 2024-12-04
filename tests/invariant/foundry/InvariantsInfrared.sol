@@ -189,7 +189,7 @@ contract InvariantsInfrared is Test {
     }
 
     /// forge-config: default.invariant.fail-on-revert = false
-    function invariant_ibgt_minted_equal_to_bgt_rewards() public {
+    function invariant_ibgt_minted_equal_to_bgt_rewards() public view {
         // assert that the total minted ibgt is equal to the total bgt rewards
         assertEq(
             ibgt.totalSupply(),
@@ -199,7 +199,10 @@ contract InvariantsInfrared is Test {
     }
 
     /// forge-config: default.invariant.fail-on-revert = false
-    function invariant_delegated_amount_not_bigger_than_BGT_balance() public {
+    function invariant_delegated_amount_not_bigger_than_BGT_balance()
+        public
+        view
+    {
         // assert that the total delegated bgt is not bigger than the total bgt rewards
         assertLe(
             governanceHandler.totalDelegatedBgt(),
@@ -217,6 +220,7 @@ contract InvariantsInfrared is Test {
     /// forge-config: default.invariant.fail-on-revert = false
     function invariant_delegated_amount_not_bigger_than_IBGT_total_supply()
         public
+        view
     {
         // assert that the total delegated bgt is not bigger than the total bgt rewards
         assertTrue(
@@ -228,7 +232,7 @@ contract InvariantsInfrared is Test {
     /*//////////////////////////////////////////////////////////////
                     User Invariants
     //////////////////////////////////////////////////////////////*/
-    function invariant_user_earned_ibgt_rewards() public {
+    function invariant_user_earned_ibgt_rewards() public view {
         // assert that the user earned ibgt rewards
         address[] memory users = userHandler.getUsers();
         uint256 userRewards;
