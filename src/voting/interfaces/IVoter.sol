@@ -120,16 +120,6 @@ interface IVoter {
     );
 
     /**
-     * @notice Emitted when a token's whitelist status changes
-     * @param whitelister Address making the whitelist change
-     * @param token Token address being whitelisted/unwhitelisted
-     * @param _bool New whitelist status
-     */
-    event WhitelistToken(
-        address indexed whitelister, address indexed token, bool indexed _bool
-    );
-
-    /**
      * @notice Emitted when an NFT's whitelist status changes
      * @param whitelister Address making the whitelist change
      * @param tokenId ID of the NFT being whitelisted/unwhitelisted
@@ -138,6 +128,21 @@ interface IVoter {
     event WhitelistNFT(
         address indexed whitelister, uint256 indexed tokenId, bool indexed _bool
     );
+
+    /**
+     * @notice Emitted when a killed bribe vault is skipped
+     * @param stakingToken Address of staking token for vault to skip
+     * @param tokenId ID of the veNFT used to vote
+     */
+    event SkipKilledBribeVault(
+        address indexed stakingToken, uint256 indexed tokenId
+    );
+
+    /**
+     * @notice Emitted when maximum voting number is set
+     * @param maxVotingNum New maximum number of allowed votes
+     */
+    event MaxVotingNumSet(uint256 indexed maxVotingNum);
 
     /*//////////////////////////////////////////////////////////////
                             VIEW FUNCTIONS

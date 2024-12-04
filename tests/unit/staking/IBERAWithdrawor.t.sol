@@ -79,12 +79,9 @@ contract IBERAWithdraworTest is IBERABaseTest {
     }
 
     function testQueueStoresRequest() public {
-        uint256 fee = IBERAConstants.MINIMUM_WITHDRAW_FEE + 1;
-        uint256 amount = 1 ether;
-        address receiver = alice;
         uint256 confirmed = ibera.confirmed();
-        assertTrue(amount <= confirmed);
-        vm.deal(address(ibera), fee);
+        assertTrue(1 ether <= confirmed);
+        vm.deal(address(ibera), IBERAConstants.MINIMUM_WITHDRAW_FEE + 1);
         uint256 nonce = withdrawor.nonceRequest();
         (
             address _receiver,
@@ -99,7 +96,9 @@ contract IBERAWithdraworTest is IBERABaseTest {
         assertEq(_amountSubmit, 0);
         assertEq(_amountProcess, 0);
         vm.prank(address(ibera));
-        withdrawor.queue{value: fee}(receiver, amount);
+        withdrawor.queue{value: IBERAConstants.MINIMUM_WITHDRAW_FEE + 1}(
+            alice, 1 ether
+        );
         (
             address receiver_,
             uint96 timestamp_,
@@ -107,11 +106,11 @@ contract IBERAWithdraworTest is IBERABaseTest {
             uint256 amountSubmit_,
             uint256 amountProcess_
         ) = withdrawor.requests(nonce);
-        assertEq(receiver_, receiver);
+        assertEq(receiver_, alice);
         assertEq(timestamp_, uint96(block.timestamp));
-        assertEq(fee_, fee);
-        assertEq(amountSubmit_, amount);
-        assertEq(amountProcess_, amount);
+        assertEq(fee_, IBERAConstants.MINIMUM_WITHDRAW_FEE + 1);
+        assertEq(amountSubmit_, 1 ether);
+        assertEq(amountProcess_, 1 ether);
     }
 
     function testQueueEmitsQueue() public {
@@ -128,62 +127,73 @@ contract IBERAWithdraworTest is IBERABaseTest {
         withdrawor.queue{value: fee}(receiver, amount);
     }
 
+    // test specific storage to circumvent stack to deep error
+    uint256 feeT1;
+    uint256 feesT1;
+    uint256 rebalancingT1;
+    uint256 reservesT1;
+
     function testQueueMultiple() public {
-        uint256 fee = IBERAConstants.MINIMUM_WITHDRAW_FEE;
-        uint256 amount = 42 ether;
+        feeT1 = IBERAConstants.MINIMUM_WITHDRAW_FEE;
         uint256 confirmed = ibera.confirmed();
-        assertTrue(amount <= confirmed);
-        vm.deal(address(ibera), 2 * fee);
-        uint256 fees = withdrawor.fees();
-        uint256 rebalancing = withdrawor.rebalancing();
-        uint256 reserves = withdrawor.reserves();
+        assertTrue(42 ether <= confirmed);
+        vm.deal(address(ibera), 2 * feeT1);
+        feesT1 = withdrawor.fees();
+        rebalancingT1 = withdrawor.rebalancing();
+        reservesT1 = withdrawor.reserves();
         uint256 nonce = withdrawor.nonceRequest();
         vm.prank(address(keeper));
-        withdrawor.queue{value: fee}(address(depositor), 12 ether);
+        withdrawor.queue{value: feeT1}(address(depositor), 12 ether);
         vm.prank(address(ibera));
-        withdrawor.queue{value: fee}(alice, 14 ether);
+        withdrawor.queue{value: feeT1}(alice, 14 ether);
         vm.prank(address(ibera));
-        withdrawor.queue{value: fee}(bob, 16 ether);
+        withdrawor.queue{value: feeT1}(bob, 16 ether);
         assertEq(withdrawor.nonceRequest(), nonce + 3);
-        assertEq(withdrawor.fees(), fees + 3 * fee);
-        assertEq(withdrawor.reserves(), reserves);
-        assertEq(withdrawor.rebalancing(), rebalancing + 12 ether);
-        (
-            address receiverFirst,
-            uint96 timestampFirst,
-            uint256 feeFirst,
-            uint256 amountSubmitFirst,
-            uint256 amountProcessFirst
-        ) = withdrawor.requests(nonce);
-        assertEq(receiverFirst, address(depositor));
-        assertEq(timestampFirst, uint96(block.timestamp));
-        assertEq(feeFirst, fee);
-        assertEq(amountSubmitFirst, 12 ether);
-        assertEq(amountProcessFirst, 12 ether);
-        (
-            address receiverSecond,
-            uint96 timestampSecond,
-            uint256 feeSecond,
-            uint256 amountSubmitSecond,
-            uint256 amountProcessSecond
-        ) = withdrawor.requests(nonce + 1);
-        assertEq(receiverSecond, address(alice));
-        assertEq(timestampSecond, uint96(block.timestamp));
-        assertEq(feeSecond, fee);
-        assertEq(amountSubmitSecond, 14 ether);
-        assertEq(amountProcessSecond, 14 ether);
-        (
-            address receiverThird,
-            uint96 timestampThird,
-            uint256 feeThird,
-            uint256 amountSubmitThird,
-            uint256 amountProcessThird
-        ) = withdrawor.requests(nonce + 2);
-        assertEq(receiverThird, address(bob));
-        assertEq(timestampThird, uint96(block.timestamp));
-        assertEq(feeThird, fee);
-        assertEq(amountSubmitThird, 16 ether);
-        assertEq(amountProcessThird, 16 ether);
+        assertEq(withdrawor.fees(), feesT1 + 3 * feeT1);
+        assertEq(withdrawor.reserves(), reservesT1);
+        assertEq(withdrawor.rebalancing(), rebalancingT1 + 12 ether);
+        {
+            (
+                address receiverFirst,
+                uint96 timestampFirst,
+                uint256 feeFirst,
+                uint256 amountSubmitFirst,
+                uint256 amountProcessFirst
+            ) = withdrawor.requests(nonce);
+            assertEq(receiverFirst, address(depositor));
+            assertEq(timestampFirst, uint96(block.timestamp));
+            assertEq(feeFirst, feeT1);
+            assertEq(amountSubmitFirst, 12 ether);
+            assertEq(amountProcessFirst, 12 ether);
+        }
+        {
+            (
+                address receiverSecond,
+                uint96 timestampSecond,
+                uint256 feeSecond,
+                uint256 amountSubmitSecond,
+                uint256 amountProcessSecond
+            ) = withdrawor.requests(nonce + 1);
+            assertEq(receiverSecond, address(alice));
+            assertEq(timestampSecond, uint96(block.timestamp));
+            assertEq(feeSecond, feeT1);
+            assertEq(amountSubmitSecond, 14 ether);
+            assertEq(amountProcessSecond, 14 ether);
+        }
+        {
+            (
+                address receiverThird,
+                uint96 timestampThird,
+                uint256 feeThird,
+                uint256 amountSubmitThird,
+                uint256 amountProcessThird
+            ) = withdrawor.requests(nonce + 2);
+            assertEq(receiverThird, address(bob));
+            assertEq(timestampThird, uint96(block.timestamp));
+            assertEq(feeThird, feeT1);
+            assertEq(amountSubmitThird, 16 ether);
+            assertEq(amountProcessThird, 16 ether);
+        }
     }
 
     function testQueueRevertsWhenUnauthorized() public {
@@ -456,20 +466,28 @@ contract IBERAWithdraworTest is IBERABaseTest {
         assertEq(amountProcessFirst_, amountProcessFirst);
     }
 
+    // test specific storage to circumvent stack to deep error
+    uint256 nonceRequestT2;
+    uint256 nonceSubmitT2;
+    uint256 nonceProcessT2;
+    uint256 feesT2;
+    uint256 rebalancingT2;
+    uint256 reservesT2;
+
     function testExecuteUpdatesRequestsNonceFeesWhenPartialLastAmount()
         public
     {
         testQueueMultiple();
-        uint256 nonceRequest = withdrawor.nonceRequest();
-        uint256 nonceSubmit = withdrawor.nonceSubmit();
-        uint256 nonceProcess = withdrawor.nonceProcess();
+        nonceRequestT2 = withdrawor.nonceRequest();
+        nonceSubmitT2 = withdrawor.nonceSubmit();
+        nonceProcessT2 = withdrawor.nonceProcess();
         // should have the min deposit from iibera.initialize call to push through
-        assertEq(nonceRequest, 4); // 0 on init, 3 on test multiple
-        assertEq(nonceSubmit, 1); // none submitted yet
-        assertEq(nonceProcess, 1); // nonce processed yet
-        uint256 fees = withdrawor.fees();
-        uint256 rebalancing = withdrawor.rebalancing();
-        uint256 reserves = withdrawor.reserves();
+        assertEq(nonceRequestT2, 4); // 0 on init, 3 on test multiple
+        assertEq(nonceSubmitT2, 1); // none submitted yet
+        assertEq(nonceProcessT2, 1); // nonce processed yet
+        feesT2 = withdrawor.fees();
+        rebalancingT2 = withdrawor.rebalancing();
+        reservesT2 = withdrawor.reserves();
         (
             address receiverFirst,
             uint96 timestampFirst,
@@ -484,16 +502,49 @@ contract IBERAWithdraworTest is IBERABaseTest {
             uint256 amountSubmitSecond,
             uint256 amountProcessSecond
         ) = withdrawor.requests(2);
-        uint256 amount = amountSubmitFirst + amountSubmitSecond / 4;
-        assertTrue(amount % 1 gwei == 0);
+        // uint256 amount = amountSubmitFirst + amountSubmitSecond / 4;
+        assertTrue((amountSubmitFirst + amountSubmitSecond / 4) % 1 gwei == 0);
         vm.prank(keeper);
-        withdrawor.execute(pubkey0, amount);
-        assertEq(withdrawor.nonceRequest(), nonceRequest);
-        assertEq(withdrawor.nonceSubmit(), nonceSubmit + 1);
-        assertEq(withdrawor.nonceProcess(), nonceProcess);
-        assertEq(withdrawor.fees(), fees - feeFirst - feeSecond);
-        assertEq(withdrawor.reserves(), reserves);
-        assertEq(withdrawor.rebalancing(), rebalancing);
+        withdrawor.execute(pubkey0, amountSubmitFirst + amountSubmitSecond / 4);
+        assertEq(withdrawor.nonceRequest(), nonceRequestT2);
+        assertEq(withdrawor.nonceSubmit(), nonceSubmitT2 + 1);
+        assertEq(withdrawor.nonceProcess(), nonceProcessT2);
+        assertEq(withdrawor.fees(), feesT2 - feeFirst - feeSecond);
+        assertEq(withdrawor.reserves(), reservesT2);
+        assertEq(withdrawor.rebalancing(), rebalancingT2);
+
+        verifyReceiverFirst(
+            receiverFirst,
+            timestampFirst,
+            feeFirst,
+            amountSubmitFirst,
+            amountProcessFirst
+        );
+        {
+            (
+                address receiverSecond_,
+                uint96 timestampSecond_,
+                uint256 feeSecond_,
+                uint256 amountSubmitSecond_,
+                uint256 amountProcessSecond_
+            ) = withdrawor.requests(2);
+            assertEq(receiverSecond_, receiverSecond);
+            assertEq(timestampSecond_, timestampSecond);
+            assertEq(feeSecond_, 0);
+            assertEq(
+                amountSubmitSecond_, amountSubmitSecond - amountSubmitSecond / 4
+            );
+            assertEq(amountProcessSecond_, amountProcessSecond);
+        }
+    }
+
+    function verifyReceiverFirst(
+        address receiverFirst,
+        uint96 timestampFirst,
+        uint256 feeFirst,
+        uint256 amountSubmitFirst,
+        uint256 amountProcessFirst
+    ) internal {
         (
             address receiverFirst_,
             uint96 timestampFirst_,
@@ -506,20 +557,6 @@ contract IBERAWithdraworTest is IBERABaseTest {
         assertEq(feeFirst_, 0);
         assertEq(amountSubmitFirst_, 0);
         assertEq(amountProcessFirst_, amountProcessFirst);
-        (
-            address receiverSecond_,
-            uint96 timestampSecond_,
-            uint256 feeSecond_,
-            uint256 amountSubmitSecond_,
-            uint256 amountProcessSecond_
-        ) = withdrawor.requests(2);
-        assertEq(receiverSecond_, receiverSecond);
-        assertEq(timestampSecond_, timestampSecond);
-        assertEq(feeSecond_, 0);
-        assertEq(
-            amountSubmitSecond_, amountSubmitSecond - amountSubmitSecond / 4
-        );
-        assertEq(amountProcessSecond_, amountProcessSecond);
     }
 
     // // TODO:
@@ -570,20 +607,10 @@ contract IBERAWithdraworTest is IBERABaseTest {
         uint256 balanceWithdrawPrecompile = address(WITHDRAW_PRECOMPILE).balance;
         uint256 balanceWithdrawor = address(withdrawor).balance;
         uint256 balanceKeeper = address(keeper).balance;
-        (
-            address receiverFirst,
-            uint96 timestampFirst,
-            uint256 feeFirst,
-            uint256 amountSubmitFirst,
-            uint256 amountProcessFirst
-        ) = withdrawor.requests(1);
-        (
-            address receiverSecond,
-            uint96 timestampSecond,
-            uint256 feeSecond,
-            uint256 amountSubmitSecond,
-            uint256 amountProcessSecond
-        ) = withdrawor.requests(2);
+        (,, uint256 feeFirst, uint256 amountSubmitFirst,) =
+            withdrawor.requests(1);
+        (,, uint256 feeSecond, uint256 amountSubmitSecond,) =
+            withdrawor.requests(2);
         uint256 amount = amountSubmitFirst + amountSubmitSecond / 4;
         assertTrue(amount % 1 gwei == 0);
         vm.prank(keeper);
@@ -602,27 +629,14 @@ contract IBERAWithdraworTest is IBERABaseTest {
 
     function testExecuteEmitsExecute() public {
         testQueueMultiple();
-        uint256 nonceRequest = withdrawor.nonceRequest();
         uint256 nonceSubmit = withdrawor.nonceSubmit();
         uint256 nonceProcess = withdrawor.nonceProcess();
         // should have the min deposit from iibera.initialize call to push through
-        assertEq(nonceRequest, 4); // 0 on init, 3 on test multiple
+        assertEq(withdrawor.nonceRequest(), 4); // 0 on init, 3 on test multiple
         assertEq(nonceSubmit, 1); // none submitted yet
         assertEq(nonceProcess, 1); // nonce processed yet
-        (
-            address receiverFirst,
-            uint96 timestampFirst,
-            uint256 feeFirst,
-            uint256 amountSubmitFirst,
-            uint256 amountProcessFirst
-        ) = withdrawor.requests(1);
-        (
-            address receiverSecond,
-            uint96 timestampSecond,
-            uint256 feeSecond,
-            uint256 amountSubmitSecond,
-            uint256 amountProcessSecond
-        ) = withdrawor.requests(2);
+        (,,, uint256 amountSubmitFirst,) = withdrawor.requests(1);
+        (,,, uint256 amountSubmitSecond,) = withdrawor.requests(2);
         uint256 amount = amountSubmitFirst + amountSubmitSecond / 4;
         assertTrue(amount % 1 gwei == 0);
         vm.expectEmit();

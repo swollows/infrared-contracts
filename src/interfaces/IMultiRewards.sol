@@ -74,6 +74,7 @@ interface IMultiRewards {
         uint256 rewardRate;
         uint256 lastUpdateTime;
         uint256 rewardPerTokenStored;
+        uint256 rewardResidual;
     }
 
     /**
@@ -175,7 +176,8 @@ interface IMultiRewards {
             uint256 periodFinish,
             uint256 rewardRate,
             uint256 lastUpdateTime,
-            uint256 rewardPerTokenStored
+            uint256 rewardPerTokenStored,
+            uint256 rewardResidual
         );
 
     /**

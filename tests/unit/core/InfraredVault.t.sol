@@ -125,7 +125,42 @@ contract InfraredVaultTest is Helper {
                         notifyRewardAmount
     //////////////////////////////////////////////////////////////*/
 
-    event RewardAdded(uint256 amount);
+    event RewardAdded(address rewardsToken, uint256 amount);
+
+    function testSuccessfulNotification() public {
+        uint256 rewardAmount = 1000 ether;
+        vm.startPrank(address(infrared));
+        infraredVault.updateRewardsDuration(address(rewardsToken), 30 days);
+        deal(address(rewardsToken), address(infrared), rewardAmount);
+        rewardsToken.approve(address(infraredVault), rewardAmount);
+
+        uint256 residual = rewardAmount % 30 days;
+        vm.expectEmit(true, true, true, true, address(infraredVault));
+        emit IMultiRewards.RewardAdded(
+            address(rewardsToken), rewardAmount - residual
+        );
+
+        infraredVault.notifyRewardAmount(address(rewardsToken), rewardAmount);
+
+        (
+            ,
+            ,
+            uint256 periodFinish,
+            uint256 rewardRate,
+            uint256 lastUpdateTime,
+            uint256 rewardPerTokenStored,
+            uint256 rewardResidual
+        ) = getRewardData(address(infraredVault), address(rewardsToken));
+        assertTrue(periodFinish > block.timestamp, "Reward notification failed");
+        // check reward data updated on notify
+        assertEq(rewardRate, rewardAmount / (30 days));
+        assertEq(lastUpdateTime, block.timestamp);
+        assertEq(periodFinish, block.timestamp + 30 days);
+        assertEq(rewardPerTokenStored, 0);
+        // check balance transfer
+        assertEq(rewardsToken.balanceOf(address(infraredVault)), rewardAmount);
+        assertEq(rewardsToken.balanceOf(address(infrared)), 0);
+    }
 
     function testRevertWithZeroAddressForToken() public {
         uint256 rewardAmount = 1000 ether;
@@ -279,7 +314,7 @@ contract InfraredVaultTest is Helper {
         vm.stopPrank();
 
         // check cannot recover reward token
-        (,,,, uint256 lastUpdateTime,) =
+        (,,,, uint256 lastUpdateTime,,) =
             infraredVault.rewardData(address(rewardsToken));
         assertTrue(lastUpdateTime != 0);
 
@@ -324,7 +359,7 @@ contract InfraredVaultTest is Helper {
         vm.stopPrank();
 
         // Verify that the rewards duration was updated correctly
-        (, uint256 actualDuration,,,,) =
+        (, uint256 actualDuration,,,,,) =
             getRewardData(address(infraredVault), address(rewardsToken));
         assertEq(
             actualDuration,
@@ -449,7 +484,7 @@ contract InfraredVaultTest is Helper {
         assertEq(userBalance, stakeAmount, "User balance should be updated");
 
         // Check total supply in the infraredVault
-        uint256 totalSupply = infraredVault.totalSupply();
+        uint256 totalSupply = infraredVault.totalSupply() - 1; // infared holds a balance of 1 wei in every vault
         assertEq(totalSupply, stakeAmount, "Total supply should be updated");
 
         // Check staking token transferred to berachain rewards infraredVault
@@ -531,7 +566,7 @@ contract InfraredVaultTest is Helper {
         );
 
         // Check total supply in the infraredVault after withdrawal
-        uint256 totalSupply = infraredVault.totalSupply();
+        uint256 totalSupply = infraredVault.totalSupply() - 1; // infared holds a balance of 1 wei in every vault
         assertEq(
             totalSupply, 0, "Total supply should decrease after withdrawal"
         );
@@ -765,7 +800,8 @@ contract InfraredVaultTest is Helper {
             uint256 periodFinish,
             uint256 rewardRate,
             uint256 lastUpdateTime,
-            uint256 rewardPerTokenStored
+            uint256 rewardPerTokenStored,
+            uint256 rewardResidual
         )
     {
         (bool success, bytes memory data) = _infraredVault.call(
@@ -780,9 +816,11 @@ contract InfraredVaultTest is Helper {
             periodFinish,
             rewardRate,
             lastUpdateTime,
-            rewardPerTokenStored
+            rewardPerTokenStored,
+            rewardResidual
         ) = abi.decode(
-            data, (address, uint256, uint256, uint256, uint256, uint256)
+            data,
+            (address, uint256, uint256, uint256, uint256, uint256, uint256)
         );
         return (
             rewardsDistributor,
@@ -790,7 +828,8 @@ contract InfraredVaultTest is Helper {
             periodFinish,
             rewardRate,
             lastUpdateTime,
-            rewardPerTokenStored
+            rewardPerTokenStored,
+            rewardResidual
         );
     }
 
@@ -982,8 +1021,6 @@ contract InfraredVaultTest is Helper {
     }
 
     function testGetAllRewardsForUserWithNoStake() public {
-        address user = address(0x123);
-
         // Setup: Add reward token without any stakes or rewards
         MockERC20 rewardToken = new MockERC20("Reward", "RWD", 18);
 
@@ -1006,6 +1043,71 @@ contract InfraredVaultTest is Helper {
         // Verify results
         assertEq(
             rewards.length, 0, "Should have 2 reward tokens but zero amounts"
+        );
+    }
+
+    function testRewardPerTokenPrecisionHandling() public {
+        // Setup
+        uint256 rewardDuration = 7 days;
+        MockERC20 stakingToken = MockERC20(address(wbera));
+
+        vm.startPrank(address(infrared));
+        infraredVault.updateRewardsDuration(
+            address(rewardsToken), rewardDuration
+        );
+        vm.stopPrank();
+
+        // User stakes
+        uint256 stakingAmount = 1 ether;
+        deal(address(stakingToken), user, stakingAmount);
+        vm.startPrank(user);
+        stakingToken.approve(address(infraredVault), stakingAmount);
+        infraredVault.stake(stakingAmount);
+        vm.stopPrank();
+
+        // Notify reward with a residual
+        uint256 rewardAmount = rewardDuration - 1; // This will create a residual
+        deal(address(rewardsToken), address(infrared), rewardAmount);
+        vm.startPrank(address(infrared));
+        rewardsToken.approve(address(infraredVault), rewardAmount);
+        infraredVault.notifyRewardAmount(address(rewardsToken), rewardAmount);
+        vm.stopPrank();
+
+        // Check that the rewardPerToken is zero due to precision loss
+        assertEq(infraredVault.rewardPerToken(address(rewardsToken)), 0);
+
+        // Skip time to simulate the reward period
+        skip(rewardDuration);
+
+        // Check that no rewards are claimable due to precision loss
+        uint256 balanceBefore = rewardsToken.balanceOf(user);
+        vm.startPrank(user);
+        infraredVault.getReward();
+        uint256 balanceAfter = rewardsToken.balanceOf(user);
+        vm.stopPrank();
+        assertEq(balanceAfter - balanceBefore, 0);
+
+        // Notify reward again to check if residual is handled
+        uint256 additionalRewardAmount = rewardDuration + 1; // Add more to cover residual
+        deal(address(rewardsToken), address(infrared), additionalRewardAmount);
+        vm.startPrank(address(infrared));
+        rewardsToken.approve(address(infraredVault), additionalRewardAmount);
+        infraredVault.notifyRewardAmount(
+            address(rewardsToken), additionalRewardAmount
+        );
+        vm.stopPrank();
+
+        // Skip time again
+        skip(rewardDuration);
+
+        // Check that rewards are now claimable
+        balanceBefore = rewardsToken.balanceOf(user);
+        vm.startPrank(user);
+        infraredVault.getReward();
+        balanceAfter = rewardsToken.balanceOf(user);
+        vm.stopPrank();
+        assertTrue(
+            balanceAfter - balanceBefore > 0, "Rewards should be claimable"
         );
     }
 }

@@ -229,6 +229,7 @@ abstract contract MultiRewards is ReentrancyGuard, Pausable, IMultiRewards {
         nonReentrant
         updateReward(_user)
     {
+        onReward();
         for (uint256 i; i < rewardTokens.length; i++) {
             address _rewardsToken = rewardTokens[i];
             uint256 reward = rewards[_user][_rewardsToken];
@@ -247,7 +248,6 @@ abstract contract MultiRewards is ReentrancyGuard, Pausable, IMultiRewards {
 
     /// @inheritdoc IMultiRewards
     function getReward() public {
-        onReward();
         getRewardForUser(msg.sender);
     }
 
@@ -305,6 +305,12 @@ abstract contract MultiRewards is ReentrancyGuard, Pausable, IMultiRewards {
         IERC20(_rewardsToken).safeTransferFrom(
             msg.sender, address(this), reward
         );
+        // add in the prior residual amount and account for new residual
+        // @dev residual used to account for precision loss when dividing reward by rewardsDuration
+        reward = reward.add(rewardData[_rewardsToken].rewardResidual);
+        rewardData[_rewardsToken].rewardResidual =
+            reward % rewardData[_rewardsToken].rewardsDuration;
+        reward = reward.sub(rewardData[_rewardsToken].rewardResidual);
 
         if (block.timestamp >= rewardData[_rewardsToken].periodFinish) {
             rewardData[_rewardsToken].rewardRate =

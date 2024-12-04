@@ -156,6 +156,7 @@ contract Voter is IVoter, InfraredUpgradeable, ReentrancyGuardUpgradeable {
         }
         if (_maxVotingNum == maxVotingNum) revert SameValue();
         maxVotingNum = _maxVotingNum;
+        emit MaxVotingNumSet(_maxVotingNum);
     }
 
     /// @inheritdoc IVoter
@@ -231,7 +232,7 @@ contract Voter is IVoter, InfraredUpgradeable, ReentrancyGuardUpgradeable {
         for (uint256 i = 0; i < _stakingTokenCnt; i++) {
             _weights[i] = votes[_tokenId][_stakingTokenVote[i]];
         }
-        _vote(_tokenId, _weight, _stakingTokenVote, _weights);
+        _vote(_tokenId, _weight, _stakingTokenVote, _weights, true);
     }
 
     /**
@@ -250,12 +251,14 @@ contract Voter is IVoter, InfraredUpgradeable, ReentrancyGuardUpgradeable {
      *    - Update token-specific accounting
      *    - Deposit into bribe vault
      * 4. Update global vote accounting if votes were cast
+     * 5. If _isPoke is true, deposit in fees reward vault in addition to marking tokenId as voted
      */
     function _vote(
         uint256 _tokenId,
         uint256 _weight,
         address[] memory _stakingTokenVote,
-        uint256[] memory _weights
+        uint256[] memory _weights,
+        bool _isPoke
     ) internal {
         _reset(_tokenId);
         uint256 _stakingTokenCnt = _stakingTokenVote.length;
@@ -273,7 +276,14 @@ contract Voter is IVoter, InfraredUpgradeable, ReentrancyGuardUpgradeable {
             if (_bribeVault == address(0)) {
                 revert BribeVaultDoesNotExist(_stakingToken);
             }
-            if (!isAlive[_stakingToken]) revert BribeVaultNotAlive(_bribeVault);
+            if (!isAlive[_stakingToken]) {
+                if (_isPoke) {
+                    emit SkipKilledBribeVault(_stakingToken, _tokenId);
+                    continue; // Skip this token without affecting totalWeight and usedWeights
+                        // this effectively means user is using less than 100% of their voting power
+                }
+                revert BribeVaultNotAlive(_bribeVault);
+            }
 
             uint256 _stakingTokenWeight =
                 (_weights[i] * _weight) / _totalVoteWeight;
@@ -334,7 +344,7 @@ contract Voter is IVoter, InfraredUpgradeable, ReentrancyGuardUpgradeable {
         }
         lastVoted[_tokenId] = _timestamp;
         uint256 _weight = IVotingEscrow(ve).balanceOfNFT(_tokenId);
-        _vote(_tokenId, _weight, _stakingTokenVote, _weights);
+        _vote(_tokenId, _weight, _stakingTokenVote, _weights, false);
     }
 
     /// @inheritdoc IVoter
@@ -457,6 +467,9 @@ contract Voter is IVoter, InfraredUpgradeable, ReentrancyGuardUpgradeable {
             revert NotApprovedOrOwner();
         }
         uint256 _length = _bribes.length;
+        if (_length != _tokens.length) {
+            revert UnequalLengths();
+        }
         for (uint256 i = 0; i < _length; i++) {
             IReward(_bribes[i]).getReward(_tokenId, _tokens[i]);
         }

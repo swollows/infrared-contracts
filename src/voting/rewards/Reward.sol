@@ -300,6 +300,26 @@ abstract contract Reward is IReward, ReentrancyGuard {
         nonReentrant
     {}
 
+    /// @inheritdoc IReward
+    function renotifyRewardAmount(uint256 timestamp, address token) external {
+        uint256 epochStart = VelodromeTimeLibrary.epochStart(timestamp);
+        uint256 currentEpochStart =
+            VelodromeTimeLibrary.epochStart(block.timestamp);
+        uint256 rewardAmount = tokenRewardsPerEpoch[token][epochStart];
+        uint256 index = getPriorSupplyIndex(timestamp);
+
+        if (rewardAmount == 0) revert ZeroAmount();
+        if (currentEpochStart <= epochStart) revert ActiveEpoch();
+        if (supplyCheckpoints[index].supply != 0) revert NonZeroSupply();
+
+        tokenRewardsPerEpoch[token][epochStart] = 0;
+
+        // Redistribute rewards to current epoch.
+        tokenRewardsPerEpoch[token][currentEpochStart] += rewardAmount;
+
+        emit NotifyReward(address(this), token, epochStart, rewardAmount);
+    }
+
     /**
      * @notice Internal helper for adding rewards
      * @dev Transfers tokens and updates reward accounting

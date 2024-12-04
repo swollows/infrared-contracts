@@ -173,7 +173,7 @@ contract InfraredRewardsTest is Helper {
         vm.stopPrank();
 
         // Verify reward was added by checking reward duration
-        (, uint256 duration,,,,) =
+        (, uint256 duration,,,,,) =
             infraredVault.rewardData(address(newRewardToken));
         assertEq(duration, rewardsDuration, "Reward duration should match");
     }
@@ -208,11 +208,14 @@ contract InfraredRewardsTest is Helper {
 
     function testAddIncentivesSuccess() public {
         uint256 rewardAmount = 100 ether;
+        uint256 rewardsDuration = 7 days;
         MockERC20 newRewardToken = new MockERC20("NewReward", "NRT", 18);
 
         vm.startPrank(infraredGovernance);
         infrared.updateWhiteListedRewardTokens(address(newRewardToken), true);
-        infrared.addReward(address(wbera), address(newRewardToken), 7 days);
+        infrared.addReward(
+            address(wbera), address(newRewardToken), rewardsDuration
+        );
         vm.stopPrank();
 
         // Deal tokens to admin (test contract)
@@ -221,9 +224,11 @@ contract InfraredRewardsTest is Helper {
         // Approve the Infrared contract to spend tokens
         newRewardToken.approve(address(infrared), rewardAmount);
 
+        uint256 residual = rewardAmount % rewardsDuration;
+
         // Expect the event from the vault
         vm.expectEmit(true, true, true, true, address(infraredVault));
-        emit RewardAdded(address(newRewardToken), rewardAmount);
+        emit RewardAdded(address(newRewardToken), rewardAmount - residual);
 
         // Call addIncentives
         infrared.addIncentives(
@@ -231,7 +236,7 @@ contract InfraredRewardsTest is Helper {
         );
 
         // Verify rewards were added
-        (,,, uint256 rewardRate,,) =
+        (,,, uint256 rewardRate,,,) =
             infraredVault.rewardData(address(newRewardToken));
         assertTrue(rewardRate > 0, "Reward rate should be set");
     }
@@ -648,6 +653,80 @@ contract InfraredRewardsTest is Helper {
             (vaultIbgtAfter - vaultIbgtBefore) * 1_500_000,
             1e16, // 1% tolerance
             "RED:IBGT ratio mismatch"
+        );
+    }
+
+    function testClaimLostRewardsOnVault() public {
+        // Setup: Register vault and distribute rewards
+        address stakingToken = address(wbera);
+        address user = address(123);
+        uint256 stakeAmount = 100 ether;
+        uint256 rewardAmount = 50 ether;
+
+        // Stake some tokens to simulate initial user participation
+        stakeInVault(address(infraredVault), stakingToken, user, stakeAmount);
+
+        // Distribute rewards to the vault
+        address vaultWbera = factory.getVault(stakingToken);
+        vm.startPrank(address(blockRewardController));
+        bgt.mint(address(distributor), rewardAmount);
+        vm.stopPrank();
+
+        vm.startPrank(address(distributor));
+        bgt.approve(address(vaultWbera), rewardAmount);
+        IBerachainRewardsVault(vaultWbera).notifyRewardAmount(
+            abi.encodePacked(bytes32("v0"), bytes16("")), rewardAmount
+        );
+        vm.stopPrank();
+
+        // Advance time to ensure rewards are claimable
+        vm.warp(block.timestamp + 10 days);
+
+        infrared.harvestVault(stakingToken);
+
+        // Unstake all tokens to simulate no users staked
+        vm.startPrank(user);
+        infraredVault.withdraw(stakeAmount);
+        vm.stopPrank();
+
+        vm.warp(block.timestamp + 20 days);
+
+        // check if user has any rewards
+        uint256 rewards = infraredVault.earned(user, address(ibgt));
+        assertEq(rewards, 0, "User should have no rewards");
+
+        // verify that infrared has a balance of 1 wei in the vault
+        assertEq(
+            infraredVault.balanceOf(address(infrared)),
+            1,
+            "Infrared should have a balance of 1 wei in the vault"
+        );
+        // verify that the total supply is 1 wei more than the balance of infrared
+        assertEq(
+            infraredVault.totalSupply(),
+            1,
+            "Total supply should be 1 wei more than the balance of infrared"
+        );
+
+        // Store initial balance of Infrared contract
+        uint256 initialInfraredBalance = ibgt.balanceOf(address(infrared));
+
+        // check how much infrared has earned
+        uint256 earned = infraredVault.earned(address(infrared), address(ibgt));
+        assertEq(earned > 0, true, "Infrared should have earned rewards");
+
+        // Claim lost rewards
+        vm.startPrank(infraredGovernance);
+        infrared.claimLostRewardsOnVault(stakingToken);
+        vm.stopPrank();
+
+        // Verify that the Infrared contract's balance increased by the reward amount
+        uint256 finalInfraredBalance = ibgt.balanceOf(address(infrared));
+        assertApproxEqRel(
+            finalInfraredBalance,
+            initialInfraredBalance + rewardAmount,
+            1e6,
+            "Infrared should have claimed the lost rewards"
         );
     }
 }

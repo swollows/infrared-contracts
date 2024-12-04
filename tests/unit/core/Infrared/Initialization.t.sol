@@ -4,6 +4,7 @@ pragma solidity 0.8.26;
 //external
 
 import "./Helper.sol";
+import {IMultiRewards} from "src/interfaces/IMultiRewards.sol";
 
 contract InfraredInitializationTest is Helper {
     /*//////////////////////////////////////////////////////////////
@@ -140,6 +141,60 @@ contract InfraredInitializationTest is Helper {
         // Check that the rewards duration was updated
         assertEq(
             infrared.rewardsDuration(), 123, "Rewards duration not updated"
+        );
+    }
+
+    function testUpdateRewardsDurationForVault() public {
+        // Set up initial conditions
+        address stakingToken = address(wbera);
+        address rewardsToken = address(ibgt);
+        uint256 newRewardsDuration = 2 days;
+
+        // Update the rewards duration for the vault
+        vm.expectEmit(true, true, true, true, address(infraredVault));
+        emit IMultiRewards.RewardsDurationUpdated(
+            rewardsToken, newRewardsDuration
+        );
+        infrared.updateRewardsDurationForVault(
+            stakingToken, rewardsToken, newRewardsDuration
+        );
+
+        // Verify that the rewards duration was updated
+        (, uint256 updatedRewardsDuration,,,,,) =
+            infraredVault.rewardData(rewardsToken);
+        assertEq(
+            updatedRewardsDuration,
+            newRewardsDuration,
+            "Rewards duration not updated correctly"
+        );
+
+        // Test unauthorized access
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAccessControl.AccessControlUnauthorizedAccount.selector,
+                address(666),
+                infrared.GOVERNANCE_ROLE()
+            )
+        );
+        vm.prank(address(666));
+        infrared.updateRewardsDurationForVault(stakingToken, rewardsToken, 0);
+
+        // Test for zero rewards duration
+        vm.expectRevert(Errors.ZeroAmount.selector);
+        infrared.updateRewardsDurationForVault(stakingToken, rewardsToken, 0);
+
+        // Test for unsupported vault
+        address unsupportedStakingToken = address(0x123);
+        vm.expectRevert(Errors.VaultNotSupported.selector);
+        infrared.updateRewardsDurationForVault(
+            unsupportedStakingToken, rewardsToken, newRewardsDuration
+        );
+
+        // Test for non-whitelisted reward token
+        address nonWhitelistedToken = address(0x456);
+        vm.expectRevert(Errors.RewardTokenNotWhitelisted.selector);
+        infrared.updateRewardsDurationForVault(
+            stakingToken, nonWhitelistedToken, newRewardsDuration
         );
     }
 }

@@ -2,7 +2,7 @@
 pragma solidity 0.8.26;
 
 import "./Base.t.sol";
-
+import {IVoter} from "@voting/interfaces/IVoter.sol";
 // import {assertApproxEq} from "forge-std/StdAssertions.sol";
 
 contract VoterTest is Base {
@@ -144,7 +144,7 @@ contract VoterTest is Base {
         vm.expectRevert(IVoter.DistributeWindow.selector);
         voter.poke(tokenId);
 
-        // successful vote one hour after epoch start
+        // successful poke one hour before epoch start
         skip(1);
         voter.poke(tokenId);
         vm.stopPrank();
@@ -301,6 +301,28 @@ contract VoterTest is Base {
         assertEq(voter.stakingTokenVote(tokenId, 1), address(stakingToken2));
 
         vm.stopPrank();
+    }
+
+    function testPokeAfterVoteWithKilledBribe() public {
+        testPokeAfterVote();
+
+        skipAndRoll(1 days);
+
+        voter.killBribeVault(stakingTokens[0]);
+
+        vm.expectEmit(true, false, false, true, address(voter));
+        emit IVoter.SkipKilledBribeVault(stakingTokens[0], 1);
+
+        vm.expectEmit(true, false, false, true, address(voter));
+        emit Voted(
+            address(this), // third party is poking on behalf of user1
+            stakingTokens[1],
+            1, // tokenId1
+            663907904115329340,
+            663907904115329340,
+            block.timestamp
+        );
+        voter.poke(1);
     }
 
     function testVoteAfterResetInSameEpoch() public {
@@ -505,6 +527,71 @@ contract VoterTest is Base {
         );
 
         voter.getStakingTokenWeights();
+    }
+
+    function testRedistributeRewardsFromNonDepositedVaults() public {
+        skip(1 weeks / 2);
+
+        // create a lock for user1
+        uint256 tokenId = createLock(user1);
+        // Add rewards to two stakingTokens
+
+        address bribeVault = voter.bribeVaults(stakingTokens[0]);
+        // add rewards for stakingToken
+        IERC20(stakingTokens[0]).approve(bribeVault, TOKEN_1);
+        BribeVotingReward(bribeVault).notifyRewardAmount(
+            stakingTokens[0], TOKEN_1
+        );
+
+        address bribeVault2 = voter.bribeVaults(stakingTokens[1]);
+        // add rewards for stakingToken
+        IERC20(stakingTokens[1]).approve(bribeVault2, TOKEN_1);
+        BribeVotingReward(bribeVault2).notifyRewardAmount(
+            stakingTokens[1], TOKEN_1
+        );
+
+        address[] memory _stakingTokens = new address[](1);
+        _stakingTokens[0] = stakingTokens[1];
+        uint256[] memory weights = new uint256[](1);
+        weights[0] = 1;
+
+        // change vote to not vote for  stakingTokens[1] instead of stakingTokens[0]
+        vm.prank(user1);
+        voter.vote(1, _stakingTokens, weights);
+
+        skipToNextEpoch(1 hours + 1);
+
+        // rewards only occur for stakingToken2, not stakingToken
+        assertEq(
+            BribeVotingReward(bribeVault).earned(stakingTokens[0], tokenId), 0
+        );
+        assertEq(
+            BribeVotingReward(bribeVault2).earned(stakingTokens[1], tokenId),
+            TOKEN_1
+        );
+
+        // redistribute rewards
+        BribeVotingReward(bribeVault).renotifyRewardAmount(
+            block.timestamp - (1 weeks + 1 hours), stakingTokens[0]
+        );
+
+        // change user vote back to stakingTokens[0]
+        _stakingTokens[0] = stakingTokens[0];
+
+        vm.prank(user1);
+        voter.vote(1, _stakingTokens, weights);
+
+        skipToNextEpoch(1 hours + 1);
+
+        // rewards from previous epoch should be redistributed
+        assertEq(
+            BribeVotingReward(bribeVault).earned(stakingTokens[0], tokenId),
+            TOKEN_1
+        );
+        assertEq(
+            BribeVotingReward(bribeVault2).earned(stakingTokens[1], tokenId),
+            TOKEN_1
+        );
     }
 
     function testReset() public {

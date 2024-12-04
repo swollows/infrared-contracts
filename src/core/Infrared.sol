@@ -259,8 +259,28 @@ contract Infrared is InfraredUpgradeable, IInfrared {
     }
 
     /// @inheritdoc IInfrared
+    function updateRewardsDurationForVault(
+        address _stakingToken,
+        address _rewardsToken,
+        uint256 _rewardsDuration
+    ) external onlyGovernor whenInitialized {
+        vaultStorage.updateRewardsDurationForVault(
+            _stakingToken, _rewardsToken, _rewardsDuration
+        );
+    }
+
+    /// @inheritdoc IInfrared
     function pauseVault(address _asset) external onlyGovernor whenInitialized {
         vaultStorage.pauseVault(_asset);
+    }
+
+    /// @inheritdoc IInfrared
+    function claimLostRewardsOnVault(address _asset)
+        external
+        onlyGovernor
+        whenInitialized
+    {
+        vaultStorage.claimLostRewardsOnVault(_asset);
     }
 
     /// @inheritdoc IInfrared
@@ -362,7 +382,7 @@ contract Infrared is InfraredUpgradeable, IInfrared {
     }
 
     /// @inheritdoc IInfrared
-    function harvestBase() external whenInitialized {
+    function harvestBase() public whenInitialized {
         uint256 bgtAmt = rewardsStorage.harvestBase();
         emit BaseHarvested(msg.sender, bgtAmt);
     }
@@ -415,7 +435,7 @@ contract Infrared is InfraredUpgradeable, IInfrared {
         emit BribesCollected(msg.sender, _token, amtIBERA, amtIbgtVault);
     }
 
-    function harvestOperatorRewards() external whenInitialized {
+    function harvestOperatorRewards() public whenInitialized {
         uint256 _amt = rewardsStorage.harvestOperatorRewards();
         emit OperatorRewardsDistributed(
             address(ibera), address(distributor), _amt
@@ -439,6 +459,8 @@ contract Infrared is InfraredUpgradeable, IInfrared {
         onlyGovernor
         whenInitialized
     {
+        harvestBase();
+        harvestOperatorRewards();
         validatorStorage.addValidators(_validators);
         emit ValidatorsAdded(msg.sender, _validators);
     }
@@ -449,6 +471,8 @@ contract Infrared is InfraredUpgradeable, IInfrared {
         onlyGovernor
         whenInitialized
     {
+        harvestBase();
+        harvestOperatorRewards();
         validatorStorage.removeValidators(_pubkeys);
         emit ValidatorsRemoved(msg.sender, _pubkeys);
     }
@@ -459,6 +483,8 @@ contract Infrared is InfraredUpgradeable, IInfrared {
         onlyGovernor
         whenInitialized
     {
+        harvestBase();
+        harvestOperatorRewards();
         validatorStorage.replaceValidator(_current, _new);
         emit ValidatorReplaced(msg.sender, _current, _new);
     }

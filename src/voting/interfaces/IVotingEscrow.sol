@@ -205,6 +205,10 @@ interface IVotingEscrow is IVotes, IERC4906, IERC6372, IERC721Metadata {
         uint256 _ts
     );
     event SetAllowedManager(address indexed _allowedManager);
+    event ToggleSplit(address indexed account, bool indexed canSplit);
+    event VoterAndDistributorSet(
+        address indexed voter, address indexed distributor
+    );
 
     // State variables
 
@@ -216,9 +220,6 @@ interface IVotingEscrow is IVotes, IERC4906, IERC6372, IERC721Metadata {
 
     /// @notice Address of Voter.sol
     function voter() external view returns (address);
-
-    /// @notice Address of Velodrome Team multisig
-    function team() external view returns (address);
 
     /// @notice Address of art proxy used for on-chain art generation
     function artProxy() external view returns (address);
@@ -312,8 +313,6 @@ interface IVotingEscrow is IVotes, IERC4906, IERC6372, IERC721Metadata {
     function version() external view returns (string memory);
 
     function decimals() external view returns (uint8);
-
-    function setTeam(address _team) external;
 
     function setArtProxy(address _proxy) external;
 

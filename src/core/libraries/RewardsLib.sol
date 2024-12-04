@@ -81,18 +81,37 @@ library RewardsLib {
         amtRecipient -= (amtProtocol + amtVoter); // Deduct fees from recipient
     }
 
+    function chargedFeesOnRewardsInternal(
+        uint256 _amt,
+        uint256 _feeTotal,
+        uint256 _feeProtocol
+    )
+        internal
+        pure
+        returns (uint256 amtRecipient, uint256 amtVoter, uint256 amtProtocol)
+    {
+        amtRecipient = _amt;
+        if (_feeTotal == 0) return (amtRecipient, 0, 0);
+
+        uint256 _amtTotal = amtRecipient * _feeTotal / FEE_UNIT; // FEE_UNIT = 1e6
+        amtProtocol = _amtTotal * _feeProtocol / FEE_UNIT; // Protocol's share
+        amtVoter = _amtTotal - amtProtocol; // Remainder for voter
+        amtRecipient -= (amtProtocol + amtVoter); // Deduct fees from recipient
+    }
+
     function _distributeFeesOnRewards(
-        RewardsStorage storage $,
+        mapping(address => uint256) storage protocolFeeAmounts,
+        address _voter,
         address _token,
         uint256 _amtVoter,
         uint256 _amtProtocol
     ) internal {
         // add protocol fees to accumulator for token
-        $.protocolFeeAmounts[_token] += _amtProtocol;
+        protocolFeeAmounts[_token] += _amtProtocol;
 
         // forward voter fees
         if (_amtVoter > 0) {
-            address voterFeeVault = IVoter($.voter).feeVault();
+            address voterFeeVault = IVoter(_voter).feeVault();
             IERC20(_token).safeIncreaseAllowance(voterFeeVault, _amtVoter);
             IReward(voterFeeVault).notifyRewardAmount(_token, _amtVoter);
         }
@@ -107,9 +126,10 @@ library RewardsLib {
         uint256 minted = IIBGT($.ibgt).totalSupply();
         uint256 bgtBalance = _getBGTBalance($);
         // @dev should never happen but check in case
-        if (bgtBalance <= minted) revert Errors.UnderFlow();
+        if (bgtBalance < minted) revert Errors.UnderFlow();
 
         bgtAmt = bgtBalance - minted;
+        if (bgtAmt == 0) return 0;
 
         // Redeem BGT for BERA and send to IBERA receivor
         // No fee deduction needed here as fees will be handled by
@@ -121,24 +141,72 @@ library RewardsLib {
         external
         returns (uint256 bgtAmt)
     {
-        // IInfraredVault vault = vaultRegistry(_asset);
+        // Ensure the vault is valid
         if (vault == IInfraredVault(address(0))) {
             revert Errors.VaultNotSupported();
         }
 
+        // Record the BGT balance before claiming rewards
         uint256 balanceBefore = _getBGTBalance($);
+
+        // Get the rewards from the vault's reward vault
         IBerachainRewardsVault rewardsVault = vault.rewardsVault();
         rewardsVault.getReward(address(vault), address(this));
 
+        // Calculate the amount of BGT rewards received
         bgtAmt = _getBGTBalance($) - balanceBefore;
 
-        // get total and protocol fee rates
+        // Retrieve the total and protocol fee rates
         uint256 feeTotal =
             $.fees[uint256(ConfigTypes.FeeType.HarvestVaultFeeRate)];
         uint256 feeProtocol =
             $.fees[uint256(ConfigTypes.FeeType.HarvestVaultProtocolRate)];
 
-        _handleBGTRewardsForVault($, vault, bgtAmt, feeTotal, feeProtocol);
+        // If no BGT rewards were received, exit early
+        if (bgtAmt == 0) return bgtAmt;
+
+        // Mint IBGT tokens equivalent to the BGT rewards
+        IIBGT($.ibgt).mint(address(this), bgtAmt);
+
+        // Calculate and distribute fees on the BGT rewards
+        (uint256 _amt, uint256 _amtVoter, uint256 _amtProtocol) =
+            chargedFeesOnRewardsInternal(bgtAmt, feeTotal, feeProtocol);
+        _distributeFeesOnRewards(
+            $.protocolFeeAmounts, $.voter, $.ibgt, _amtVoter, _amtProtocol
+        );
+
+        // Send the remaining IBGT rewards to the vault
+        if (_amt > 0) {
+            IERC20($.ibgt).safeIncreaseAllowance(address(vault), _amt);
+            vault.notifyRewardAmount($.ibgt, _amt);
+        }
+
+        // If RED token is set and mint rate is greater than zero, handle RED rewards
+        if (address($.red) != address(0) && $.redMintRate > 0) {
+            // Calculate the amount of RED tokens to mint
+            uint256 redAmt = Math.mulDiv(bgtAmt, $.redMintRate, RATE_UNIT);
+            IRED($.red).mint(address(this), redAmt);
+
+            // Check if RED is already a reward token in the vault
+            (, uint256 redRewardsDuration,,,,,) = vault.rewardData($.red);
+            if (redRewardsDuration == 0) {
+                // Add RED as a reward token if not already added
+                vault.addReward($.red, $.rewardsDuration);
+            }
+
+            // Calculate and distribute fees on the RED rewards
+            (_amt, _amtVoter, _amtProtocol) =
+                chargedFeesOnRewardsInternal(redAmt, 0, 0);
+            _distributeFeesOnRewards(
+                $.protocolFeeAmounts, $.voter, $.red, _amtVoter, _amtProtocol
+            );
+
+            // Send the remaining RED rewards to the vault
+            if (_amt > 0) {
+                IERC20($.red).safeIncreaseAllowance(address(vault), _amt);
+                vault.notifyRewardAmount($.red, _amt);
+            }
+        }
     }
 
     function harvestBribes(
@@ -261,7 +329,7 @@ library RewardsLib {
         if (_amount == 0) return;
 
         // add reward if not already added
-        (, uint256 _vaultRewardsDuration,,,,) = _vault.rewardData(_token);
+        (, uint256 _vaultRewardsDuration,,,,,) = _vault.rewardData(_token);
         if (_vaultRewardsDuration == 0) {
             _vault.addReward(_token, $.rewardsDuration);
         }
@@ -272,7 +340,9 @@ library RewardsLib {
         // calculate and distribute fees on rewards
         (_amount, _amtVoter, _amtProtocol) =
             chargedFeesOnRewards($, _amount, _feeTotal, _feeProtocol);
-        _distributeFeesOnRewards($, _token, _amtVoter, _amtProtocol);
+        _distributeFeesOnRewards(
+            $.protocolFeeAmounts, $.voter, _token, _amtVoter, _amtProtocol
+        );
 
         // increase allowance then notify vault of new rewards
         if (_amount > 0) {
@@ -300,78 +370,6 @@ library RewardsLib {
     }
 
     /**
-     * @notice Handles BGT token rewards, minting IBGT and supplying to the vault.
-     * @param _vault       address         The address of the vault.
-     * @param _bgtAmt      uint256         The BGT reward amount.
-     * @param _feeTotal    uint256         The rate to charge for total fees on iBGT `_bgtAmt`.
-     * @param _feeProtocol uint256         The rate to charge for protocol treasury on total iBGT fees.
-     */
-    function _handleBGTRewardsForVault(
-        RewardsStorage storage $,
-        IInfraredVault _vault,
-        uint256 _bgtAmt,
-        uint256 _feeTotal,
-        uint256 _feeProtocol
-    ) internal {
-        // pass if no bgt rewards
-        if (_bgtAmt == 0) return;
-
-        // handle bgt rewards by minting and supplying IBGT to vault
-        IIBGT($.ibgt).mint(address(this), _bgtAmt);
-
-        bool redMintingCondition =
-            address($.red) != address(0) && $.redMintRate > 0;
-
-        // Determine number of tokens to process
-        uint256 numTokens = redMintingCondition ? 2 : 1;
-        address[] memory _tokens = new address[](numTokens);
-        uint256[] memory _amts = new uint256[](numTokens);
-        uint256[] memory _feeTotals = new uint256[](numTokens);
-        uint256[] memory _feeProtocols = new uint256[](numTokens);
-
-        // ibgt attrs. feeTotal and feeProtocol charged on minted ibgt
-        _tokens[0] = $.ibgt;
-        _amts[0] = _bgtAmt;
-        _feeTotals[0] = _feeTotal;
-        _feeProtocols[0] = _feeProtocol;
-
-        // Only handle RED distribution if set
-        if (redMintingCondition) {
-            uint256 _redAmt = Math.mulDiv(_bgtAmt, $.redMintRate, RATE_UNIT);
-            IRED($.red).mint(address(this), _redAmt);
-
-            // red attrs. zero fee rates charged on newly minted red
-            _tokens[1] = $.red;
-            _amts[1] = _redAmt;
-            // _feeTotals[1] and _feeProtocols[1] remain 0
-
-            (, uint256 _redRewardsDuration,,,,) = _vault.rewardData($.red);
-            if (_redRewardsDuration == 0) {
-                // Add RED as a reward token if not already added
-                _vault.addReward($.red, $.rewardsDuration);
-            }
-        }
-
-        for (uint256 i = 0; i < numTokens; i++) {
-            address _token = _tokens[i];
-            uint256 _amt = _amts[i];
-            uint256 _amtVoter;
-            uint256 _amtProtocol;
-
-            // calculate and distribute fees on rewards
-            (_amt, _amtVoter, _amtProtocol) =
-                chargedFeesOnRewards($, _amt, _feeTotals[i], _feeProtocols[i]);
-            _distributeFeesOnRewards($, _token, _amtVoter, _amtProtocol);
-
-            // send token rewards less fee to vault
-            if (_amt > 0) {
-                IERC20(_token).safeIncreaseAllowance(address(_vault), _amt);
-                _vault.notifyRewardAmount(_token, _amt);
-            }
-        }
-    }
-
-    /**
      * @notice Handles BGT base rewards supplied to validator distributor.
      * @param _iBERAShares      uint256         The BGT reward amount.
      * @param _feeTotal    uint256         The rate to charge for total fees on `_iBERAShares`.
@@ -394,7 +392,9 @@ library RewardsLib {
         // calculate and distribute fees on rewards
         (_amt, _amtVoter, _amtProtocol) =
             chargedFeesOnRewards($, _iBERAShares, _feeTotal, _feeProtocol);
-        _distributeFeesOnRewards($, _token, _amtVoter, _amtProtocol);
+        _distributeFeesOnRewards(
+            $.protocolFeeAmounts, $.voter, _token, _amtVoter, _amtProtocol
+        );
 
         // send token rewards less fee to vault
         if (_amt > 0) {
@@ -478,7 +478,7 @@ library RewardsLib {
         // - If _iredMintRate = 500,000 (0.5 * RATE_UNIT), 0.5 RED is minted per IBGT
         // - If _iredMintRate = 2,000,000 (2 * RATE_UNIT), 2 RED are minted per IBGT
 
-        // The actual calculation is done in _handleBGTRewardsForVault:
+        // The actual calculation is done in harvestVault
         // uint256 _redAmt = Math.mulDiv(_bgtAmt, $.redMintRate, RATE_UNIT);
 
         $.redMintRate = _iredMintRate;

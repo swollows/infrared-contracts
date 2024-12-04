@@ -41,8 +41,6 @@ contract VotingEscrow is IVotingEscrow, ReentrancyGuard {
     /// @inheritdoc IVotingEscrow
     address public voter;
     /// @inheritdoc IVotingEscrow
-    address public team;
-    /// @inheritdoc IVotingEscrow
     address public artProxy;
     /// @inheritdoc IVotingEscrow
     address public allowedManager;
@@ -88,7 +86,6 @@ contract VotingEscrow is IVotingEscrow, ReentrancyGuard {
     ) {
         keeper = _keeper;
         token = _token;
-        team = msg.sender;
         voter = _voter;
         infrared = IInfrared(_infrared);
 
@@ -265,14 +262,10 @@ contract VotingEscrow is IVotingEscrow, ReentrancyGuard {
     string public constant version = "2.0.0";
     uint8 public constant decimals = 18;
 
-    function setTeam(address _team) external {
-        if (msg.sender != team) revert NotTeam();
-        if (_team == address(0)) revert ZeroAddress();
-        team = _team;
-    }
-
     function setArtProxy(address _proxy) external {
-        if (msg.sender != team) revert NotTeam();
+        if (!infrared.hasRole(infrared.GOVERNANCE_ROLE(), msg.sender)) {
+            revert NotGovernor();
+        }
         artProxy = _proxy;
         emit BatchMetadataUpdate(0, type(uint256).max);
     }
@@ -1139,8 +1132,11 @@ contract VotingEscrow is IVotingEscrow, ReentrancyGuard {
 
     /// @inheritdoc IVotingEscrow
     function toggleSplit(address _account, bool _bool) external {
-        if (msg.sender != team) revert NotTeam();
+        if (!infrared.hasRole(infrared.GOVERNANCE_ROLE(), msg.sender)) {
+            revert NotGovernor();
+        }
         canSplit[_account] = _bool;
+        emit ToggleSplit(_account, _bool);
     }
 
     /// @inheritdoc IVotingEscrow
@@ -1196,6 +1192,8 @@ contract VotingEscrow is IVotingEscrow, ReentrancyGuard {
         view
         returns (uint256)
     {
+        // flash loan protection
+        if (ownershipChange[_tokenId] == block.number) return 0;
         return BalanceLogicLibrary.balanceOfNFTAt(
             userPointEpoch, _userPointHistory, _tokenId, _t
         );
@@ -1209,7 +1207,6 @@ contract VotingEscrow is IVotingEscrow, ReentrancyGuard {
 
     /// @inheritdoc IVotingEscrow
     function balanceOfNFT(uint256 _tokenId) public view returns (uint256) {
-        if (ownershipChange[_tokenId] == block.number) return 0;
         return _balanceOfNFTAt(_tokenId, block.timestamp);
     }
 
@@ -1247,9 +1244,12 @@ contract VotingEscrow is IVotingEscrow, ReentrancyGuard {
     function setVoterAndDistributor(address _voter, address _distributor)
         external
     {
-        if (msg.sender != team) revert NotTeam();
+        if (!infrared.hasRole(infrared.GOVERNANCE_ROLE(), msg.sender)) {
+            revert NotGovernor();
+        }
         voter = _voter;
         distributor = _distributor;
+        emit VoterAndDistributorSet(_voter, _distributor);
     }
 
     /// @inheritdoc IVotingEscrow

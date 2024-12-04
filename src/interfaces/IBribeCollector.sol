@@ -49,9 +49,13 @@ interface IBribeCollector is IPOLErrors {
     /**
      * @notice Claims accumulated bribes in exchange for payout token
      * @dev Caller must approve payoutAmount of payout token to this contract.
-     * @param recipient The Address to receive claimed tokens
-     * @param feeTokens Array of token addresses to claim
+     * @param _recipient The Address to receive claimed tokens
+     * @param _feeTokens Array of token addresses to claim
+     * @param _feeAmounts Array of amounts to claim for each fee token
      */
-    function claimFees(address recipient, address[] calldata feeTokens)
-        external;
+    function claimFees(
+        address _recipient,
+        address[] calldata _feeTokens,
+        uint256[] calldata _feeAmounts
+    ) external;
 }

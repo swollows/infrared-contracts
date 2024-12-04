@@ -135,7 +135,7 @@ contract InfraredForkTest is HelperForkTest {
             address rewardToken = _rewardTokens[i];
             assertTrue(infrared.whitelistedRewardTokens(rewardToken));
 
-            (, uint256 rewardDurationIbgt,,,,) =
+            (, uint256 rewardDurationIbgt,,,,,) =
                 IMultiRewards(address(_ibgtVault)).rewardData(rewardToken);
             assertTrue(rewardDurationIbgt > 0);
         }

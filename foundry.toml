@@ -7,7 +7,7 @@ force = false
 optimizer = true
 optimizer_runs = 1
 verbosity = 1
-via_ir = true
+via_ir = false
 fuzz = { runs = 1_000 }
 test = 'tests'
 remappings = [

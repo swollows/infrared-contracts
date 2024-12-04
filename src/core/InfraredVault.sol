@@ -54,6 +54,11 @@ contract InfraredVault is MultiRewards, IInfraredVault {
         address _ibgt = address(IInfrared(infrared).ibgt());
 
         _addReward(_ibgt, infrared, _rewardsDuration);
+
+        // to be able to recover rewards which where distributed during periods where there was no stake
+        // infrared will have a stake of 1 wei in the vault
+        _totalSupply = _totalSupply + 1;
+        _balances[msg.sender] = _balances[msg.sender] + 1;
     }
 
     /**
@@ -188,11 +193,11 @@ contract InfraredVault is MultiRewards, IInfraredVault {
         }
 
         // Create a new array with the exact size of non-zero rewards
-        UserReward[] memory rewards = new UserReward[](count);
+        UserReward[] memory userRewards = new UserReward[](count);
         for (uint256 j = 0; j < count; j++) {
-            rewards[j] = tempRewards[j];
+            userRewards[j] = tempRewards[j];
         }
 
-        return rewards;
+        return userRewards;
     }
 }

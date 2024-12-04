@@ -160,8 +160,22 @@ interface IInfrared is IInfraredUpgradeable {
     /**
      * @notice Sets the new duration for reward distributions in InfraredVaults
      * @param _rewardsDuration The new reward duration period, in seconds
+     * @dev Only callable by governance
      */
     function updateRewardsDuration(uint256 _rewardsDuration) external;
+
+    /**
+     * @notice Updates the rewards duration for a specific reward token on a specific vault
+     * @param _stakingToken The address of the staking asset associated with the vault
+     * @param _rewardsToken The address of the reward token to update the duration for
+     * @param _rewardsDuration The new reward duration period, in seconds
+     * @dev Only callable by governance
+     */
+    function updateRewardsDurationForVault(
+        address _stakingToken,
+        address _rewardsToken,
+        uint256 _rewardsDuration
+    ) external;
 
     /**
      * @notice Pauses staking functionality on a specific vault
@@ -169,6 +183,13 @@ interface IInfrared is IInfraredUpgradeable {
      * @dev Only callable by governance, will revert if vault doesn't exist
      */
     function pauseVault(address _asset) external;
+
+    /**
+     * @notice Claims lost rewards on a specific vault
+     * @param _asset The address of the staking asset associated with the vault to claim lost rewards on
+     * @dev Only callable by governance, will revert if vault doesn't exist
+     */
+    function claimLostRewardsOnVault(address _asset) external;
 
     /**
      * @notice Recovers ERC20 tokens sent accidentally to the contract

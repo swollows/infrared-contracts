@@ -109,7 +109,7 @@ contract InfraredTest is Helper {
 
         // Step 8: Assertions
         assertEq(
-            vault.totalSupply(),
+            vault.totalSupply() - 1, // infared holds a balance of 1 wei in every vault
             0,
             "Vault total supply should be zero after withdrawal"
         );
@@ -218,20 +218,7 @@ contract InfraredTest is Helper {
     }
 
     function testharvestBaseSuccess() public {
-        // 1. Mint ibgt to some random address, such that total supply of ibgt is 100 ether
-        ibgt.mint(address(12), 100 ether);
-        vm.startPrank(address(blockRewardController));
-        // 2. Mint bgt to the Infrared, to simulate the rewards.
-        bgt.mint(address(infrared), 110 ether);
-        vm.stopPrank();
-        deal(address(bgt), 110 ether);
-
-        assertTrue(
-            bgt.balanceOf(address(infrared)) > ibgt.totalSupply(),
-            "Infrared should have more BERA than total supply of IBGT"
-        );
-
-        // 3. Add a validator to the validator set
+        // 1. Add a validator to the validator set
         vm.startPrank(infraredGovernance);
         ValidatorTypes.Validator memory validator_str = ValidatorTypes.Validator({
             pubkey: "0x1234567890abcdef",
@@ -244,6 +231,19 @@ contract InfraredTest is Helper {
         pubkeys[0] = validator_str.pubkey;
         infrared.addValidators(validators);
         vm.stopPrank();
+
+        // 2. Mint ibgt to some random address, such that total supply of ibgt is 100 ether
+        ibgt.mint(address(12), 100 ether);
+        vm.startPrank(address(blockRewardController));
+        // 3. Mint bgt to the Infrared, to simulate the rewards.
+        bgt.mint(address(infrared), 110 ether);
+        vm.stopPrank();
+        deal(address(bgt), 110 ether);
+
+        assertTrue(
+            bgt.balanceOf(address(infrared)) > ibgt.totalSupply(),
+            "Infrared should have more BERA than total supply of IBGT"
+        );
 
         // Store initial balances
         uint256 receivorBalanceBefore = ibera.receivor().balance;
@@ -282,7 +282,8 @@ contract InfraredTest is Helper {
         );
     }
 
-    function testharvestBaseNoMinted() public {
+    function testharvestBaseUnderflow() public {
+        ibgt.mint(address(infrared), 100 ether);
         vm.expectRevert(abi.encodeWithSignature("UnderFlow()"));
         infrared.harvestBase();
     }
@@ -360,7 +361,23 @@ contract InfraredTest is Helper {
     }
 
     function testharvestBoostRewards() public {
-        // Step 1: Vault Registration
+        // 1. Add a validator to the validator set
+        vm.startPrank(infraredGovernance);
+        ValidatorTypes.Validator memory validator_str = ValidatorTypes.Validator({
+            pubkey: "0x1234567890abcdef",
+            addr: address(validator)
+        });
+        ValidatorTypes.Validator[] memory validators =
+            new ValidatorTypes.Validator[](1);
+        validators[0] = validator_str;
+
+        bytes[] memory pubkeys = new bytes[](1);
+        pubkeys[0] = validator_str.pubkey;
+
+        infrared.addValidators(validators);
+        vm.stopPrank();
+
+        // Step 2: Vault Registration
         infrared.grantRole(infrared.KEEPER_ROLE(), address(this));
 
         address[] memory rewardTokens = new address[](2);
@@ -380,21 +397,6 @@ contract InfraredTest is Helper {
         vm.stopPrank();
 
         address ibgtVault = address(infrared.ibgtVault());
-
-        vm.startPrank(infraredGovernance);
-        ValidatorTypes.Validator memory validator_str = ValidatorTypes.Validator({
-            pubkey: "0x1234567890abcdef",
-            addr: address(validator)
-        });
-        ValidatorTypes.Validator[] memory validators =
-            new ValidatorTypes.Validator[](1);
-        validators[0] = validator_str;
-
-        bytes[] memory pubkeys = new bytes[](1);
-        pubkeys[0] = validator_str.pubkey;
-
-        infrared.addValidators(validators);
-        vm.stopPrank();
 
         infrared.harvestBase();
 

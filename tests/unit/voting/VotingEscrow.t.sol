@@ -57,7 +57,6 @@ contract VotingEscrowTest is Base {
     );
 
     function testInitialState() public {
-        assertEq(escrow.team(), address(this));
         assertEq(escrow.allowedManager(), address(keeper));
         // voter should already have been setup
         assertEq(escrow.voter(), address(voter));

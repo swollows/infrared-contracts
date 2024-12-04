@@ -27,6 +27,14 @@ interface IReward {
      * @notice Thrown when attempting operation with zero amount
      */
     error ZeroAmount();
+    /**
+     * @notice Thrown when supply is not zero
+     */
+    error NonZeroSupply();
+    /**
+     * @notice Thrown when epoch is active
+     */
+    error ActiveEpoch();
 
     /*//////////////////////////////////////////////////////////////
                                 EVENTS
@@ -280,4 +288,11 @@ interface IReward {
      * @param amount Amount of token to add to rewards
      */
     function notifyRewardAmount(address token, uint256 amount) external;
+
+    /**
+     * @notice in case rewards where distributed during a epoch with no deposits, redistribute the rewards
+     * @param timestamp Timestamp of the start of the epoch to renotify
+     * @param token Address of token to renotify
+     */
+    function renotifyRewardAmount(uint256 timestamp, address token) external;
 }

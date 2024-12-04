@@ -113,7 +113,7 @@ library VaultManagerLib {
 
         IInfraredVault vault = $.vaultRegistry[_stakingToken];
 
-        (, uint256 _vaultRewardsDuration,,,,) = vault.rewardData(_rewardsToken);
+        (, uint256 _vaultRewardsDuration,,,,,) = vault.rewardData(_rewardsToken);
         if (_vaultRewardsDuration == 0) {
             revert Errors.RewardTokenNotWhitelisted();
         }
@@ -160,5 +160,36 @@ library VaultManagerLib {
         if (_to == address(0)) revert Errors.ZeroAddress();
         IInfraredVault vault = $.vaultRegistry[_asset];
         vault.recoverERC20(_to, _token, _amount);
+    }
+
+    function updateRewardsDurationForVault(
+        VaultStorage storage $,
+        address _stakingToken,
+        address _rewardsToken,
+        uint256 _rewardsDuration
+    ) external {
+        if (_rewardsDuration == 0) {
+            revert Errors.ZeroAmount();
+        }
+        if ($.vaultRegistry[_stakingToken] == IInfraredVault(address(0))) {
+            revert Errors.VaultNotSupported();
+        }
+        IInfraredVault vault = $.vaultRegistry[_stakingToken];
+        (, uint256 rewardsDuration,,,,,) = vault.rewardData(_rewardsToken);
+        if (rewardsDuration == 0) {
+            revert Errors.RewardTokenNotWhitelisted();
+        }
+        vault.updateRewardsDuration(_rewardsToken, _rewardsDuration);
+    }
+
+    function claimLostRewardsOnVault(VaultStorage storage $, address _asset)
+        external
+    {
+        IInfraredVault vault = $.vaultRegistry[_asset];
+        if (address(vault) == address(0)) {
+            revert Errors.VaultNotSupported();
+        }
+        // unclaimed rewards will end up split between IBERA shareholders
+        vault.getReward();
     }
 }

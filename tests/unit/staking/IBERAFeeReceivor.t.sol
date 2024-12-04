@@ -273,13 +273,13 @@ contract IBERAFeeReceivorTest is IBERABaseTest {
         receivor.collect();
     }
 
-    function testCollectRevertsWhenShareholderFeesZero() public {
+    function testCollectWhenShareholderFeesZero() public {
         uint256 shareholderFees = receivor.shareholderFees();
         assertTrue(shareholderFees == 0);
 
-        vm.expectRevert(IIBERAFeeReceivor.InvalidAmount.selector);
         vm.prank(address(ibera));
-        receivor.collect();
+        uint256 sharesMinted = receivor.collect();
+        assertEq(sharesMinted, 0);
     }
 
     function testRoundingLossIsMinimal() public {

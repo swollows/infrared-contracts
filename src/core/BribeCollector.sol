@@ -66,25 +66,34 @@ contract BribeCollector is InfraredUpgradeable, IBribeCollector {
     /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
 
     /// @inheritdoc IBribeCollector
-    function claimFees(address _recipient, address[] calldata _feeTokens)
-        external
-    {
+    function claimFees(
+        address _recipient,
+        address[] calldata _feeTokens,
+        uint256[] calldata _feeAmounts
+    ) external {
+        if (_feeTokens.length != _feeAmounts.length) {
+            revert Errors.InvalidArrayLength();
+        }
+        if (_recipient == address(0)) revert Errors.ZeroAddress();
+        // transfer price of claiming tokens (payoutAmount) from the sender to this contract
+        IERC20(payoutToken).safeTransferFrom(
+            msg.sender, address(this), payoutAmount
+        );
+        // increase the allowance of the payout token to the infrared contract to be send to
+        // validator distribution contract
         IERC20(payoutToken).safeIncreaseAllowance(
             address(infrared), payoutAmount
         );
-
         // Callback into infrared post auction to split amount to vaults and protocol
         infrared.collectBribes(payoutToken, payoutAmount);
+        // payoutAmount will be transferred out at this point
 
         // From all the specified fee tokens, transfer them to the recipient.
         for (uint256 i = 0; i < _feeTokens.length; i++) {
             address feeToken = _feeTokens[i];
-            uint256 feeTokenAmountToTransfer =
-                IERC20(feeToken).balanceOf(address(this));
-            IERC20(feeToken).safeTransfer(_recipient, feeTokenAmountToTransfer);
-            emit FeesClaimed(
-                msg.sender, _recipient, feeToken, feeTokenAmountToTransfer
-            );
+            uint256 feeAmount = _feeAmounts[i];
+            IERC20(feeToken).safeTransfer(_recipient, feeAmount);
+            emit FeesClaimed(msg.sender, _recipient, feeToken, feeAmount);
         }
     }
 }

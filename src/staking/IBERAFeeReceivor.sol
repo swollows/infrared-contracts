@@ -92,6 +92,7 @@ contract IBERAFeeReceivor is
     /// @inheritdoc IIBERAFeeReceivor
     function collect() external returns (uint256 sharesMinted) {
         if (msg.sender != IBERA) revert Unauthorized();
+        if (shareholderFees == 0) return 0;
         uint256 shf = shareholderFees;
         uint256 min =
             IBERAConstants.MINIMUM_DEPOSIT + IBERAConstants.MINIMUM_DEPOSIT_FEE;
