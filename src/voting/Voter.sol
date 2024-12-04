@@ -407,6 +407,14 @@ contract Voter is IVoter, InfraredUpgradeable, ReentrancyGuardUpgradeable {
         }
         if (bribeVaults[_stakingToken] != address(0)) revert BribeVaultExists();
 
+        // iterate through rewards to ensure they are whitelisted
+        uint256 _rewardsLength = _rewards.length;
+        for (uint256 i = 0; i < _rewardsLength; i++) {
+            if (!infrared.whitelistedRewardTokens(_rewards[i])) {
+                revert NotWhitelistedToken();
+            }
+        }
+
         // adaptation to only create bribe voting rewards
         address _bribeVault =
             address(new BribeVotingReward(address(this), _rewards));

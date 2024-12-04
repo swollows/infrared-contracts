@@ -45,7 +45,10 @@ abstract contract InfraredUpgradeable is
     }
 
     modifier whenInitialized() {
-        if (_isInitializing()) revert Errors.NotInitialized();
+        uint64 _version = _getInitializedVersion();
+        if (_version == 0 || _version == type(uint64).max) {
+            revert Errors.NotInitialized();
+        }
         _;
     }
 

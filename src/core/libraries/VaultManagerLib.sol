@@ -142,4 +142,23 @@ library VaultManagerLib {
     {
         return $.whitelistedRewardTokens.contains(token);
     }
+
+    function recoverERC20FromVault(
+        VaultStorage storage $,
+        address _asset,
+        address _to,
+        address _token,
+        uint256 _amount
+    ) external {
+        if (address($.vaultRegistry[_asset]) == address(0)) {
+            revert Errors.NoRewardsVault();
+        }
+        if (_amount == 0) revert Errors.ZeroAmount();
+        if (!isWhitelisted($, _token)) {
+            revert Errors.RewardTokenNotWhitelisted();
+        }
+        if (_to == address(0)) revert Errors.ZeroAddress();
+        IInfraredVault vault = $.vaultRegistry[_asset];
+        vault.recoverERC20(_to, _token, _amount);
+    }
 }

@@ -278,6 +278,16 @@ contract Infrared is InfraredUpgradeable, IInfrared {
     }
 
     /// @inheritdoc IInfrared
+    function recoverERC20FromVault(
+        address _asset,
+        address _to,
+        address _token,
+        uint256 _amount
+    ) external onlyGovernor whenInitialized {
+        vaultStorage.recoverERC20FromVault(_asset, _to, _token, _amount);
+    }
+
+    /// @inheritdoc IInfrared
     function delegateBGT(address _delegatee)
         external
         onlyGovernor
@@ -458,7 +468,7 @@ contract Infrared is InfraredUpgradeable, IInfrared {
         bytes calldata _pubkey,
         uint64 _startBlock,
         IBeraChef.Weight[] calldata _weights
-    ) external onlyKeeper {
+    ) external onlyKeeper whenInitialized {
         if (!isInfraredValidator(_pubkey)) revert Errors.InvalidValidator();
         chef.queueNewRewardAllocation(_pubkey, _startBlock, _weights);
     }

@@ -10,6 +10,8 @@ import {VotingReward} from "./VotingReward.sol";
  * @dev Final implementation of voting rewards specifically for bribe distribution
  */
 contract BribeVotingReward is VotingReward {
+    event NoLongerWhitelistedTokenRemoved(address indexed token);
+
     /**
      * @notice Initializes bribe voting rewards
      * @param _voter Address of voter contract
@@ -37,5 +39,30 @@ contract BribeVotingReward is VotingReward {
         }
 
         _notifyRewardAmount(msg.sender, token, amount);
+    }
+
+    /**
+     * @notice Removes tokens from the rewards list that are no longer whitelisted
+     * @param tokens The list of tokens to remove
+     */
+    function removeNoLongerWhitelistedTokens(address[] calldata tokens)
+        external
+    {
+        for (uint256 i = 0; i < tokens.length; i++) {
+            if (
+                !IVoter(voter).isWhitelistedToken(tokens[i])
+                    && isReward[tokens[i]]
+            ) {
+                isReward[tokens[i]] = false;
+                for (uint256 j = 0; j < rewards.length; j++) {
+                    if (rewards[j] == tokens[i]) {
+                        rewards[j] = rewards[rewards.length - 1];
+                        rewards.pop();
+                        break;
+                    }
+                }
+                emit NoLongerWhitelistedTokenRemoved(tokens[i]);
+            }
+        }
     }
 }

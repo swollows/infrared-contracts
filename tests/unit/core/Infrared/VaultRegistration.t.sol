@@ -133,4 +133,21 @@ contract InfraredRegisterVaultTest is Helper {
             "Keeper role should persist post registration"
         );
     }
+
+    function testRecoverERC20FromVault() public {
+        testSuccessfulVaultRegistration();
+        address vault = address(infrared.vaultRegistry(address(stakingAsset)));
+        address token = address(honey);
+        uint256 amount = 1000;
+        uint256 balanceBefore = honey.balanceOf(vault);
+        assertEq(balanceBefore, 0);
+        honey.mint(vault, amount);
+        infrared.recoverERC20FromVault(
+            address(stakingAsset), address(this), token, amount
+        );
+        uint256 balanceAfter = honey.balanceOf(vault);
+        assertEq(balanceAfter, 0);
+        uint256 balanceReceiver = honey.balanceOf(address(this));
+        assertEq(balanceReceiver, amount);
+    }
 }

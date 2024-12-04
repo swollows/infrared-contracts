@@ -7,116 +7,129 @@ import "./Helper.sol";
 import {Errors} from "@utils/Errors.sol";
 
 import {DataTypes} from "@utils/DataTypes.sol";
+import {IInfrared} from "@interfaces/IInfrared.sol";
 
 contract ValidatorManagment is Helper {
-/*//////////////////////////////////////////////////////////////
+    /*//////////////////////////////////////////////////////////////
                Validator Set Management Tests
     //////////////////////////////////////////////////////////////*/
 
-/* TODO: FIX
-    function testAddValidators() public {
-        // Set up a new mock validator
-        DataTypes.Validator[] memory newValidators =
-            new DataTypes.Validator[](1);
-        newValidators[0] = DataTypes.Validator({
-            pubKey: bytes("validator_pub_key"),
-            coinbase: address(msg.sender)
+    function testAddValidatorsRevertsOnZeroAddress() public {
+        // Setup
+        ValidatorTypes.Validator[] memory validators =
+            new ValidatorTypes.Validator[](1);
+        validators[0] = ValidatorTypes.Validator({
+            addr: address(0), // Zero address to trigger the revert
+            pubkey: bytes("somePubKey")
         });
 
-        bytes[] memory pubKeys = new bytes[](1);
-        pubKeys[0] = newValidators[0].pubKey;
+        // Expect the addValidators function to revert with Errors.ZeroAddress
+        vm.startPrank(infraredGovernance);
+        vm.expectRevert(Errors.ZeroAddress.selector);
+        infrared.addValidators(validators);
+        vm.stopPrank();
+    }
 
-        vm.prank(governance);
-        // Add the new validator
+    function testAddValidatorsSuccess() public {
+        // Setup
+        ValidatorTypes.Validator[] memory validators =
+            new ValidatorTypes.Validator[](1);
+        validators[0] = ValidatorTypes.Validator({
+            addr: address(1), // Valid address
+            pubkey: bytes("somePubKey")
+        });
+
+        // Start the prank as the governance address
+        vm.startPrank(infraredGovernance);
+
+        // Verify that the ValidatorsAdded event was emitted
         vm.expectEmit(true, true, true, true);
-        emit IInfrared.ValidatorsAdded(governance, pubKeys);
-        infrared.addValidators(newValidators);
+        emit IInfrared.ValidatorsAdded(infraredGovernance, validators);
 
-        // Assert that the validator was added
-        assertEq(
-            infrared.isInfraredValidator(newValidators[0].pubKey),
-            true,
-            "Validator not added correctly"
-        );
+        // Add validators successfully
+        infrared.addValidators(validators);
+
+        // Stop the prank
+        vm.stopPrank();
+
+        // Verify that the validator was added
+        // Check if the validator's public key is stored
+        bool isValidatorAdded =
+            infrared.isInfraredValidator(validators[0].pubkey);
+        assertTrue(isValidatorAdded, "Validator should be added");
     }
 
     function testFailAddValidatorWithZeroPubKey() public {
         // Set up a new mock validator with zero-length public key
-        DataTypes.Validator[] memory newValidators =
-            new DataTypes.Validator[](1);
-        newValidators[0] =
-            DataTypes.Validator({pubKey: "", coinbase: address(msg.sender)});
+        ValidatorTypes.Validator[] memory newValidators =
+            new ValidatorTypes.Validator[](1);
+        newValidators[0] = ValidatorTypes.Validator({
+            pubkey: bytes(""), // Zero-length public key
+            addr: address(this)
+        });
 
         vm.startPrank(governance);
         // Expect a revert due to zero-length public key
         vm.expectRevert(Errors.ZeroBytes.selector);
         // Attempt to add the new validators
-        try infrared.addValidators(newValidators) {
-            revert("Zero-length public key should revert");
-        } catch {
-            revert();
-        }
+        infrared.addValidators(newValidators);
+        vm.stopPrank();
     }
 
     function testFailAddValidatorUnauthorized() public {
         // Set up a new mock validator
-        DataTypes.Validator[] memory newValidators =
-            new DataTypes.Validator[](1);
-        newValidators[0] = DataTypes.Validator({
-            pubKey: "someValidPubKey", // This needs to be a valid public key in bytes format
-            coinbase: address(msg.sender)
+        ValidatorTypes.Validator[] memory newValidators =
+            new ValidatorTypes.Validator[](1);
+        newValidators[0] = ValidatorTypes.Validator({
+            pubkey: bytes("someValidPubKey"),
+            addr: address(this)
         });
 
         // Simulate the call from an unauthorized address
         vm.prank(address(2));
 
+        // Expect a revert due to unauthorized access
+        vm.expectRevert("Unauthorized");
         // Attempt to add the new validator
         infrared.addValidators(newValidators);
-
-        // Expect a revert due to unauthorized access
-        vm.expectRevert();
     }
 
     function testRemoveValidators() public {
         // Set up a new mock validator
-        DataTypes.Validator[] memory newValidators =
-            new DataTypes.Validator[](2);
-        newValidators[0] = DataTypes.Validator({
-            pubKey: "someValidPubKey", // A valid public key in bytes format
-            coinbase: address(msg.sender)
+        ValidatorTypes.Validator[] memory newValidators =
+            new ValidatorTypes.Validator[](2);
+        newValidators[0] = ValidatorTypes.Validator({
+            pubkey: bytes("someValidPubKey"),
+            addr: address(this)
         });
-        newValidators[1] = DataTypes.Validator({
-            pubKey: "someOtherValidPubKey2", // Another valid public key in bytes format
-            coinbase: address(msg.sender)
+        newValidators[1] = ValidatorTypes.Validator({
+            pubkey: bytes("someOtherValidPubKey2"),
+            addr: address(this)
         });
 
-        vm.startPrank(governance);
-        // Add the new validator
+        vm.startPrank(infraredGovernance);
+        // Add the new validators
         infrared.addValidators(newValidators);
 
         // Assert that the validator was added
         assertTrue(
-            infrared.isInfraredValidator(newValidators[0].pubKey),
+            infrared.isInfraredValidator(newValidators[0].pubkey),
             "Validator not added correctly"
         );
 
-        DataTypes.Validator[] memory validatorsToRemove =
-            new DataTypes.Validator[](1);
-        validatorsToRemove[0] = newValidators[0];
-
-        bytes[] memory pubKeysToRemove = new bytes[](1);
-        pubKeysToRemove[0] = validatorsToRemove[0].pubKey;
+        bytes[] memory pubkeysToRemove = new bytes[](1);
+        pubkeysToRemove[0] = newValidators[0].pubkey;
 
         // Prepare for the removal event
         vm.expectEmit(true, true, false, true);
-        emit IInfrared.ValidatorsRemoved(governance, pubKeysToRemove);
+        emit IInfrared.ValidatorsRemoved(infraredGovernance, pubkeysToRemove);
 
         // Remove the validator
-        infrared.removeValidators(validatorsToRemove);
+        infrared.removeValidators(pubkeysToRemove);
 
         // Assert that the validator was removed
         assertFalse(
-            infrared.isInfraredValidator(newValidators[0].pubKey),
+            infrared.isInfraredValidator(newValidators[0].pubkey),
             "Validator not removed correctly"
         );
         vm.stopPrank();
@@ -124,162 +137,157 @@ contract ValidatorManagment is Helper {
 
     function testFailRemoveValidatorUnauthorized() public {
         // Create a new validator struct with sample data
-        // Convert the Validator struct to bytes to simulate adding and removing
-        DataTypes.Validator[] memory newValidators =
-            new DataTypes.Validator[](1);
-        newValidators[0] = DataTypes.Validator({
-            pubKey: "somePublicKey", // Assuming this is a valid public key in bytes
-            coinbase: address(msg.sender)
+        ValidatorTypes.Validator[] memory newValidators =
+            new ValidatorTypes.Validator[](1);
+        newValidators[0] = ValidatorTypes.Validator({
+            pubkey: "somePublicKey",
+            addr: address(this)
         });
 
-        vm.startPrank(governance);
+        vm.startPrank(infraredGovernance);
         // Add the new validator
         infrared.addValidators(newValidators);
         vm.stopPrank();
 
         // Assert that the validator was added successfully
         assertTrue(
-            infrared.isInfraredValidator(newValidators[0].pubKey),
+            infrared.isInfraredValidator(newValidators[0].pubkey),
             "Validator not added correctly"
         );
 
+        bytes[] memory pubkeysToRemove = new bytes[](1);
+        pubkeysToRemove[0] = newValidators[0].pubkey;
+
         // Attempt to remove the validator as an unauthorized user
         vm.prank(address(2)); // Simulate call from an unauthorized address
-        vm.expectRevert("Unauthorized"); // Use the specific revert reason or error selector expected for unauthorized access
-        infrared.removeValidators(newValidators);
+        vm.expectRevert("Unauthorized");
+        infrared.removeValidators(pubkeysToRemove);
     }
 
     function testReplaceValidator() public {
         // Set up a new mock validator
-        DataTypes.Validator[] memory newValidators =
-            new DataTypes.Validator[](1);
-        newValidators[0] = DataTypes.Validator({
-            pubKey: "someValidPubKey777", // Original validator's public key
-            coinbase: address(msg.sender)
+        ValidatorTypes.Validator[] memory newValidators =
+            new ValidatorTypes.Validator[](1);
+        newValidators[0] = ValidatorTypes.Validator({
+            pubkey: bytes("someValidPubKey777"),
+            addr: address(this)
         });
 
         // Add the new validator
-        vm.startPrank(governance);
+        vm.startPrank(infraredGovernance);
         infrared.addValidators(newValidators);
 
         // Assert that the validator was added
         assertTrue(
-            infrared.isInfraredValidator(newValidators[0].pubKey),
+            infrared.isInfraredValidator(newValidators[0].pubkey),
             "Validator not added correctly"
         );
 
         // Prepare for validator replacement
-        DataTypes.Validator[] memory replacementValidator =
-            new DataTypes.Validator[](1);
-        replacementValidator[0] = DataTypes.Validator({
-            pubKey: "someValidPubKey45454", // New validator's public key
-            coinbase: address(msg.sender)
+        ValidatorTypes.Validator[] memory replacementValidator =
+            new ValidatorTypes.Validator[](1);
+        replacementValidator[0] = ValidatorTypes.Validator({
+            pubkey: bytes("someValidPubKey45454"),
+            addr: address(this)
         });
 
         // Emitting event for replacing validator
         vm.expectEmit(true, true, false, true);
         emit IInfrared.ValidatorReplaced(
-            governance, newValidators[0].pubKey, replacementValidator[0].pubKey
+            infraredGovernance,
+            newValidators[0].pubkey,
+            replacementValidator[0].pubkey
         );
 
         // Replace the original validator with the new one
-        infrared.replaceValidator(newValidators[0], replacementValidator[0]);
+        infrared.replaceValidator(
+            newValidators[0].pubkey, replacementValidator[0].pubkey
+        );
 
         // Stop impersonating the governance address
         vm.stopPrank();
 
         // Assert that the original validator was replaced
         assertFalse(
-            infrared.isInfraredValidator(newValidators[0].pubKey),
+            infrared.isInfraredValidator(newValidators[0].pubkey),
             "Original validator was not removed correctly"
         );
         assertTrue(
-            infrared.isInfraredValidator(replacementValidator[0].pubKey),
+            infrared.isInfraredValidator(replacementValidator[0].pubkey),
             "New validator was not added correctly"
         );
     }
 
     function testFailReplaceValidatorWithInvalidPubKey() public {
         // Set up a new mock validator with valid details
-        DataTypes.Validator[] memory originalValidator;
-        originalValidator[0] = DataTypes.Validator({
-            pubKey: "someValidPubKey777", // Assuming this is a valid public key in bytes format
-            coinbase: address(msg.sender)
+        ValidatorTypes.Validator[] memory originalValidator =
+            new ValidatorTypes.Validator[](1);
+        originalValidator[0] = ValidatorTypes.Validator({
+            pubkey: bytes("someValidPubKey777"),
+            addr: address(this)
         });
 
         // Attempt to add the original validator
-        vm.prank(governance);
+        vm.prank(infraredGovernance);
         infrared.addValidators(originalValidator);
 
         // Assert that the original validator was added
         assertTrue(
-            infrared.isInfraredValidator(originalValidator[0].pubKey),
+            infrared.isInfraredValidator(originalValidator[0].pubkey),
             "Original validator not added correctly"
         );
 
         // Prepare an invalid new validator with zero-length public key
-        DataTypes.Validator[1] memory invalidNewValidator;
-        invalidNewValidator[0] = DataTypes.Validator({
-            pubKey: "", // Zero-length public key
-            coinbase: address(msg.sender)
-        });
+        ValidatorTypes.Validator[] memory invalidNewValidator =
+            new ValidatorTypes.Validator[](1);
+        invalidNewValidator[0] =
+            ValidatorTypes.Validator({pubkey: bytes(""), addr: address(this)});
 
         // Attempt to replace the original validator with the invalid new validator
-        vm.prank(governance);
-        vm.expectRevert(Errors.ZeroBytes.selector); // Assuming you have a specific error for this
-        infrared.replaceValidator(originalValidator[0], invalidNewValidator[0]);
+        vm.prank(infraredGovernance);
+        vm.expectRevert(Errors.ZeroBytes.selector);
+        infrared.replaceValidator(
+            originalValidator[0].pubkey, invalidNewValidator[0].pubkey
+        );
     }
 
     function testFailReplaceValidatorUnauthorized() public {
-        // Assuming we have a function to convert addresses to bytes for demonstration
-        bytes memory pubKey777 = abi.encodePacked(address(777));
-        bytes memory pubKey888 = abi.encodePacked(address(888));
+        bytes memory pubkey777 = abi.encodePacked(address(777));
+        bytes memory pubkey888 = abi.encodePacked(address(888));
 
         // Set up a new mock validator with valid details
-        DataTypes.Validator[] memory originalValidator;
-        originalValidator[0] = DataTypes.Validator({
-            pubKey: pubKey777,
-            coinbase: address(msg.sender)
-        });
+        ValidatorTypes.Validator[] memory originalValidator =
+            new ValidatorTypes.Validator[](1);
+        originalValidator[0] =
+            ValidatorTypes.Validator({pubkey: pubkey777, addr: address(this)});
 
         // Add the original validator with governance privileges
-        vm.prank(governance);
+        vm.prank(infraredGovernance);
         infrared.addValidators(originalValidator);
 
         // Assert that the original validator was added
         assertTrue(
-            infrared.isInfraredValidator(originalValidator[0].pubKey),
+            infrared.isInfraredValidator(originalValidator[0].pubkey),
             "Original validator not added correctly"
         );
 
         // Attempt to replace the validator without authorization
         vm.prank(address(2)); // Simulating a call from an unauthorized address
-
-        // Prepare the call to replace the validator and expect it to revert due to unauthorized access
-
-        vm.expectRevert(); // Use your contract's specific revert reason or error selector for unauthorized actions
-        // Attempt to replace the original validator with a new public key, simulated to fail due to lack of permissions
-        infrared.replaceValidator(
-            originalValidator[0],
-            DataTypes.Validator({
-                pubKey: pubKey888,
-                coinbase: address(msg.sender)
-            })
-        );
+        vm.expectRevert("Unauthorized");
+        infrared.replaceValidator(originalValidator[0].pubkey, pubkey888);
     }
-    */
 
-/*//////////////////////////////////////////////////////////////
+    /*//////////////////////////////////////////////////////////////
                                 FUZZING
     //////////////////////////////////////////////////////////////*/
 
-/* TODO: FIX
+    /* TODO: FIX
     function testValidatorManagementFuzz(uint8 numActions, uint256 seed)
         public
     {
         // This will represent the current set of validators
-        DataTypes.Validator[] memory currentValidators =
-            new DataTypes.Validator[](0);
+        ValidatorTypes.Validator[] memory currentValidators =
+            new ValidatorTypes.Validator[](0);
 
         for (uint256 i = 0; i < numActions; i++) {
             // Randomly decide the action to take: add, remove, or replace
@@ -290,14 +298,14 @@ contract ValidatorManagment is Helper {
                 // Define a random number of validators to add
                 uint8 numToAdd =
                     uint8(uint256(keccak256(abi.encode(seed, i))) % 5) + 1; // Add 1-5 validators
-                DataTypes.Validator[] memory validatorsToAdd =
-                    new DataTypes.Validator[](numToAdd);
+                ValidatorTypes.Validator[] memory validatorsToAdd =
+                    new ValidatorTypes.Validator[](numToAdd);
                 for (uint8 j = 0; j < numToAdd; j++) {
-                    validatorsToAdd[j] = DataTypes.Validator({
-                        pubKey: abi.encodePacked(
+                    validatorsToAdd[j] = ValidatorTypes.Validator({
+                        pubkey: abi.encodePacked(
                             uint256(keccak256(abi.encode(seed, i, j)))
                         ),
-                        coinbase: address(msg.sender)
+                        addr: address(msg.sender)
                     });
                 }
                 vm.prank(governance);
@@ -309,8 +317,8 @@ contract ValidatorManagment is Helper {
                 // Randomly select one of the current validators to remove
                 uint256 indexToRemove = uint256(keccak256(abi.encode(seed, i)))
                     % currentValidators.length;
-                DataTypes.Validator[] memory validatorsToRemove =
-                    new DataTypes.Validator[](1);
+                ValidatorTypes.Validator[] memory validatorsToRemove =
+                    new ValidatorTypes.Validator[](1);
                 validatorsToRemove[0] = currentValidators[indexToRemove];
                 vm.prank(governance);
                 infrared.removeValidators(validatorsToRemove);
@@ -321,11 +329,11 @@ contract ValidatorManagment is Helper {
                 // Randomly select one of the current validators to replace
                 uint256 indexToReplace = uint256(keccak256(abi.encode(seed, i)))
                     % currentValidators.length;
-                DataTypes.Validator memory newValidator = DataTypes.Validator({
-                    pubKey: abi.encodePacked(
+                ValidatorTypes.Validator memory newValidator = ValidatorTypes.Validator({
+                    pubkey: abi.encodePacked(
                         uint256(keccak256(abi.encode(seed, i, "replace")))
                     ),
-                    coinbase: address(msg.sender)
+                    addr: address(msg.sender)
                 });
                 vm.prank(governance);
                 infrared.replaceValidator(
@@ -338,11 +346,11 @@ contract ValidatorManagment is Helper {
 
     // Helper function to combine two arrays of Validator structs
     function combineValidatorArrays(
-        DataTypes.Validator[] memory array1,
-        DataTypes.Validator[] memory array2
-    ) internal pure returns (DataTypes.Validator[] memory) {
-        DataTypes.Validator[] memory combined =
-            new DataTypes.Validator[](array1.length + array2.length);
+        ValidatorTypes.Validator[] memory array1,
+        ValidatorTypes.Validator[] memory array2
+    ) internal pure returns (ValidatorTypes.Validator[] memory) {
+        ValidatorTypes.Validator[] memory combined =
+            new ValidatorTypes.Validator[](array1.length + array2.length);
         for (uint256 i = 0; i < array1.length; i++) {
             combined[i] = array1[i];
         }
@@ -354,12 +362,12 @@ contract ValidatorManagment is Helper {
 
     // Helper function to remove an element from an array of Validator structs by index
     function removeValidatorAtIndex(
-        DataTypes.Validator[] memory array,
+        ValidatorTypes.Validator[] memory array,
         uint256 index
-    ) internal pure returns (DataTypes.Validator[] memory) {
+    ) internal pure returns (ValidatorTypes.Validator[] memory) {
         require(index < array.length, "Index out of bounds");
-        DataTypes.Validator[] memory newArray =
-            new DataTypes.Validator[](array.length - 1);
+        ValidatorTypes.Validator[] memory newArray =
+            new ValidatorTypes.Validator[](array.length - 1);
         for (uint256 i = 0; i < index; i++) {
             newArray[i] = array[i];
         }

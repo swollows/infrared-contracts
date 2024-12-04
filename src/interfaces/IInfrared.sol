@@ -180,6 +180,20 @@ interface IInfrared is IInfraredUpgradeable {
         external;
 
     /**
+     * @notice Recover ERC20 tokens from a vault.
+     * @param _asset  address The address of the staking asset that the vault is for.
+     * @param _to     address The address to send the tokens to.
+     * @param _token  address The address of the token to recover.
+     * @param _amount uint256 The amount of the token to recover.
+     */
+    function recoverERC20FromVault(
+        address _asset,
+        address _to,
+        address _token,
+        uint256 _amount
+    ) external;
+
+    /**
      * @notice Initializes Infrared by whitelisting rewards tokens, granting admin access roles, and deploying the iBGT vault
      * @param _admin The address of the admin
      * @param _collector The address of the collector

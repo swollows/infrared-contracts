@@ -45,6 +45,7 @@ library ValidatorManagerLib {
     ) internal {
         for (uint256 i = 0; i < _validators.length; i++) {
             ValidatorTypes.Validator memory v = _validators[i];
+            if (v.addr == address(0)) revert Errors.ZeroAddress();
             bytes32 id = _getValidatorId(v.pubkey);
             if ($.validatorIds.contains(id)) {
                 revert Errors.InvalidValidator();

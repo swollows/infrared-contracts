@@ -31,6 +31,7 @@ contract VoterTest is Base {
     event NotifyReward(
         address indexed sender, address indexed reward, uint256 amount
     );
+    event NoLongerWhitelistedTokenRemoved(address indexed token);
 
     // Note: _vote are not included in one-vote-per-epoch
     // Only vote() should be constrained as they must be called by the owner
@@ -774,6 +775,23 @@ contract VoterTest is Base {
         voter.createBribeVault(stakingTokens[0], stakingTokens);
     }
 
+    function testCannotCreateBribeVaultIfRewardTokenNotWhiteListed() public {
+        address[] memory _rewardTokens = new address[](2);
+        _rewardTokens[0] = stakingTokens[0];
+        _rewardTokens[1] = address(1);
+
+        // register new infrared Vault that has not have bribe market created yet
+        address bribeRewardToken3 =
+            address(new MockERC20("BribeRewardToken3", "BRT3", 18));
+
+        vm.startPrank(keeper);
+        infrared.registerVault(bribeRewardToken3);
+        vm.stopPrank();
+
+        vm.expectRevert(IVoter.NotWhitelistedToken.selector);
+        voter.createBribeVault(bribeRewardToken3, _rewardTokens);
+    }
+
     function testCannotVoteForBribeVaultThatDoesNotExist() public {
         skipToNextEpoch(60 minutes + 1);
 
@@ -865,6 +883,44 @@ contract VoterTest is Base {
         // address this == governor
         voter.killBribeVault(stakingTokens[0]);
         assertFalse(voter.isAlive(stakingTokens[0]));
+    }
+
+    function testRemoveNoLongerWhitelistedTokensFromBribeVault() public {
+        infrared.updateWhiteListedRewardTokens(stakingTokens[0], false);
+
+        address[] memory noLongerWhitelistedTokens = new address[](1);
+        noLongerWhitelistedTokens[0] = stakingTokens[0];
+
+        BribeVotingReward bribeVault1 =
+            BribeVotingReward(voter.bribeVaults(stakingTokens[0]));
+        BribeVotingReward bribeVault2 =
+            BribeVotingReward(voter.bribeVaults(stakingTokens[1]));
+
+        assertTrue(bribeVault1.isReward(stakingTokens[0]));
+        uint256 rl1 = bribeVault1.rewardsListLength();
+        assertEq(rl1, 2);
+
+        assertTrue(bribeVault2.isReward(stakingTokens[0]));
+        uint256 rl2 = bribeVault2.rewardsListLength();
+        assertEq(rl2, 2);
+
+        vm.expectEmit();
+        emit NoLongerWhitelistedTokenRemoved(noLongerWhitelistedTokens[0]);
+
+        bribeVault1.removeNoLongerWhitelistedTokens(noLongerWhitelistedTokens);
+
+        vm.expectEmit();
+        emit NoLongerWhitelistedTokenRemoved(noLongerWhitelistedTokens[0]);
+
+        bribeVault2.removeNoLongerWhitelistedTokens(noLongerWhitelistedTokens);
+
+        assertFalse(bribeVault1.isReward(stakingTokens[0]));
+        rl1 = bribeVault1.rewardsListLength();
+        assertEq(rl1, 1);
+
+        assertFalse(bribeVault2.isReward(stakingTokens[0]));
+        rl2 = bribeVault2.rewardsListLength();
+        assertEq(rl2, 1);
     }
 
     function testCannotKillBribeVaultIfAlreadyKilled() public {
