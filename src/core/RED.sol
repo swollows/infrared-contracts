@@ -8,12 +8,17 @@ import {ERC20PresetMinterPauser} from "../vendors/ERC20PresetMinterPauser.sol";
  * @notice This contract is the RED token.
  */
 contract RED is ERC20PresetMinterPauser {
+    error ZeroAddress();
+
     address public immutable ibgt;
     address public immutable infrared;
 
     constructor(address _ibgt, address _infrared)
         ERC20PresetMinterPauser("Infared Governance Token", "RED")
     {
+        if (_ibgt == address(0) || _infrared == address(0)) {
+            revert ZeroAddress();
+        }
         ibgt = _ibgt;
         infrared = _infrared;
 

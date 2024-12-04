@@ -7,6 +7,7 @@ interface IIBERAWithdrawor {
     error InvalidAmount();
     error InvalidReceiver();
     error InvalidReserves();
+    error ZeroAddress();
     error CallFailed();
 
     event Queue(address indexed receiver, uint256 nonce, uint256 amount);

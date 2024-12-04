@@ -29,7 +29,7 @@ contract InfraredVault is MultiRewards, IInfraredVault {
     address public immutable infrared;
 
     // The address of the berachain rewards vault
-    IBerachainRewardsVault public rewardsVault;
+    IBerachainRewardsVault public immutable rewardsVault;
 
     /// Modifier to check that the caller is infrared contract
     modifier onlyInfrared() {
@@ -180,10 +180,11 @@ contract InfraredVault is MultiRewards, IInfraredVault {
         view
         returns (UserReward[] memory)
     {
-        UserReward[] memory tempRewards = new UserReward[](rewardTokens.length);
+        uint256 len = rewardTokens.length;
+        UserReward[] memory tempRewards = new UserReward[](len);
         uint256 count = 0;
 
-        for (uint256 i = 0; i < rewardTokens.length; i++) {
+        for (uint256 i = 0; i < len; i++) {
             uint256 amount = earned(_user, rewardTokens[i]);
             if (amount > 0) {
                 tempRewards[count] =

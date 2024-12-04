@@ -76,7 +76,8 @@ library RewardsLib {
         if (_feeTotal == 0) return (amtRecipient, 0, 0);
 
         uint256 _amtTotal = amtRecipient * _feeTotal / FEE_UNIT; // FEE_UNIT = 1e6
-        amtProtocol = _amtTotal * _feeProtocol / FEE_UNIT; // Protocol's share
+        amtProtocol =
+            amtRecipient * _feeTotal * _feeProtocol / (FEE_UNIT * FEE_UNIT); // Protocol's share
         amtVoter = _amtTotal - amtProtocol; // Remainder for voter
         amtRecipient -= (amtProtocol + amtVoter); // Deduct fees from recipient
     }
@@ -94,7 +95,8 @@ library RewardsLib {
         if (_feeTotal == 0) return (amtRecipient, 0, 0);
 
         uint256 _amtTotal = amtRecipient * _feeTotal / FEE_UNIT; // FEE_UNIT = 1e6
-        amtProtocol = _amtTotal * _feeProtocol / FEE_UNIT; // Protocol's share
+        amtProtocol =
+            amtRecipient * _feeTotal * _feeProtocol / (FEE_UNIT * FEE_UNIT); // Protocol's share
         amtVoter = _amtTotal - amtProtocol; // Remainder for voter
         amtRecipient -= (amtProtocol + amtVoter); // Deduct fees from recipient
     }

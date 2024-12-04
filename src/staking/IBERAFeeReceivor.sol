@@ -52,6 +52,10 @@ contract IBERAFeeReceivor is
         external
         initializer
     {
+        if (
+            admin == address(0) || ibera == address(0)
+                || _infrared == address(0)
+        ) revert ZeroAddress();
         __Ownable_init(admin);
         __UUPSUpgradeable_init();
 

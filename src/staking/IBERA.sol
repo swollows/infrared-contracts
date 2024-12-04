@@ -76,6 +76,11 @@ contract IBERA is
         address _claimor,
         address _receivor
     ) external payable initializer {
+        if (
+            admin == address(0) || _infrared == address(0)
+                || _depositor == address(0) || _withdrawor == address(0)
+                || _claimor == address(0) || _receivor == address(0)
+        ) revert ZeroAddress();
         __ERC20_init("Infrared BERA", "iBERA");
         __AccessControl_init();
         __UUPSUpgradeable_init();
@@ -269,6 +274,7 @@ contract IBERA is
         public
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
+        if (_depositor == address(0)) revert ZeroAddress();
         depositor = _depositor;
     }
 
@@ -276,10 +282,12 @@ contract IBERA is
         public
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
+        if (_withdrawor == address(0)) revert ZeroAddress();
         withdrawor = _withdrawor;
     }
 
     function setClaimor(address _claimor) public onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (_claimor == address(0)) revert ZeroAddress();
         claimor = _claimor;
     }
 
@@ -287,6 +295,7 @@ contract IBERA is
         public
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
+        if (_receivor == address(0)) revert ZeroAddress();
         receivor = _receivor;
     }
 

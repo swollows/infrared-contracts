@@ -69,6 +69,7 @@ contract IBERADepositor is
     /// @param admin Address for admin to upgrade
     /// @param ibera The initial IBERA address
     function initialize(address admin, address ibera) public initializer {
+        if (admin == address(0) || ibera == address(0)) revert ZeroAddress();
         __Ownable_init(admin);
         __UUPSUpgradeable_init();
         IBERA = ibera;

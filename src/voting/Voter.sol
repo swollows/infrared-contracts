@@ -32,12 +32,6 @@ contract Voter is IVoter, InfraredUpgradeable, ReentrancyGuardUpgradeable {
     /// @inheritdoc IVoter
     address public ve;
 
-    /**
-     * @notice Duration over which rewards are released
-     *  @dev Used as constant across various reward calculations
-     */
-    uint256 internal constant DURATION = 7 days;
-
     /// @inheritdoc IVoter
     uint256 public totalWeight;
 

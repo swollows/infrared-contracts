@@ -6,6 +6,7 @@ interface IIBERADepositor {
     error InvalidValidator();
     error InvalidAmount();
     error InvalidFee();
+    error ZeroAddress();
     error InvalidSignature();
 
     event Queue(uint256 nonce, uint256 amount);

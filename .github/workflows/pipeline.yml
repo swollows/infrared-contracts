@@ -3,6 +3,9 @@ name: pipeline
 on:
   pull_request:
   push:
+    paths:
+    - 'src/**/*.sol'
+    - '.github/workflows/pipeline.yml'
     branches:
       - main
 

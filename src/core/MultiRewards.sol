@@ -30,7 +30,7 @@ abstract contract MultiRewards is ReentrancyGuard, Pausable, IMultiRewards {
      * @notice The token that users stake to earn rewards
      * @dev This is the base token that users deposit into the contract
      */
-    IERC20 public stakingToken;
+    IERC20 public immutable stakingToken;
 
     /**
      * @notice Stores reward-related data for each reward token
@@ -260,18 +260,6 @@ abstract contract MultiRewards is ReentrancyGuard, Pausable, IMultiRewards {
     /*//////////////////////////////////////////////////////////////
                             RESTRICTED
     //////////////////////////////////////////////////////////////*/
-
-    /**
-     * @notice Sets the rewards distributor for a reward token.
-     * @param _rewardsToken       address The address of the reward token.
-     * @param _rewardsDistributor address The address of the rewards distributor.
-     */
-    function _setRewardsDistributor(
-        address _rewardsToken,
-        address _rewardsDistributor
-    ) internal {
-        rewardData[_rewardsToken].rewardsDistributor = _rewardsDistributor;
-    }
 
     /**
      * @notice Adds a reward token to the contract.

@@ -69,7 +69,7 @@ contract VotingEscrow is IVotingEscrow, ReentrancyGuard {
     uint256 public tokenId;
 
     /// @inheritdoc IVotingEscrow
-    IInfrared public infrared;
+    IInfrared public immutable infrared;
 
     /**
      * @notice Initializes VotingEscrow contract
@@ -84,6 +84,10 @@ contract VotingEscrow is IVotingEscrow, ReentrancyGuard {
         address _voter,
         address _infrared
     ) {
+        if (
+            _keeper == address(0) || _token == address(0)
+                || _voter == address(0) || _infrared == address(0)
+        ) revert ZeroAddress();
         keeper = _keeper;
         token = _token;
         voter = _voter;
@@ -263,6 +267,7 @@ contract VotingEscrow is IVotingEscrow, ReentrancyGuard {
     uint8 public constant decimals = 18;
 
     function setArtProxy(address _proxy) external {
+        if (_proxy == address(0)) revert ZeroAddress();
         if (!infrared.hasRole(infrared.GOVERNANCE_ROLE(), msg.sender)) {
             revert NotGovernor();
         }
@@ -1244,6 +1249,9 @@ contract VotingEscrow is IVotingEscrow, ReentrancyGuard {
     function setVoterAndDistributor(address _voter, address _distributor)
         external
     {
+        if (_voter == address(0) || _distributor == address(0)) {
+            revert ZeroAddress();
+        }
         if (!infrared.hasRole(infrared.GOVERNANCE_ROLE(), msg.sender)) {
             revert NotGovernor();
         }

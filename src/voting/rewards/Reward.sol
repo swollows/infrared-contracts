@@ -29,7 +29,7 @@ abstract contract Reward is IReward, ReentrancyGuard {
     /// @inheritdoc IReward
     address public immutable ve;
     /// @inheritdoc IReward
-    address public authorized;
+    address public immutable authorized;
     /// @inheritdoc IReward
     uint256 public totalSupply;
     /// @inheritdoc IReward
