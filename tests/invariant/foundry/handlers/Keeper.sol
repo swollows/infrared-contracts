@@ -55,8 +55,6 @@ contract Keeper is Test {
         IInfraredVault v = infrared.registerVault(address(stakingAsset));
         vm.stopPrank();
 
-        console.log("Vault registered: ", address(v));
-
         // optional - stake 1 ether in the vault
         deal(address(stakingAsset), address(this), 1 ether);
         MockERC20(address(stakingAsset)).approve(address(v), 1 ether);

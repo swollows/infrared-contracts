@@ -22,18 +22,18 @@ import {InfraredDistributor} from "@core/InfraredDistributor.sol";
 import {BribeCollector} from "@core/BribeCollector.sol";
 
 // internal
-import "@core/Infrared.sol";
-import "@core/InfraredDistributor.sol";
-import "@core/IBGT.sol";
-import "@core/RED.sol";
-import "@core/InfraredVault.sol";
-import "@utils/DataTypes.sol";
+import {IERC20, Infrared} from "@core/Infrared.sol";
+import {InfraredDistributor} from "@core/InfraredDistributor.sol";
+import {IBGT} from "@core/IBGT.sol";
+import {RED} from "@core/RED.sol";
+import {IInfraredVault, InfraredVault} from "@core/InfraredVault.sol";
+import {DataTypes} from "@utils/DataTypes.sol";
 
-import "@interfaces/IInfrared.sol";
+import {IInfrared} from "@interfaces/IInfrared.sol";
 
 // mocks
-import "@mocks/MockERC20.sol";
-import "@berachain/pol/rewards/RewardVaultFactory.sol";
+import {MockERC20} from "@mocks/MockERC20.sol";
+import {RewardVaultFactory} from "@berachain/pol/rewards/RewardVaultFactory.sol";
 import {POLTest} from "@berachain/../test/pol/POL.t.sol";
 
 abstract contract Helper is POLTest {

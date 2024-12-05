@@ -4,19 +4,24 @@ pragma solidity 0.8.26;
 import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
 import "forge-std/Test.sol";
 
-import {InfraredVault, Errors, MultiRewards} from "@core/InfraredVault.sol";
+import {
+    IInfraredVault,
+    InfraredVault,
+    Errors,
+    MultiRewards
+} from "@core/InfraredVault.sol";
 import {IMultiRewards} from "@interfaces/IMultiRewards.sol";
 
 import {IBGT} from "@core/IBGT.sol";
 
 import {IInfrared} from "@interfaces/IInfrared.sol";
 
-import "@mocks/MockERC20.sol";
-import "@mocks/MockInfrared.sol";
-import "@berachain/pol/rewards/RewardVaultFactory.sol";
+import {MockERC20} from "@mocks/MockERC20.sol";
+import {MockInfrared} from "@mocks/MockInfrared.sol";
+import {RewardVaultFactory} from "@berachain/pol/rewards/RewardVaultFactory.sol";
 import {IRewardVault as IBerachainRewardsVault} from
     "@berachain/pol/interfaces/IRewardVault.sol";
-import "@berachain/../test/mock/pol/MockRewardVault.sol";
+import {MockRewardVault} from "@berachain/../test/mock/pol/MockRewardVault.sol";
 
 import {stdStorage, StdStorage} from "forge-std/Test.sol";
 
@@ -463,9 +468,6 @@ contract InfraredVaultTest is Helper {
         deal(user, stakeAmount);
         vm.startPrank(user);
         wbera.deposit{value: stakeAmount}();
-
-        console.log("STAKING TOKEN IS: ", address(infraredVault.stakingToken()));
-        console.log("WBERA IS: ", address(wbera));
 
         // User approves the infraredVault to spend their tokens
         wbera.approve(address(infraredVault), stakeAmount);

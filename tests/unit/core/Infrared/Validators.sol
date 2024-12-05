@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
-import "@forge-std/console2.sol";
-
-import "./Helper.sol";
+import {Helper} from "./Helper.sol";
 import {Errors} from "@utils/Errors.sol";
 
 import {DataTypes} from "@utils/DataTypes.sol";
 import {IInfrared} from "@interfaces/IInfrared.sol";
+import {ValidatorTypes} from "@core/libraries/ValidatorTypes.sol";
 
 contract ValidatorManagment is Helper {
     /*//////////////////////////////////////////////////////////////

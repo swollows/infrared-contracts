@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
-import "./Helper.sol";
-import "@forge-std/console2.sol";
+import {Helper, IAccessControl, IInfraredVault, MockERC20} from "./Helper.sol";
+import {Errors} from "@utils/Errors.sol";
 
 contract InfraredRegisterVaultTest is Helper {
     /*//////////////////////////////////////////////////////////////

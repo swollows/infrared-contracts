@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
-import "./Base.t.sol";
+import {Base, BribeVotingReward, IERC20, MockERC20} from "./Base.t.sol";
 import {IVoter} from "@voting/interfaces/IVoter.sol";
 // import {assertApproxEq} from "forge-std/StdAssertions.sol";
 

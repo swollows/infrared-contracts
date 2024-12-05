@@ -1,19 +1,19 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
-import "./Helper.sol";
-// import "@berachain/test/pol/BGT.t.sol";
-// import "@berachain/src/pol/BGT.sol";
-// import { BeaconDepositMock, POLTest } from "@berachain/test/pol/POL.t.sol";
+import {Helper, IInfrared, InfraredVault, RED} from "./Helper.sol";
 import "@mocks/MockERC20.sol";
 import {BGTStaker} from "@berachain/pol/BGTStaker.sol";
 import "@berachain/pol/rewards/RewardVaultFactory.sol";
 import {IRewardVault as IBerachainRewardsVault} from
     "@berachain/pol/interfaces/IRewardVault.sol";
 import {IIBERAFeeReceivor} from "@interfaces/IIBERAFeeReceivor.sol";
+import {ValidatorTypes} from "@core/libraries/ValidatorTypes.sol";
+import {Errors} from "@utils/Errors.sol";
+import {DataTypes} from "@utils/DataTypes.sol";
 
 contract InfraredTest is Helper {
-    using stdStorage for StdStorage;
+    // using stdStorage for StdStorage;
 
     // MockBerachainRewardsVaultFactory public factory
     /*//////////////////////////////////////////////////////////////
@@ -93,8 +93,6 @@ contract InfraredTest is Helper {
         uint256 rewardBalance = ibgt.balanceOf(user);
         assertTrue(rewardBalance > 0, "User should have rewards");
 
-        console.log("User reward balance: ", rewardBalance);
-
         // Step 7: Users Withdraw Tokens
         vm.startPrank(user);
         vault.withdraw(stakeAmount);
@@ -144,34 +142,12 @@ contract InfraredTest is Helper {
 
         address ibgtVault = address(infrared.ibgtVault());
 
-        // Step 6. Assure that the vaults received the collected bribes.
-        console.log(
-            "[reward] ibgtVault balance before: ",
-            wbera.balanceOf(address(ibgtVault))
-        );
-        console.log(
-            "[reward] Infrared balance before: ",
-            wbera.balanceOf(address(infrared))
-        );
-
-        console.log("------------collectBribes()---------------------");
-
         // Step 4. approve 3 ether to infrared.
         vm.startPrank(address(collector));
         wbera.approve(address(infrared), 3 ether);
 
         // Step 5. Call `collectBribes` with the reward token.
         infrared.collectBribes(address(wbera), 3 ether);
-
-        // Step 6. Display the updated balances of the vaults and infrared after they received the collected bribes.
-        console.log(
-            "[reward] ibgtVault balance after: ",
-            wbera.balanceOf(address(ibgtVault))
-        );
-        console.log(
-            "[reward] Infrared remaining balance after: ",
-            wbera.balanceOf(address(infrared))
-        );
 
         // Step 7. Assure that the vaults received the collected bribes.
         assertTrue(
@@ -600,7 +576,7 @@ contract InfraredTest is Helper {
         // Verify redMintRate in internal storage
         bytes32 storedValue = vm.load(address(infrared), redMintRateSlot);
         uint256 redMintRate = uint256(storedValue);
-        console.log("redMintRate:", redMintRate);
+
         assertEq(
             redMintRate, halfRate, "Internal storage mismatch for half rate"
         );
@@ -613,7 +589,7 @@ contract InfraredTest is Helper {
         // Verify redMintRate in internal storage again
         storedValue = vm.load(address(infrared), redMintRateSlot);
         redMintRate = uint256(storedValue);
-        console.log("redMintRate:", redMintRate);
+
         assertEq(
             redMintRate, doubleRate, "Internal storage mismatch for double rate"
         );
