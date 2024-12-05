@@ -512,6 +512,12 @@ contract InfraredTest is Helper {
         // Grant MINTER_ROLE to infrared contract
         newRed.grantRole(newRed.MINTER_ROLE(), address(infrared));
 
+        // Get the base slot from the public constant
+        bytes32 baseSlot = infrared.REWARDS_STORAGE_LOCATION();
+
+        // The red address is at offset 8 in the struct
+        bytes32 redSlot = bytes32(uint256(baseSlot) + 8);
+
         // Start recording storage access
         vm.record();
 
@@ -519,9 +525,9 @@ contract InfraredTest is Helper {
         vm.prank(infraredGovernance);
         infrared.setRed(address(newRed));
 
-        // Verify slot 19 contains newRed address
-        bytes32 redSlot = vm.load(address(infrared), bytes32(uint256(19)));
-        assertEq(address(uint160(uint256(redSlot))), address(newRed));
+        // Verify the calculated slot contains newRed address
+        bytes32 storedValue = vm.load(address(infrared), redSlot);
+        assertEq(address(uint160(uint256(storedValue))), address(newRed));
     }
 
     function testSetRedFailsZeroAddress() public {
@@ -577,6 +583,12 @@ contract InfraredTest is Helper {
         vm.prank(infraredGovernance);
         infrared.setRed(address(newRed));
 
+        // Get the base slot from the public constant
+        bytes32 baseSlot = infrared.REWARDS_STORAGE_LOCATION();
+
+        // redMintRate is after 9 addresses and 1 mapping in the struct
+        bytes32 redMintRateSlot = bytes32(uint256(baseSlot) + 10);
+
         // Start recording storage access for debugging
         vm.record();
 
@@ -586,9 +598,8 @@ contract InfraredTest is Helper {
         infrared.updateRedMintRate(halfRate);
 
         // Verify redMintRate in internal storage
-        bytes32 redMintRateSlot =
-            vm.load(address(infrared), bytes32(uint256(21)));
-        uint256 redMintRate = uint256(redMintRateSlot);
+        bytes32 storedValue = vm.load(address(infrared), redMintRateSlot);
+        uint256 redMintRate = uint256(storedValue);
         console.log("redMintRate:", redMintRate);
         assertEq(
             redMintRate, halfRate, "Internal storage mismatch for half rate"
@@ -600,8 +611,8 @@ contract InfraredTest is Helper {
         infrared.updateRedMintRate(doubleRate);
 
         // Verify redMintRate in internal storage again
-        redMintRateSlot = vm.load(address(infrared), bytes32(uint256(21)));
-        redMintRate = uint256(redMintRateSlot);
+        storedValue = vm.load(address(infrared), redMintRateSlot);
+        redMintRate = uint256(storedValue);
         console.log("redMintRate:", redMintRate);
         assertEq(
             redMintRate, doubleRate, "Internal storage mismatch for double rate"

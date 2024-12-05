@@ -65,11 +65,52 @@ contract Infrared is InfraredUpgradeable, IInfrared {
                            STORAGE/EVENTS
     //////////////////////////////////////////////////////////////*/
 
-    // Storage for validator management
-    ValidatorManagerLib.ValidatorStorage internal validatorStorage;
-    // Vault storage instance
-    VaultManagerLib.VaultStorage internal vaultStorage;
-    RewardsLib.RewardsStorage internal rewardsStorage;
+    // @note Storage slot locations computed using ERC-7201 formula
+    bytes32 public constant VALIDATOR_STORAGE_LOCATION = keccak256(
+        abi.encode(uint256(keccak256(bytes("infrared.validatorStorage"))) - 1)
+    ) & ~bytes32(uint256(0xff));
+
+    bytes32 public constant VAULT_STORAGE_LOCATION = keccak256(
+        abi.encode(uint256(keccak256(bytes("infrared.vaultStorage"))) - 1)
+    ) & ~bytes32(uint256(0xff));
+
+    bytes32 public constant REWARDS_STORAGE_LOCATION = keccak256(
+        abi.encode(uint256(keccak256(bytes("infrared.rewardsStorage"))) - 1)
+    ) & ~bytes32(uint256(0xff));
+
+    // Helper functions to access the storage
+    function _validatorStorage()
+        internal
+        pure
+        returns (ValidatorManagerLib.ValidatorStorage storage vs)
+    {
+        bytes32 position = VALIDATOR_STORAGE_LOCATION;
+        assembly {
+            vs.slot := position
+        }
+    }
+
+    function _vaultStorage()
+        internal
+        pure
+        returns (VaultManagerLib.VaultStorage storage vs)
+    {
+        bytes32 position = VAULT_STORAGE_LOCATION;
+        assembly {
+            vs.slot := position
+        }
+    }
+
+    function _rewardsStorage()
+        internal
+        pure
+        returns (RewardsLib.RewardsStorage storage rs)
+    {
+        bytes32 position = REWARDS_STORAGE_LOCATION;
+        assembly {
+            rs.slot := position
+        }
+    }
 
     /**
      * @notice The BGT token contract reference
@@ -154,16 +195,16 @@ contract Infrared is InfraredUpgradeable, IInfrared {
         ) revert Errors.ZeroAddress();
         if (_rewardsDuration == 0) revert Errors.ZeroAmount();
 
-        vaultStorage.rewardsDuration = _rewardsDuration;
+        _vaultStorage().rewardsDuration = _rewardsDuration;
 
         // grant admin access roles
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
         _grantRole(KEEPER_ROLE, _admin);
         _grantRole(GOVERNANCE_ROLE, _admin);
 
-        vaultStorage.updateWhitelistedRewardTokens(address(wbera), true);
-        vaultStorage.updateWhitelistedRewardTokens(address(ibgt), true);
-        vaultStorage.updateWhitelistedRewardTokens(address(honey), true);
+        _vaultStorage().updateWhitelistedRewardTokens(address(wbera), true);
+        _vaultStorage().updateWhitelistedRewardTokens(address(ibgt), true);
+        _vaultStorage().updateWhitelistedRewardTokens(address(honey), true);
 
         // set collector, validator distributor, and veIRED voter fee vault
         collector = IBribeCollector(_collector);
@@ -178,20 +219,21 @@ contract Infrared is InfraredUpgradeable, IInfrared {
             revert Errors.RewardTokenNotSupported();
         }
 
-        validatorStorage.distributor = address(distributor);
-        validatorStorage.bgt = address(_bgt);
-        validatorStorage.ibgt = address(ibgt);
+        _validatorStorage().distributor = address(distributor);
+        _validatorStorage().bgt = address(_bgt);
+        _validatorStorage().ibgt = address(ibgt);
 
-        rewardsStorage.collector = address(collector);
-        rewardsStorage.distributor = address(distributor);
-        rewardsStorage.wbera = address(wbera);
-        rewardsStorage.bgt = address(_bgt);
-        rewardsStorage.ibgt = address(ibgt);
-        rewardsStorage.voter = address(voter);
-        rewardsStorage.ibera = address(ibera);
-        rewardsStorage.rewardsDuration = _rewardsDuration;
+        _rewardsStorage().collector = address(collector);
+        _rewardsStorage().distributor = address(distributor);
+        _rewardsStorage().wbera = address(wbera);
+        _rewardsStorage().bgt = address(_bgt);
+        _rewardsStorage().ibgt = address(ibgt);
+        _rewardsStorage().voter = address(voter);
+        _rewardsStorage().ibera = address(ibera);
+        _rewardsStorage().rewardsDuration = _rewardsDuration;
 
-        rewardsStorage.ibgtVault = vaultStorage.registerVault(address(ibgt));
+        _rewardsStorage().ibgtVault =
+            _vaultStorage().registerVault(address(ibgt));
 
         // init upgradeable components
         __InfraredUpgradeable_init();
@@ -207,7 +249,7 @@ contract Infrared is InfraredUpgradeable, IInfrared {
         whenInitialized
         returns (IInfraredVault vault)
     {
-        vault = IInfraredVault(vaultStorage.registerVault(_asset));
+        vault = IInfraredVault(_vaultStorage().registerVault(_asset));
         emit NewVault(msg.sender, _asset, address(vault));
     }
 
@@ -216,7 +258,9 @@ contract Infrared is InfraredUpgradeable, IInfrared {
         address _rewardsToken,
         uint256 _rewardsDuration
     ) external onlyGovernor whenInitialized {
-        vaultStorage.addReward(_stakingToken, _rewardsToken, _rewardsDuration);
+        _vaultStorage().addReward(
+            _stakingToken, _rewardsToken, _rewardsDuration
+        );
     }
 
     function addIncentives(
@@ -224,7 +268,7 @@ contract Infrared is InfraredUpgradeable, IInfrared {
         address _rewardsToken,
         uint256 _amount
     ) external whenInitialized {
-        vaultStorage.addIncentives(_stakingToken, _rewardsToken, _amount);
+        _vaultStorage().addIncentives(_stakingToken, _rewardsToken, _amount);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -238,7 +282,7 @@ contract Infrared is InfraredUpgradeable, IInfrared {
         whenInitialized
     {
         bool previousStatus = whitelistedRewardTokens(_token);
-        vaultStorage.updateWhitelistedRewardTokens(_token, _whitelisted);
+        _vaultStorage().updateWhitelistedRewardTokens(_token, _whitelisted);
         emit WhiteListedRewardTokensUpdated(
             msg.sender, _token, previousStatus, _whitelisted
         );
@@ -251,8 +295,8 @@ contract Infrared is InfraredUpgradeable, IInfrared {
         whenInitialized
     {
         uint256 oldRewardsDuration = rewardsDuration();
-        vaultStorage.updateRewardsDuration(_rewardsDuration);
-        rewardsStorage.updateRewardsDuration(_rewardsDuration);
+        _vaultStorage().updateRewardsDuration(_rewardsDuration);
+        _rewardsStorage().updateRewardsDuration(_rewardsDuration);
         emit RewardsDurationUpdated(
             msg.sender, oldRewardsDuration, _rewardsDuration
         );
@@ -264,14 +308,14 @@ contract Infrared is InfraredUpgradeable, IInfrared {
         address _rewardsToken,
         uint256 _rewardsDuration
     ) external onlyGovernor whenInitialized {
-        vaultStorage.updateRewardsDurationForVault(
+        _vaultStorage().updateRewardsDurationForVault(
             _stakingToken, _rewardsToken, _rewardsDuration
         );
     }
 
     /// @inheritdoc IInfrared
     function pauseVault(address _asset) external onlyGovernor whenInitialized {
-        vaultStorage.pauseVault(_asset);
+        _vaultStorage().pauseVault(_asset);
     }
 
     /// @inheritdoc IInfrared
@@ -280,7 +324,7 @@ contract Infrared is InfraredUpgradeable, IInfrared {
         onlyGovernor
         whenInitialized
     {
-        vaultStorage.claimLostRewardsOnVault(_asset);
+        _vaultStorage().claimLostRewardsOnVault(_asset);
     }
 
     /// @inheritdoc IInfrared
@@ -304,7 +348,7 @@ contract Infrared is InfraredUpgradeable, IInfrared {
         address _token,
         uint256 _amount
     ) external onlyGovernor whenInitialized {
-        vaultStorage.recoverERC20FromVault(_asset, _to, _token, _amount);
+        _vaultStorage().recoverERC20FromVault(_asset, _to, _token, _amount);
     }
 
     /// @inheritdoc IInfrared
@@ -313,7 +357,7 @@ contract Infrared is InfraredUpgradeable, IInfrared {
         onlyGovernor
         whenInitialized
     {
-        rewardsStorage.delegateBGT(_delegatee);
+        _rewardsStorage().delegateBGT(_delegatee);
     }
 
     /// @inheritdoc IInfrared
@@ -322,8 +366,8 @@ contract Infrared is InfraredUpgradeable, IInfrared {
         onlyGovernor
         whenInitialized
     {
-        uint256 prevWeight = rewardsStorage.collectBribesWeight;
-        rewardsStorage.updateIBERABribesWeight(_weight);
+        uint256 prevWeight = _rewardsStorage().collectBribesWeight;
+        _rewardsStorage().updateIBERABribesWeight(_weight);
         emit IBERABribesWeightUpdated(msg.sender, prevWeight, _weight);
     }
 
@@ -334,7 +378,7 @@ contract Infrared is InfraredUpgradeable, IInfrared {
         whenInitialized
     {
         uint256 prevFee = fees(uint256(_t));
-        rewardsStorage.updateFee(_t, _fee);
+        _rewardsStorage().updateFee(_t, _fee);
         emit FeeUpdated(msg.sender, _t, prevFee, _fee);
     }
 
@@ -344,13 +388,13 @@ contract Infrared is InfraredUpgradeable, IInfrared {
         onlyGovernor
         whenInitialized
     {
-        rewardsStorage.claimProtocolFees(_to, _token, _amount);
+        _rewardsStorage().claimProtocolFees(_to, _token, _amount);
         emit ProtocolFeesClaimed(msg.sender, _to, _token, _amount);
     }
 
     /// @inheritdoc IInfrared
     function setRed(address _red) external onlyGovernor whenInitialized {
-        rewardsStorage.setRed(_red);
+        _rewardsStorage().setRed(_red);
         red = IRED(_red);
         emit RedSet(msg.sender, _red);
     }
@@ -361,7 +405,7 @@ contract Infrared is InfraredUpgradeable, IInfrared {
         onlyGovernor
         whenInitialized
     {
-        rewardsStorage.updateRedMintRate(_redMintRate);
+        _rewardsStorage().updateRedMintRate(_redMintRate);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -377,20 +421,21 @@ contract Infrared is InfraredUpgradeable, IInfrared {
         view
         returns (uint256 amtRecipient, uint256 amtVoter, uint256 amtProtocol)
     {
-        return
-            rewardsStorage.chargedFeesOnRewards(_amt, _feeTotal, _feeProtocol);
+        return _rewardsStorage().chargedFeesOnRewards(
+            _amt, _feeTotal, _feeProtocol
+        );
     }
 
     /// @inheritdoc IInfrared
     function harvestBase() public whenInitialized {
-        uint256 bgtAmt = rewardsStorage.harvestBase();
+        uint256 bgtAmt = _rewardsStorage().harvestBase();
         emit BaseHarvested(msg.sender, bgtAmt);
     }
 
     /// @inheritdoc IInfrared
     function harvestVault(address _asset) external whenInitialized {
         IInfraredVault vault = vaultRegistry(_asset);
-        uint256 bgtAmt = rewardsStorage.harvestVault(vault);
+        uint256 bgtAmt = _rewardsStorage().harvestVault(vault);
         emit VaultHarvested(msg.sender, _asset, address(vault), bgtAmt);
     }
 
@@ -410,7 +455,7 @@ contract Infrared is InfraredUpgradeable, IInfrared {
             }
         }
         (address[] memory tokens, uint256[] memory _amounts) =
-            rewardsStorage.harvestBribes(_tokens, whitelisted);
+            _rewardsStorage().harvestBribes(_tokens, whitelisted);
         for (uint256 i; i < len; ++i) {
             if (whitelisted[i]) {
                 emit BribeSupplied(address(collector), tokens[i], _amounts[i]);
@@ -430,13 +475,13 @@ contract Infrared is InfraredUpgradeable, IInfrared {
             revert Errors.RewardTokenNotSupported();
         }
         (uint256 amtIBERA, uint256 amtIbgtVault) =
-            rewardsStorage.collectBribesInWBERA(_amount);
+            _rewardsStorage().collectBribesInWBERA(_amount);
 
         emit BribesCollected(msg.sender, _token, amtIBERA, amtIbgtVault);
     }
 
     function harvestOperatorRewards() public whenInitialized {
-        uint256 _amt = rewardsStorage.harvestOperatorRewards();
+        uint256 _amt = _rewardsStorage().harvestOperatorRewards();
         emit OperatorRewardsDistributed(
             address(ibera), address(distributor), _amt
         );
@@ -445,7 +490,7 @@ contract Infrared is InfraredUpgradeable, IInfrared {
     /// @inheritdoc IInfrared
     function harvestBoostRewards() external whenInitialized {
         (address _vault, address _token, uint256 _amount) =
-            rewardsStorage.harvestBoostRewards();
+            _rewardsStorage().harvestBoostRewards();
         emit RewardSupplied(address(_vault), _token, _amount);
     }
 
@@ -461,7 +506,7 @@ contract Infrared is InfraredUpgradeable, IInfrared {
     {
         harvestBase();
         harvestOperatorRewards();
-        validatorStorage.addValidators(_validators);
+        _validatorStorage().addValidators(_validators);
         emit ValidatorsAdded(msg.sender, _validators);
     }
 
@@ -473,7 +518,7 @@ contract Infrared is InfraredUpgradeable, IInfrared {
     {
         harvestBase();
         harvestOperatorRewards();
-        validatorStorage.removeValidators(_pubkeys);
+        _validatorStorage().removeValidators(_pubkeys);
         emit ValidatorsRemoved(msg.sender, _pubkeys);
     }
 
@@ -485,7 +530,7 @@ contract Infrared is InfraredUpgradeable, IInfrared {
     {
         harvestBase();
         harvestOperatorRewards();
-        validatorStorage.replaceValidator(_current, _new);
+        _validatorStorage().replaceValidator(_current, _new);
         emit ValidatorReplaced(msg.sender, _current, _new);
     }
 
@@ -509,7 +554,7 @@ contract Infrared is InfraredUpgradeable, IInfrared {
         onlyKeeper
         whenInitialized
     {
-        validatorStorage.queueBoosts(_pubkeys, _amts);
+        _validatorStorage().queueBoosts(_pubkeys, _amts);
         emit QueuedBoosts(msg.sender, _pubkeys, _amts);
     }
 
@@ -519,7 +564,7 @@ contract Infrared is InfraredUpgradeable, IInfrared {
         onlyKeeper
         whenInitialized
     {
-        validatorStorage.cancelBoosts(_pubkeys, _amts);
+        _validatorStorage().cancelBoosts(_pubkeys, _amts);
         emit CancelledBoosts(msg.sender, _pubkeys, _amts);
     }
 
@@ -528,7 +573,7 @@ contract Infrared is InfraredUpgradeable, IInfrared {
         external
         whenInitialized
     {
-        validatorStorage.activateBoosts(_pubkeys);
+        _validatorStorage().activateBoosts(_pubkeys);
         emit ActivatedBoosts(msg.sender, _pubkeys);
     }
 
@@ -537,7 +582,7 @@ contract Infrared is InfraredUpgradeable, IInfrared {
         bytes[] calldata _pubkeys,
         uint128[] calldata _amts
     ) external onlyKeeper whenInitialized {
-        validatorStorage.queueDropBoosts(_pubkeys, _amts);
+        _validatorStorage().queueDropBoosts(_pubkeys, _amts);
         emit QueueDropBoosts(msg.sender, _pubkeys, _amts);
     }
 
@@ -546,13 +591,13 @@ contract Infrared is InfraredUpgradeable, IInfrared {
         bytes[] calldata _pubkeys,
         uint128[] calldata _amts
     ) external onlyKeeper whenInitialized {
-        validatorStorage.cancelDropBoosts(_pubkeys, _amts);
+        _validatorStorage().cancelDropBoosts(_pubkeys, _amts);
         emit CancelDropBoosts(msg.sender, _pubkeys, _amts);
     }
 
     /// @inheritdoc IInfrared
     function dropBoosts(bytes[] calldata _pubkeys) external whenInitialized {
-        validatorStorage.dropBoosts(_pubkeys);
+        _validatorStorage().dropBoosts(_pubkeys);
         emit DroppedBoosts(msg.sender, _pubkeys);
     }
 
@@ -567,12 +612,12 @@ contract Infrared is InfraredUpgradeable, IInfrared {
         virtual
         returns (ValidatorTypes.Validator[] memory validators)
     {
-        return validatorStorage.infraredValidators();
+        return _validatorStorage().infraredValidators();
     }
 
     /// @inheritdoc IInfrared
     function numInfraredValidators() external view returns (uint256) {
-        return validatorStorage.numInfraredValidators();
+        return _validatorStorage().numInfraredValidators();
     }
 
     /// @inheritdoc IInfrared
@@ -581,7 +626,7 @@ contract Infrared is InfraredUpgradeable, IInfrared {
         view
         returns (bool)
     {
-        return validatorStorage.isValidator(_validator);
+        return _validatorStorage().isValidator(_validator);
     }
 
     /// @inheritdoc IInfrared
@@ -598,7 +643,7 @@ contract Infrared is InfraredUpgradeable, IInfrared {
         view
         returns (bool)
     {
-        return vaultStorage.isWhitelisted(token);
+        return _vaultStorage().isWhitelisted(token);
     }
 
     /**
@@ -610,7 +655,7 @@ contract Infrared is InfraredUpgradeable, IInfrared {
         view
         returns (IInfraredVault vault)
     {
-        vault = vaultStorage.vaultRegistry[_stakingToken];
+        vault = _vaultStorage().vaultRegistry[_stakingToken];
     }
 
     /**
@@ -621,23 +666,23 @@ contract Infrared is InfraredUpgradeable, IInfrared {
         external
         onlyGovernor
     {
-        vaultStorage.setVaultRegistrationPauseStatus(pause);
+        _vaultStorage().setVaultRegistrationPauseStatus(pause);
         emit VaultRegistrationPauseStatus(pause);
     }
 
     /// @inheritdoc IInfrared
     function rewardsDuration() public view returns (uint256 duration) {
-        return vaultStorage.rewardsDuration;
+        return _vaultStorage().rewardsDuration;
     }
 
     /// @inheritdoc IInfrared
     function fees(uint256 t) public view override returns (uint256) {
-        return rewardsStorage.fees[t];
+        return _rewardsStorage().fees[t];
     }
 
     /// @inheritdoc IInfrared
     function ibgtVault() external view returns (IInfraredVault) {
-        return IInfraredVault(rewardsStorage.ibgtVault);
+        return IInfraredVault(_rewardsStorage().ibgtVault);
     }
 
     /// @inheritdoc IInfrared
@@ -646,6 +691,6 @@ contract Infrared is InfraredUpgradeable, IInfrared {
         view
         returns (uint256)
     {
-        return rewardsStorage.protocolFeeAmounts[_token];
+        return _rewardsStorage().protocolFeeAmounts[_token];
     }
 }
