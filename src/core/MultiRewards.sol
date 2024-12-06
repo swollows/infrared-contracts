@@ -10,16 +10,13 @@ import {ReentrancyGuard} from
 import {SafeERC20} from
     "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Errors} from "src/utils/Errors.sol";
-import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {SafeMath} from "src/utils/SafeMath.sol";
 
 /**
  * @title MultiRewards
  * @dev Fork of https://github.com/curvefi/multi-rewards with hooks on stake/withdraw of LP tokens
  */
 abstract contract MultiRewards is ReentrancyGuard, Pausable, IMultiRewards {
-    using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
     /*//////////////////////////////////////////////////////////////
@@ -129,7 +126,10 @@ abstract contract MultiRewards is ReentrancyGuard, Pausable, IMultiRewards {
         view
         returns (uint256)
     {
-        return Math.min(block.timestamp, rewardData[_rewardsToken].periodFinish);
+        // min value between timestamp and period finish
+        uint256 periodFinish = rewardData[_rewardsToken].periodFinish;
+        uint256 ts = block.timestamp;
+        return ts < periodFinish ? ts : periodFinish;
     }
 
     /// @inheritdoc IMultiRewards
@@ -141,13 +141,11 @@ abstract contract MultiRewards is ReentrancyGuard, Pausable, IMultiRewards {
         if (_totalSupply == 0) {
             return rewardData[_rewardsToken].rewardPerTokenStored;
         }
-        return rewardData[_rewardsToken].rewardPerTokenStored.add(
-            lastTimeRewardApplicable(_rewardsToken).sub(
-                rewardData[_rewardsToken].lastUpdateTime
-            ).mul(rewardData[_rewardsToken].rewardRate).mul(1e18).div(
-                _totalSupply
-            )
-        );
+        return rewardData[_rewardsToken].rewardPerTokenStored
+            + (
+                lastTimeRewardApplicable(_rewardsToken)
+                    - rewardData[_rewardsToken].lastUpdateTime
+            ) * rewardData[_rewardsToken].rewardRate * 1e18 / _totalSupply;
     }
 
     /// @inheritdoc IMultiRewards
@@ -156,11 +154,13 @@ abstract contract MultiRewards is ReentrancyGuard, Pausable, IMultiRewards {
         view
         returns (uint256)
     {
-        return _balances[account].mul(
-            rewardPerToken(_rewardsToken).sub(
-                userRewardPerTokenPaid[account][_rewardsToken]
-            )
-        ).div(1e18).add(rewards[account][_rewardsToken]);
+        return (
+            _balances[account]
+                * (
+                    rewardPerToken(_rewardsToken)
+                        - userRewardPerTokenPaid[account][_rewardsToken]
+                )
+        ) / 1e18 + rewards[account][_rewardsToken];
     }
 
     /// @inheritdoc IMultiRewards
@@ -169,9 +169,8 @@ abstract contract MultiRewards is ReentrancyGuard, Pausable, IMultiRewards {
         view
         returns (uint256)
     {
-        return rewardData[_rewardsToken].rewardRate.mul(
-            rewardData[_rewardsToken].rewardsDuration
-        );
+        return rewardData[_rewardsToken].rewardRate
+            * rewardData[_rewardsToken].rewardsDuration;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -186,8 +185,8 @@ abstract contract MultiRewards is ReentrancyGuard, Pausable, IMultiRewards {
         updateReward(msg.sender)
     {
         require(amount > 0, "Cannot stake 0");
-        _totalSupply = _totalSupply.add(amount);
-        _balances[msg.sender] = _balances[msg.sender].add(amount);
+        _totalSupply = _totalSupply + amount;
+        _balances[msg.sender] = _balances[msg.sender] + amount;
 
         // transfer staking token in then hook stake, for hook to have access to collateral
         stakingToken.safeTransferFrom(msg.sender, address(this), amount);
@@ -208,8 +207,8 @@ abstract contract MultiRewards is ReentrancyGuard, Pausable, IMultiRewards {
         updateReward(msg.sender)
     {
         require(amount > 0, "Cannot withdraw 0");
-        _totalSupply = _totalSupply.sub(amount);
-        _balances[msg.sender] = _balances[msg.sender].sub(amount);
+        _totalSupply = _totalSupply - amount;
+        _balances[msg.sender] = _balances[msg.sender] - amount;
 
         // hook withdraw then transfer staking token out, in case hook needs to bring in collateral
         onWithdraw(amount);
@@ -295,27 +294,25 @@ abstract contract MultiRewards is ReentrancyGuard, Pausable, IMultiRewards {
         );
         // add in the prior residual amount and account for new residual
         // @dev residual used to account for precision loss when dividing reward by rewardsDuration
-        reward = reward.add(rewardData[_rewardsToken].rewardResidual);
+        reward = reward + rewardData[_rewardsToken].rewardResidual;
         rewardData[_rewardsToken].rewardResidual =
             reward % rewardData[_rewardsToken].rewardsDuration;
-        reward = reward.sub(rewardData[_rewardsToken].rewardResidual);
+        reward = reward - rewardData[_rewardsToken].rewardResidual;
 
         if (block.timestamp >= rewardData[_rewardsToken].periodFinish) {
             rewardData[_rewardsToken].rewardRate =
-                reward.div(rewardData[_rewardsToken].rewardsDuration);
+                reward / rewardData[_rewardsToken].rewardsDuration;
         } else {
             uint256 remaining =
-                rewardData[_rewardsToken].periodFinish.sub(block.timestamp);
-            uint256 leftover =
-                remaining.mul(rewardData[_rewardsToken].rewardRate);
-            rewardData[_rewardsToken].rewardRate = reward.add(leftover).div(
-                rewardData[_rewardsToken].rewardsDuration
-            );
+                rewardData[_rewardsToken].periodFinish - block.timestamp;
+            uint256 leftover = remaining * rewardData[_rewardsToken].rewardRate;
+            rewardData[_rewardsToken].rewardRate =
+                (reward + leftover) / rewardData[_rewardsToken].rewardsDuration;
         }
 
         rewardData[_rewardsToken].lastUpdateTime = block.timestamp;
         rewardData[_rewardsToken].periodFinish =
-            block.timestamp.add(rewardData[_rewardsToken].rewardsDuration);
+            block.timestamp + rewardData[_rewardsToken].rewardsDuration;
         emit RewardAdded(_rewardsToken, reward);
     }
 

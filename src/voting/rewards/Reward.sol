@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.26;
 
-import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 import {IReward} from "../interfaces/IReward.sol";
 import {IVoter} from "../interfaces/IVoter.sol";
 import {SafeERC20} from
@@ -208,8 +207,10 @@ abstract contract Reward is IReward, ReentrancyGuard {
         Checkpoint memory cp0 = checkpoints[tokenId][_index];
 
         // accounts for case where lastEarn is before first checkpoint
-        _currTs =
-            Math.max(_currTs, VelodromeTimeLibrary.epochStart(cp0.timestamp));
+        // max value
+        _currTs = _currTs > VelodromeTimeLibrary.epochStart(cp0.timestamp)
+            ? _currTs
+            : VelodromeTimeLibrary.epochStart(cp0.timestamp);
 
         // get epochs between current epoch and first checkpoint in same epoch as last claim
         uint256 numEpochs = (
@@ -223,12 +224,11 @@ abstract contract Reward is IReward, ReentrancyGuard {
                 // get checkpoint in this epoch
                 cp0 = checkpoints[tokenId][_index];
                 // get supply of last checkpoint in this epoch
-                _supply = Math.max(
-                    supplyCheckpoints[getPriorSupplyIndex(
-                        _currTs + DURATION - 1
-                    )].supply,
-                    1
-                );
+                // max value
+                uint256 supplyCP = supplyCheckpoints[getPriorSupplyIndex(
+                    _currTs + DURATION - 1
+                )].supply;
+                _supply = supplyCP > 1 ? supplyCP : 1;
                 reward += (cp0.balanceOf * tokenRewardsPerEpoch[token][_currTs])
                     / _supply;
                 _currTs += DURATION;

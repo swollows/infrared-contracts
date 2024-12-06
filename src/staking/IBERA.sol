@@ -10,8 +10,6 @@ import {AccessControlUpgradeable} from
 import {ERC20Upgradeable} from
     "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 
-import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
-
 import {IInfrared} from "src/interfaces/IInfrared.sol";
 import {IIBERADepositor} from "src/interfaces/IIBERADepositor.sol";
 import {IIBERAWithdrawor} from "src/interfaces/IIBERAWithdrawor.sol";
@@ -197,7 +195,7 @@ contract IBERA is
         (nonce, amount, fee) = _deposit(msg.value);
 
         // mint shares to receiver of ibera
-        shares = (d != 0 && ts != 0) ? Math.mulDiv(ts, amount, d) : amount;
+        shares = (d != 0 && ts != 0) ? ts * amount / d : amount;
         if (shares == 0) revert InvalidShares();
         _mint(receiver, shares);
 
@@ -217,7 +215,7 @@ contract IBERA is
         uint256 ts = totalSupply();
         if (shares == 0 || ts == 0) revert InvalidShares();
 
-        amount = Math.mulDiv(deposits, shares, ts);
+        amount = deposits * shares / ts;
         if (amount == 0) revert InvalidAmount();
 
         // burn shares from sender of ibera
@@ -354,7 +352,7 @@ contract IBERA is
         if (depositsAfterCompound == 0 || ts == 0) {
             shares = amount;
         } else {
-            shares = Math.mulDiv(ts, amount, depositsAfterCompound);
+            shares = ts * amount / depositsAfterCompound;
         }
 
         if (shares == 0) {
@@ -390,7 +388,7 @@ contract IBERA is
             }
         }
 
-        beraAmount = Math.mulDiv(depositsAfterCompound, shareAmount, ts);
+        beraAmount = depositsAfterCompound * shareAmount / ts;
         fee = IBERAConstants.MINIMUM_WITHDRAW_FEE;
 
         if (beraAmount == 0) {

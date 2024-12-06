@@ -7,7 +7,7 @@ import {
     IERC20,
     SafeERC20
 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
+
 import {IInfraredDistributor} from "src/interfaces/IInfraredDistributor.sol";
 import {IBerachainBGTStaker} from "src/interfaces/IBerachainBGTStaker.sol";
 import {IInfraredVault} from "src/interfaces/IInfraredVault.sol";
@@ -186,7 +186,7 @@ library RewardsLib {
         // If RED token is set and mint rate is greater than zero, handle RED rewards
         if (address($.red) != address(0) && $.redMintRate > 0) {
             // Calculate the amount of RED tokens to mint
-            uint256 redAmt = Math.mulDiv(bgtAmt, $.redMintRate, RATE_UNIT);
+            uint256 redAmt = bgtAmt * $.redMintRate / RATE_UNIT;
             IRED($.red).mint(address(this), redAmt);
 
             // Check if RED is already a reward token in the vault
@@ -243,7 +243,7 @@ library RewardsLib {
         IERC20($.wbera).safeTransferFrom(msg.sender, address(this), _amount);
 
         // determine proportion of bribe amount designated for IBERA
-        amtIBERA = Math.mulDiv(_amount, $.collectBribesWeight, WEIGHT_UNIT);
+        amtIBERA = _amount * $.collectBribesWeight / WEIGHT_UNIT;
         amtIbgtVault = _amount - amtIBERA;
 
         // Redeem WBERA for BERA and send to IBERA receivor
