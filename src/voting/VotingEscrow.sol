@@ -14,7 +14,7 @@ import {ReentrancyGuard} from
     "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {DelegationLogicLibrary} from "./libraries/DelegationLogicLibrary.sol";
 import {BalanceLogicLibrary} from "./libraries/BalanceLogicLibrary.sol";
-import {SafeCastLibrary} from "./libraries/SafeCastLibrary.sol";
+import {SafeCastLib} from "lib/solady/src/utils/SafeCastLib.sol";
 import {IInfrared} from "@interfaces/IInfrared.sol";
 
 /// @title Voting Escrow Infrared
@@ -27,8 +27,8 @@ import {IInfrared} from "@interfaces/IInfrared.sol";
 /// @dev Vote weight decays linearly over time. Lock time cannot be more than `MAXTIME` (4 years).
 contract VotingEscrow is IVotingEscrow, ReentrancyGuard {
     using SafeERC20 for IERC20;
-    using SafeCastLibrary for uint256;
-    using SafeCastLibrary for int128;
+    using SafeCastLib for uint256;
+    using SafeCastLib for int128;
     /*//////////////////////////////////////////////////////////////
                                CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/

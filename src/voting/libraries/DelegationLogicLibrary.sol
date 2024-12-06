@@ -2,10 +2,10 @@
 pragma solidity 0.8.26;
 
 import {IVotingEscrow} from "../interfaces/IVotingEscrow.sol";
-import {SafeCastLibrary} from "./SafeCastLibrary.sol";
+import {SafeCastLib} from "lib/solady/src/utils/SafeCastLib.sol";
 
 library DelegationLogicLibrary {
-    using SafeCastLibrary for int128;
+    using SafeCastLib for int128;
 
     /// @notice Used by `_mint`, `_transferFrom`, `_burn` and `delegate`
     ///         to update delegator voting checkpoints.
