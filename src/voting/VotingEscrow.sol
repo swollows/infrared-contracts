@@ -14,8 +14,9 @@ import {ReentrancyGuard} from
     "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {DelegationLogicLibrary} from "./libraries/DelegationLogicLibrary.sol";
 import {BalanceLogicLibrary} from "./libraries/BalanceLogicLibrary.sol";
+
 import {SafeCastLib} from "lib/solady/src/utils/SafeCastLib.sol";
-import {IInfrared} from "@interfaces/IInfrared.sol";
+import {IInfrared} from "src/interfaces/IInfrared.sol";
 
 /// @title Voting Escrow Infrared
 /// @notice veNFT implementation that escrows ERC-20 tokens in the form of an ERC-721 NFT

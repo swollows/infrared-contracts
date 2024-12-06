@@ -7,12 +7,12 @@ import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol"
 
 import "forge-std/Test.sol";
 
-import {BribeCollector} from "@core/BribeCollector.sol";
-import {InfraredDistributor} from "@core/InfraredDistributor.sol";
+import {BribeCollector} from "src/core/BribeCollector.sol";
+import {InfraredDistributor} from "src/core/InfraredDistributor.sol";
 
-import {MockERC20} from "@mocks/MockERC20.sol";
-import {MockInfrared} from "@mocks/MockInfrared.sol";
-// import {MockBeaconDepositContract} from "@mocks/MockBeaconDepositContract.sol";
+import {MockERC20} from "tests/unit/mocks/MockERC20.sol";
+import {MockInfrared} from "tests/unit/mocks/MockInfrared.sol";
+// import {MockBeaconDepositContract} from "tests/unit/mocks/MockBeaconDepositContract.sol";
 
 import {stdStorage, StdStorage} from "forge-std/Test.sol";
 

@@ -5,16 +5,16 @@ pragma solidity ^0.8.22;
 import "forge-std/Test.sol";
 
 // Mocks
-import {MockInfrared} from "@mocks/MockInfrared.sol";
+import {MockInfrared} from "tests/unit/mocks/MockInfrared.sol";
 
 import {BeaconDeposit} from "@berachain/pol/BeaconDeposit.sol";
 
-import {IBERA} from "@staking/IBERA.sol";
-import {IBERADepositor} from "@staking/IBERADepositor.sol";
-import {IBERAWithdrawor} from "@staking/IBERAWithdrawor.sol";
-import {IBERAClaimor} from "@staking/IBERAClaimor.sol";
-import {IBERAFeeReceivor} from "@staking/IBERAFeeReceivor.sol";
-import {IBERAConstants} from "@staking/IBERAConstants.sol";
+import {IBERA} from "src/staking/IBERA.sol";
+import {IBERADepositor} from "src/staking/IBERADepositor.sol";
+import {IBERAWithdrawor} from "src/staking/IBERAWithdrawor.sol";
+import {IBERAClaimor} from "src/staking/IBERAClaimor.sol";
+import {IBERAFeeReceivor} from "src/staking/IBERAFeeReceivor.sol";
+import {IBERAConstants} from "src/staking/IBERAConstants.sol";
 import {IBERADeployer} from "script/IBERADeployer.s.sol";
 
 contract IBERABaseTest is Test {

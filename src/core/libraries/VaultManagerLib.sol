@@ -6,9 +6,9 @@ import {EnumerableSet} from
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from
     "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {IInfraredVault} from "@interfaces/IInfraredVault.sol";
-import {Errors} from "@utils/Errors.sol";
-import {InfraredVaultDeployer} from "@utils/InfraredVaultDeployer.sol";
+import {IInfraredVault} from "src/interfaces/IInfraredVault.sol";
+import {Errors} from "src/utils/Errors.sol";
+import {InfraredVaultDeployer} from "src/utils/InfraredVaultDeployer.sol";
 
 library VaultManagerLib {
     using EnumerableSet for EnumerableSet.AddressSet;

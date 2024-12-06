@@ -8,10 +8,10 @@ import {
     ERC1967Utils
 } from "@openzeppelin-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
-import {Errors} from "@utils/Errors.sol";
+import {Errors} from "src/utils/Errors.sol";
 
-import {IInfrared} from "@interfaces/IInfrared.sol";
-import {IInfraredUpgradeable} from "@interfaces/IInfraredUpgradeable.sol";
+import {IInfrared} from "src/interfaces/IInfrared.sol";
+import {IInfraredUpgradeable} from "src/interfaces/IInfraredUpgradeable.sol";
 
 /**
  * @title InfraredUpgradeable

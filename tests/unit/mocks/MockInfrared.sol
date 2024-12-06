@@ -5,9 +5,9 @@ import {EnumerableSet} from
     "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {IRewardVaultFactory as IBerachainRewardsVaultFactory} from
     "@berachain/pol/interfaces/IRewardVaultFactory.sol";
-import {IIBGT} from "@interfaces/IIBGT.sol";
-import {IERC20Mintable} from "@interfaces/IERC20Mintable.sol";
-import {IInfraredVault} from "@interfaces/IInfraredVault.sol";
+import {IIBGT} from "src/interfaces/IIBGT.sol";
+import {IERC20Mintable} from "src/interfaces/IERC20Mintable.sol";
+import {IInfraredVault} from "src/interfaces/IInfraredVault.sol";
 
 /// @dev For testing InfraredVault.sol
 contract MockInfrared {

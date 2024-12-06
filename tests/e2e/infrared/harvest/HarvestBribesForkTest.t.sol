@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.26;
 
-import {DataTypes} from "@utils/DataTypes.sol";
+import {DataTypes} from "src/utils/DataTypes.sol";
 import {HarvestForkTest} from "./HarvestForkTest.t.sol";
 
 contract HarvestBribesForkTest is HarvestForkTest {

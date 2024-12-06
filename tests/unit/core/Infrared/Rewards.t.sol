@@ -3,10 +3,10 @@ pragma solidity 0.8.26;
 
 import "./Helper.sol";
 import "@forge-std/console2.sol";
-import "@core/Infrared.sol";
-import "@core/libraries/ConfigTypes.sol";
-import "@interfaces/IInfrared.sol";
-import "@interfaces/IMultiRewards.sol";
+import "src/core/Infrared.sol";
+import "src/core/libraries/ConfigTypes.sol";
+import "src/interfaces/IInfrared.sol";
+import "src/interfaces/IMultiRewards.sol";
 import {IRewardVault as IBerachainRewardsVault} from
     "@berachain/pol/interfaces/IRewardVault.sol";
 

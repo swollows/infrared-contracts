@@ -4,8 +4,8 @@ pragma solidity 0.8.26;
 import "forge-std/Script.sol";
 
 import {IBeraChef} from "@berachain/pol/interfaces/IBeraChef.sol";
-import {IInfrared} from "@interfaces/IInfrared.sol";
-import {Infrared} from "@core/Infrared.sol";
+import {IInfrared} from "src/interfaces/IInfrared.sol";
+import {Infrared} from "src/core/Infrared.sol";
 import {IBGT as IBerachainBGT} from "@berachain/pol/interfaces/IBGT.sol";
 
 contract InfraredKeeperScript is Script {

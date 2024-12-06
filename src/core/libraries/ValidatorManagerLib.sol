@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {IBerachainBGT} from "@interfaces/IBerachainBGT.sol";
-import {IIBGT} from "@interfaces/IIBGT.sol";
-import {Errors} from "@utils/Errors.sol";
+import {IBerachainBGT} from "src/interfaces/IBerachainBGT.sol";
+import {IIBGT} from "src/interfaces/IIBGT.sol";
+import {Errors} from "src/utils/Errors.sol";
 import {ValidatorTypes} from "./ValidatorTypes.sol";
-import {IInfraredDistributor} from "@interfaces/IInfraredDistributor.sol";
+import {IInfraredDistributor} from "src/interfaces/IInfraredDistributor.sol";
 import {EnumerableSet} from
     "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 

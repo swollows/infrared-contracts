@@ -9,15 +9,15 @@ import {
     InfraredVault,
     Errors,
     MultiRewards
-} from "@core/InfraredVault.sol";
-import {IMultiRewards} from "@interfaces/IMultiRewards.sol";
+} from "src/core/InfraredVault.sol";
+import {IMultiRewards} from "src/interfaces/IMultiRewards.sol";
 
-import {IBGT} from "@core/IBGT.sol";
+import {IBGT} from "src/core/IBGT.sol";
 
-import {IInfrared} from "@interfaces/IInfrared.sol";
+import {IInfrared} from "src/interfaces/IInfrared.sol";
 
-import {MockERC20} from "@mocks/MockERC20.sol";
-import {MockInfrared} from "@mocks/MockInfrared.sol";
+import {MockERC20} from "tests/unit/mocks/MockERC20.sol";
+import {MockInfrared} from "tests/unit/mocks/MockInfrared.sol";
 import {RewardVaultFactory} from "@berachain/pol/rewards/RewardVaultFactory.sol";
 import {IRewardVault as IBerachainRewardsVault} from
     "@berachain/pol/interfaces/IRewardVault.sol";

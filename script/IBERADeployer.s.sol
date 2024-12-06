@@ -6,12 +6,12 @@ import "forge-std/Script.sol";
 import {ERC1967Proxy} from
     "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
-import {IBERA} from "@staking/IBERA.sol";
-import {IBERAClaimor} from "@staking/IBERAClaimor.sol";
-import {IBERADepositor} from "@staking/IBERADepositor.sol";
-import {IBERAWithdrawor} from "@staking/IBERAWithdrawor.sol";
-import {IBERAFeeReceivor} from "@staking/IBERAFeeReceivor.sol";
-import {IBERAConstants} from "@staking/IBERAConstants.sol";
+import {IBERA} from "src/staking/IBERA.sol";
+import {IBERAClaimor} from "src/staking/IBERAClaimor.sol";
+import {IBERADepositor} from "src/staking/IBERADepositor.sol";
+import {IBERAWithdrawor} from "src/staking/IBERAWithdrawor.sol";
+import {IBERAFeeReceivor} from "src/staking/IBERAFeeReceivor.sol";
+import {IBERAConstants} from "src/staking/IBERAConstants.sol";
 
 contract IBERADeployer is Script {
     address public admin;

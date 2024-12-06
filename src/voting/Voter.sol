@@ -8,17 +8,18 @@ import {SafeERC20} from
 import {ReentrancyGuardUpgradeable} from
     "@openzeppelin-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 
-import {InfraredUpgradeable} from "@core/InfraredUpgradeable.sol";
-import {Errors} from "@utils/Errors.sol";
+import {InfraredUpgradeable} from "src/core/InfraredUpgradeable.sol";
+import {Errors} from "src/utils/Errors.sol";
 
-import {IReward} from "@voting/interfaces/IReward.sol";
-import {IVoter} from "@voting/interfaces/IVoter.sol";
-import {IVotingEscrow} from "@voting/interfaces/IVotingEscrow.sol";
+import {IReward} from "src/voting/interfaces/IReward.sol";
+import {IVoter} from "src/voting/interfaces/IVoter.sol";
+import {IVotingEscrow} from "src/voting/interfaces/IVotingEscrow.sol";
 
-import {BribeVotingReward} from "@voting/rewards/BribeVotingReward.sol";
-import {VelodromeTimeLibrary} from "@voting/libraries/VelodromeTimeLibrary.sol";
+import {BribeVotingReward} from "src/voting/rewards/BribeVotingReward.sol";
+import {VelodromeTimeLibrary} from
+    "src/voting/libraries/VelodromeTimeLibrary.sol";
 
-import {IInfrared} from "@interfaces/IInfrared.sol";
+import {IInfrared} from "src/interfaces/IInfrared.sol";
 
 /// @title Infrared Voting POL CuttingBoard
 /// @dev This contract manages votes for POL CuttingBoard allocation and respective bribeVault creation.

@@ -9,10 +9,10 @@ import {ReentrancyGuard} from
     "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {SafeERC20} from
     "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {Errors} from "@utils/Errors.sol";
+import {Errors} from "src/utils/Errors.sol";
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {SafeMath} from "@utils/SafeMath.sol";
+import {SafeMath} from "src/utils/SafeMath.sol";
 
 /**
  * @title MultiRewards

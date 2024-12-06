@@ -12,8 +12,8 @@ import {OwnableUpgradeable} from
     "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 import {IBeaconDeposit} from "@berachain/pol/interfaces/IBeaconDeposit.sol";
-import {IIBERA} from "@interfaces/IIBERA.sol";
-import {IIBERADepositor} from "@interfaces/IIBERADepositor.sol";
+import {IIBERA} from "src/interfaces/IIBERA.sol";
+import {IIBERADepositor} from "src/interfaces/IIBERADepositor.sol";
 
 import {IBERAConstants} from "./IBERAConstants.sol";
 

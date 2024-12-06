@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.22;
 
-import {IIBERAFeeReceivor} from "@interfaces/IIBERAFeeReceivor.sol";
-import {IBERAConstants} from "@staking/IBERAConstants.sol";
+import {IIBERAFeeReceivor} from "src/interfaces/IIBERAFeeReceivor.sol";
+import {IBERAConstants} from "src/staking/IBERAConstants.sol";
 
 import {IBERABaseTest} from "./IBERABase.t.sol";
 

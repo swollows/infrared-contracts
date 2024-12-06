@@ -9,30 +9,30 @@ import {ERC1967Proxy} from
     "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
 
-import {Voter} from "@voting/Voter.sol";
-import {VotingEscrow} from "@voting/VotingEscrow.sol";
-import {IBERA} from "@staking/IBERA.sol";
-import {IBERAClaimor} from "@staking/IBERAClaimor.sol";
-import {IBERADepositor} from "@staking/IBERADepositor.sol";
-import {IBERAWithdrawor} from "@staking/IBERAWithdrawor.sol";
-import {IBERAFeeReceivor} from "@staking/IBERAFeeReceivor.sol";
-import {IBERAConstants} from "@staking/IBERAConstants.sol";
+import {Voter} from "src/voting/Voter.sol";
+import {VotingEscrow} from "src/voting/VotingEscrow.sol";
+import {IBERA} from "src/staking/IBERA.sol";
+import {IBERAClaimor} from "src/staking/IBERAClaimor.sol";
+import {IBERADepositor} from "src/staking/IBERADepositor.sol";
+import {IBERAWithdrawor} from "src/staking/IBERAWithdrawor.sol";
+import {IBERAFeeReceivor} from "src/staking/IBERAFeeReceivor.sol";
+import {IBERAConstants} from "src/staking/IBERAConstants.sol";
 
-import {InfraredDistributor} from "@core/InfraredDistributor.sol";
-import {BribeCollector} from "@core/BribeCollector.sol";
+import {InfraredDistributor} from "src/core/InfraredDistributor.sol";
+import {BribeCollector} from "src/core/BribeCollector.sol";
 
 // internal
-import {IERC20, Infrared} from "@core/Infrared.sol";
-import {InfraredDistributor} from "@core/InfraredDistributor.sol";
-import {IBGT} from "@core/IBGT.sol";
-import {RED} from "@core/RED.sol";
-import {IInfraredVault, InfraredVault} from "@core/InfraredVault.sol";
-import {DataTypes} from "@utils/DataTypes.sol";
+import {IERC20, Infrared} from "src/core/Infrared.sol";
+import {InfraredDistributor} from "src/core/InfraredDistributor.sol";
+import {IBGT} from "src/core/IBGT.sol";
+import {RED} from "src/core/RED.sol";
+import {IInfraredVault, InfraredVault} from "src/core/InfraredVault.sol";
+import {DataTypes} from "src/utils/DataTypes.sol";
 
-import {IInfrared} from "@interfaces/IInfrared.sol";
+import {IInfrared} from "src/interfaces/IInfrared.sol";
 
 // mocks
-import {MockERC20} from "@mocks/MockERC20.sol";
+import {MockERC20} from "tests/unit/mocks/MockERC20.sol";
 import {RewardVaultFactory} from "@berachain/pol/rewards/RewardVaultFactory.sol";
 import {POLTest} from "@berachain/../test/pol/POL.t.sol";
 

@@ -5,12 +5,12 @@ import {SafeERC20} from
     "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import {InfraredUpgradeable} from "@core/InfraredUpgradeable.sol";
-import {Errors} from "@utils/Errors.sol";
+import {InfraredUpgradeable} from "src/core/InfraredUpgradeable.sol";
+import {Errors} from "src/utils/Errors.sol";
 
-import {IBribeCollector} from "@interfaces/IBribeCollector.sol";
-import {IInfrared} from "@interfaces/IInfrared.sol";
-import {IInfraredVault} from "@interfaces/IInfraredVault.sol";
+import {IBribeCollector} from "src/interfaces/IBribeCollector.sol";
+import {IInfrared} from "src/interfaces/IInfrared.sol";
+import {IInfraredVault} from "src/interfaces/IInfraredVault.sol";
 
 /**
  * @title BribeCollector

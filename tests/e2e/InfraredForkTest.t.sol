@@ -12,16 +12,16 @@ import {ERC20PresetMinterPauser} from
 import {IRewardVault as IBerachainRewardsVault} from
     "@berachain/pol/interfaces/IRewardVault.sol";
 
-import {Voter} from "@voting/Voter.sol";
-import {VotingEscrow} from "@voting/VotingEscrow.sol";
+import {Voter} from "src/voting/Voter.sol";
+import {VotingEscrow} from "src/voting/VotingEscrow.sol";
 
-import {IBGT} from "@core/IBGT.sol";
-import {Infrared} from "@core/Infrared.sol";
-import {InfraredDistributor} from "@core/InfraredDistributor.sol";
-import {BribeCollector} from "@core/BribeCollector.sol";
+import {IBGT} from "src/core/IBGT.sol";
+import {Infrared} from "src/core/Infrared.sol";
+import {InfraredDistributor} from "src/core/InfraredDistributor.sol";
+import {BribeCollector} from "src/core/BribeCollector.sol";
 
-import {IInfraredVault} from "@interfaces/IInfraredVault.sol";
-import {IMultiRewards} from "@interfaces/IMultiRewards.sol";
+import {IInfraredVault} from "src/interfaces/IInfraredVault.sol";
+import {IMultiRewards} from "src/interfaces/IMultiRewards.sol";
 
 import {HelperForkTest} from "./HelperForkTest.t.sol";
 

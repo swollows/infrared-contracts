@@ -2,7 +2,7 @@
 pragma solidity 0.8.26;
 
 import {Helper, IAccessControl, IInfraredVault, MockERC20} from "./Helper.sol";
-import {Errors} from "@utils/Errors.sol";
+import {Errors} from "src/utils/Errors.sol";
 
 contract InfraredRegisterVaultTest is Helper {
     /*//////////////////////////////////////////////////////////////

@@ -2,15 +2,15 @@
 pragma solidity 0.8.26;
 
 import {Helper, IInfrared, InfraredVault, RED} from "./Helper.sol";
-import "@mocks/MockERC20.sol";
+import "tests/unit/mocks/MockERC20.sol";
 import {BGTStaker} from "@berachain/pol/BGTStaker.sol";
 import "@berachain/pol/rewards/RewardVaultFactory.sol";
 import {IRewardVault as IBerachainRewardsVault} from
     "@berachain/pol/interfaces/IRewardVault.sol";
-import {IIBERAFeeReceivor} from "@interfaces/IIBERAFeeReceivor.sol";
-import {ValidatorTypes} from "@core/libraries/ValidatorTypes.sol";
-import {Errors} from "@utils/Errors.sol";
-import {DataTypes} from "@utils/DataTypes.sol";
+import {IIBERAFeeReceivor} from "src/interfaces/IIBERAFeeReceivor.sol";
+import {ValidatorTypes} from "src/core/libraries/ValidatorTypes.sol";
+import {Errors} from "src/utils/Errors.sol";
+import {DataTypes} from "src/utils/DataTypes.sol";
 
 contract InfraredTest is Helper {
     // using stdStorage for StdStorage;

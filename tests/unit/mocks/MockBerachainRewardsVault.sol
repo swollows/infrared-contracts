@@ -4,8 +4,8 @@ pragma solidity 0.8.26;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IRewardVault as IBerachainRewardsVault} from
     "@berachain/pol/interfaces/IRewardVault.sol";
-import {MultiRewards} from "@core/MultiRewards.sol";
-import {SafeMath} from "@utils/SafeMath.sol";
+import {MultiRewards} from "src/core/MultiRewards.sol";
+import {SafeMath} from "src/utils/SafeMath.sol";
 import {SafeERC20} from
     "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 

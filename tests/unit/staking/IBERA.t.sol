@@ -3,10 +3,10 @@ pragma solidity ^0.8.22;
 
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 
-import {IIBERA} from "@interfaces/IIBERA.sol";
-import {IIBERAWithdrawor} from "@interfaces/IIBERAWithdrawor.sol";
-import {IBERAConstants} from "@staking/IBERAConstants.sol";
-import {IBERA} from "@staking/IBERA.sol";
+import {IIBERA} from "src/interfaces/IIBERA.sol";
+import {IIBERAWithdrawor} from "src/interfaces/IIBERAWithdrawor.sol";
+import {IBERAConstants} from "src/staking/IBERAConstants.sol";
+import {IBERA} from "src/staking/IBERA.sol";
 
 import {IBERABaseTest} from "./IBERABase.t.sol";
 

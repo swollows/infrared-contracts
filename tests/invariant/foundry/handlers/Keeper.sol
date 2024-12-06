@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
-import "@core/IBGT.sol";
-import "@core/InfraredVault.sol";
-import "@core/Infrared.sol";
+import "src/core/IBGT.sol";
+import "src/core/InfraredVault.sol";
+import "src/core/Infrared.sol";
 
-import "@core/MultiRewards.sol";
+import "src/core/MultiRewards.sol";
 
 import "forge-std/Test.sol";
 
-import "@mocks/MockERC20.sol";
+import "tests/unit/mocks/MockERC20.sol";
 
 import "@berachain/pol/rewards/RewardVaultFactory.sol";
 

@@ -9,7 +9,7 @@ import {IERC6372} from "@openzeppelin/contracts/interfaces/IERC6372.sol";
 import {IERC4906} from "@openzeppelin/contracts/interfaces/IERC4906.sol";
 import {IERC165} from "@openzeppelin/contracts/interfaces/IERC165.sol";
 import {IVotes} from "./IVotes.sol";
-import {IInfrared} from "@interfaces/IInfrared.sol";
+import {IInfrared} from "src/interfaces/IInfrared.sol";
 
 interface IVotingEscrow is IVotes, IERC4906, IERC6372, IERC721Metadata {
     /*//////////////////////////////////////////////////////////////

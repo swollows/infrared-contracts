@@ -7,22 +7,22 @@ import {IBeraChef} from "@berachain/pol/interfaces/IBeraChef.sol";
 import {IRewardVaultFactory as IBerachainRewardsVaultFactory} from
     "@berachain/pol/interfaces/IRewardVaultFactory.sol";
 
-import {IVoter} from "@voting/interfaces/IVoter.sol";
-import {IIBERA} from "@interfaces/IIBERA.sol";
-import {IRED} from "@interfaces/IRED.sol";
+import {IVoter} from "src/voting/interfaces/IVoter.sol";
+import {IIBERA} from "src/interfaces/IIBERA.sol";
+import {IRED} from "src/interfaces/IRED.sol";
 
-import {IWBERA} from "@interfaces/IWBERA.sol";
-import {IERC20Mintable} from "@interfaces/IERC20Mintable.sol";
-import {IIBGT} from "@interfaces/IIBGT.sol";
-import {IBribeCollector} from "@interfaces/IBribeCollector.sol";
-import {IInfraredDistributor} from "@interfaces/IInfraredDistributor.sol";
-import {IInfraredVault} from "@interfaces/IInfraredVault.sol";
+import {IWBERA} from "src/interfaces/IWBERA.sol";
+import {IERC20Mintable} from "src/interfaces/IERC20Mintable.sol";
+import {IIBGT} from "src/interfaces/IIBGT.sol";
+import {IBribeCollector} from "src/interfaces/IBribeCollector.sol";
+import {IInfraredDistributor} from "src/interfaces/IInfraredDistributor.sol";
+import {IInfraredVault} from "src/interfaces/IInfraredVault.sol";
 
-import {DataTypes} from "@utils/DataTypes.sol";
+import {DataTypes} from "src/utils/DataTypes.sol";
 
 import {IInfraredUpgradeable} from "./IInfraredUpgradeable.sol";
-import {ValidatorTypes} from "@core/libraries/ValidatorTypes.sol";
-import {ConfigTypes} from "@core/libraries/ConfigTypes.sol";
+import {ValidatorTypes} from "src/core/libraries/ValidatorTypes.sol";
+import {ConfigTypes} from "src/core/libraries/ConfigTypes.sol";
 
 interface IInfrared is IInfraredUpgradeable {
     /**

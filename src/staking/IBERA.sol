@@ -12,11 +12,11 @@ import {ERC20Upgradeable} from
 
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 
-import {IInfrared} from "@interfaces/IInfrared.sol";
-import {IIBERADepositor} from "@interfaces/IIBERADepositor.sol";
-import {IIBERAWithdrawor} from "@interfaces/IIBERAWithdrawor.sol";
-import {IIBERAFeeReceivor} from "@interfaces/IIBERAFeeReceivor.sol";
-import {IIBERA} from "@interfaces/IIBERA.sol";
+import {IInfrared} from "src/interfaces/IInfrared.sol";
+import {IIBERADepositor} from "src/interfaces/IIBERADepositor.sol";
+import {IIBERAWithdrawor} from "src/interfaces/IIBERAWithdrawor.sol";
+import {IIBERAFeeReceivor} from "src/interfaces/IIBERAFeeReceivor.sol";
+import {IIBERA} from "src/interfaces/IIBERA.sol";
 
 import {IBERAConstants} from "./IBERAConstants.sol";
 import {IBERADepositor} from "./IBERADepositor.sol";

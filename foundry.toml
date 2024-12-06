@@ -19,15 +19,7 @@ remappings = [
     'solady/src/=lib/solady/src/',
     'solady/test/=lib/solady/test/',
     '@berachain/=lib/contracts-monorepo/src/',
-    '@utils/=src/utils/',
-    '@interfaces/=src/interfaces/',
-    '@core/=src/core/',
-    '@vendors/=src/vendors/',
     '@prb/=lib/prb-test/src/',
-    '@vesting/=src/vesting/',
-    '@mocks/=tests/unit/mocks',
-    '@voting/=src/voting/',
-    '@staking/=src/staking/',
 ]
 fs_permissions = [{ access = "read", path = "./" }]
 
@@ -43,15 +35,7 @@ remappings = [
     'solady/src/=lib/solady/src/',
     'solady/test/=lib/solady/test/',
     '@berachain/=lib/contracts-monorepo/src/',
-    '@utils/=src/utils/',
-    '@interfaces/=src/interfaces/',
-    '@core/=src/core/',
-    '@vendors/=src/vendors/',
     '@prb/=lib/prb-test/src/',
-    '@vesting/=src/vesting/',
-    '@mocks/=tests/unit/mocks',
-    '@voting/=src/voting/',
-    '@staking/=src/staking/',
 ]
 
 [profile.default.optimizer_details]

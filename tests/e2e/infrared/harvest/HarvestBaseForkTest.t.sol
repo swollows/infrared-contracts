@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.26;
 
-import {IMultiRewards} from "@interfaces/IMultiRewards.sol";
-import {IInfraredVault} from "@interfaces/IInfraredVault.sol";
+import {IMultiRewards} from "src/interfaces/IMultiRewards.sol";
+import {IInfraredVault} from "src/interfaces/IInfraredVault.sol";
 
 import {HarvestForkTest} from "./HarvestForkTest.t.sol";
 

@@ -4,9 +4,9 @@ pragma solidity ^0.8.22;
 import {IBeaconDeposit} from "@berachain/pol/interfaces/IBeaconDeposit.sol";
 import {BeaconDeposit} from "@berachain/pol/BeaconDeposit.sol";
 
-import {IIBERA} from "@interfaces/IIBERA.sol";
-import {IIBERADepositor} from "@interfaces/IIBERADepositor.sol";
-import {IBERAConstants} from "@staking/IBERAConstants.sol";
+import {IIBERA} from "src/interfaces/IIBERA.sol";
+import {IIBERADepositor} from "src/interfaces/IIBERADepositor.sol";
+import {IBERAConstants} from "src/staking/IBERAConstants.sol";
 
 import {IBERABaseTest} from "./IBERABase.t.sol";
 

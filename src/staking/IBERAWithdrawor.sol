@@ -11,10 +11,10 @@ import {
 import {OwnableUpgradeable} from
     "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
-import {IIBERA} from "@interfaces/IIBERA.sol";
-import {IIBERADepositor} from "@interfaces/IIBERADepositor.sol";
-import {IIBERAClaimor} from "@interfaces/IIBERAClaimor.sol";
-import {IIBERAWithdrawor} from "@interfaces/IIBERAWithdrawor.sol";
+import {IIBERA} from "src/interfaces/IIBERA.sol";
+import {IIBERADepositor} from "src/interfaces/IIBERADepositor.sol";
+import {IIBERAClaimor} from "src/interfaces/IIBERAClaimor.sol";
+import {IIBERAWithdrawor} from "src/interfaces/IIBERAWithdrawor.sol";
 
 import {IBERAConstants} from "./IBERAConstants.sol";
 

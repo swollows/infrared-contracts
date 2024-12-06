@@ -2,7 +2,7 @@
 pragma solidity 0.8.26;
 
 import "./Helper.sol";
-import {DataTypes} from "@utils/DataTypes.sol";
+import {DataTypes} from "src/utils/DataTypes.sol";
 
 contract DelegationTest is Helper {
 /*//////////////////////////////////////////////////////////////

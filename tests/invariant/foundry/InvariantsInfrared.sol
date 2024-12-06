@@ -8,30 +8,30 @@ import {ERC1967Proxy} from
     "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
 
-import {InfraredDistributor} from "@core/InfraredDistributor.sol";
-import {BribeCollector} from "@core/BribeCollector.sol";
+import {InfraredDistributor} from "src/core/InfraredDistributor.sol";
+import {BribeCollector} from "src/core/BribeCollector.sol";
 
-import {Voter} from "@voting/Voter.sol";
-import {VotingEscrow} from "@voting/VotingEscrow.sol";
+import {Voter} from "src/voting/Voter.sol";
+import {VotingEscrow} from "src/voting/VotingEscrow.sol";
 
 // internal
-import "@core/Infrared.sol";
-import "@core/IBGT.sol";
-import "@core/InfraredVault.sol";
-import "@utils/DataTypes.sol";
+import "src/core/Infrared.sol";
+import "src/core/IBGT.sol";
+import "src/core/InfraredVault.sol";
+import "src/utils/DataTypes.sol";
 
 // mocks
-import "@mocks/MockERC20.sol";
-import "@mocks/MockWbera.sol";
+import "tests/unit/mocks/MockERC20.sol";
+import "tests/unit/mocks/MockWbera.sol";
 import "@berachain/pol/rewards/RewardVaultFactory.sol";
-// import "@mocks/MockBeaconDepositContract.sol";
-// TODO: fix import "@mocks/MockBerachef.sol";
+// import "tests/unit/mocks/MockBeaconDepositContract.sol";
+// TODO: fix import "tests/unit/mocks/MockBerachef.sol";
 
 import "./handlers/Governance.sol";
 import "./handlers/Keeper.sol";
 import "./handlers/User.sol";
 
-import "@core/MultiRewards.sol";
+import "src/core/MultiRewards.sol";
 
 contract InvariantsInfrared is Test {
     Infrared public infrared;

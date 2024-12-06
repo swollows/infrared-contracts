@@ -6,11 +6,11 @@ import {IRewardVault as IBerachainRewardsVault} from
 import {IRewardVaultFactory as IBerachainRewardsVaultFactory} from
     "@berachain/pol/interfaces/IRewardVaultFactory.sol";
 
-import {Errors} from "@utils/Errors.sol";
-import {MultiRewards, IERC20, SafeERC20} from "@core/MultiRewards.sol";
+import {Errors} from "src/utils/Errors.sol";
+import {MultiRewards, IERC20, SafeERC20} from "src/core/MultiRewards.sol";
 
-import {IInfrared} from "@interfaces/IInfrared.sol";
-import {IInfraredVault} from "@interfaces/IInfraredVault.sol";
+import {IInfrared} from "src/interfaces/IInfrared.sol";
+import {IInfraredVault} from "src/interfaces/IInfraredVault.sol";
 
 /**
  * @title InfraredVault

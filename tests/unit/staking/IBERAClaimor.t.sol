@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.22;
 
-import {IIBERAClaimor} from "@interfaces/IIBERAClaimor.sol";
+import {IIBERAClaimor} from "src/interfaces/IIBERAClaimor.sol";
 import {IBERABaseTest} from "./IBERABase.t.sol";
 
 contract IBERAClaimorTest is IBERABaseTest {

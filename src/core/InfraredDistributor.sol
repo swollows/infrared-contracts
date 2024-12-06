@@ -8,11 +8,11 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IBeaconDeposit as IBerachainBeaconDeposit} from
     "@berachain/pol/interfaces/IBeaconDeposit.sol";
 
-import {InfraredUpgradeable} from "@core/InfraredUpgradeable.sol";
+import {InfraredUpgradeable} from "src/core/InfraredUpgradeable.sol";
 
-import {IInfrared} from "@interfaces/IInfrared.sol";
-import {IInfraredDistributor} from "@interfaces/IInfraredDistributor.sol";
-import {Errors} from "@utils/Errors.sol";
+import {IInfrared} from "src/interfaces/IInfrared.sol";
+import {IInfraredDistributor} from "src/interfaces/IInfraredDistributor.sol";
+import {Errors} from "src/utils/Errors.sol";
 
 /// @title InfraredDistributor
 /// @notice A contract for distributing rewards in a single ERC20 token (iBERA) to validators

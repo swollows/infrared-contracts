@@ -2,11 +2,11 @@
 pragma solidity 0.8.26;
 
 import {Helper} from "./Helper.sol";
-import {Errors} from "@utils/Errors.sol";
+import {Errors} from "src/utils/Errors.sol";
 
-import {DataTypes} from "@utils/DataTypes.sol";
-import {IInfrared} from "@interfaces/IInfrared.sol";
-import {ValidatorTypes} from "@core/libraries/ValidatorTypes.sol";
+import {DataTypes} from "src/utils/DataTypes.sol";
+import {IInfrared} from "src/interfaces/IInfrared.sol";
+import {ValidatorTypes} from "src/core/libraries/ValidatorTypes.sol";
 
 contract ValidatorManagment is Helper {
     /*//////////////////////////////////////////////////////////////

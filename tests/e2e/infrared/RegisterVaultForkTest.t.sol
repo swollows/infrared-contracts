@@ -2,8 +2,8 @@
 pragma solidity 0.8.26;
 
 import {IRewardVault} from "@berachain/pol/interfaces/IRewardVault.sol";
-import {IInfraredVault} from "@interfaces/IInfraredVault.sol";
-import {IMultiRewards} from "@interfaces/IMultiRewards.sol";
+import {IInfraredVault} from "src/interfaces/IInfraredVault.sol";
+import {IMultiRewards} from "src/interfaces/IMultiRewards.sol";
 
 import {InfraredForkTest} from "../InfraredForkTest.t.sol";
 

@@ -11,9 +11,9 @@ import {
 import {OwnableUpgradeable} from
     "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
-import {IIBERA} from "@interfaces/IIBERA.sol";
-import {IIBERAFeeReceivor} from "@interfaces/IIBERAFeeReceivor.sol";
-import {IInfrared} from "@interfaces/IInfrared.sol";
+import {IIBERA} from "src/interfaces/IIBERA.sol";
+import {IIBERAFeeReceivor} from "src/interfaces/IIBERAFeeReceivor.sol";
+import {IInfrared} from "src/interfaces/IInfrared.sol";
 import {IBERAConstants} from "./IBERAConstants.sol";
 
 /// @title IBERAFeeReceivor

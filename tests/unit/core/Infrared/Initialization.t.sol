@@ -5,9 +5,9 @@ pragma solidity 0.8.26;
 
 import {Helper, IAccessControl, IInfrared} from "./Helper.sol";
 import {IMultiRewards} from "src/interfaces/IMultiRewards.sol";
-import {Errors} from "@utils/Errors.sol";
-import {ConfigTypes} from "@core/libraries/ConfigTypes.sol";
-import {ValidatorTypes} from "@core/libraries/ValidatorTypes.sol";
+import {Errors} from "src/utils/Errors.sol";
+import {ConfigTypes} from "src/core/libraries/ConfigTypes.sol";
+import {ValidatorTypes} from "src/core/libraries/ValidatorTypes.sol";
 
 contract InfraredInitializationTest is Helper {
     /*//////////////////////////////////////////////////////////////

@@ -3,17 +3,17 @@ pragma solidity 0.8.26;
 
 import {ERC1967Proxy} from
     "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
-import "@mocks/MockWbera.sol";
-import "@mocks/MockERC20.sol";
-import "@mocks/MockDistributor.sol";
-import "@mocks/MockCollector.sol";
+import "tests/unit/mocks/MockWbera.sol";
+import "tests/unit/mocks/MockERC20.sol";
+import "tests/unit/mocks/MockDistributor.sol";
+import "tests/unit/mocks/MockCollector.sol";
 import "@berachain/pol/rewards/RewardVaultFactory.sol";
 
-import "@voting/VotingEscrow.sol";
-import "@voting/Voter.sol";
+import "src/voting/VotingEscrow.sol";
+import "src/voting/Voter.sol";
 
-import "@core/IBGT.sol";
-import "@core/Infrared.sol";
+import "src/core/IBGT.sol";
+import "src/core/Infrared.sol";
 
 import "forge-std/Script.sol";
 import "forge-std/Test.sol";

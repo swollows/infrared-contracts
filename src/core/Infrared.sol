@@ -17,29 +17,29 @@ import {IRewardVault as IBerachainRewardsVault} from
     "@berachain/pol/interfaces/IRewardVault.sol";
 import {IRewardVaultFactory as IBerachainRewardsVaultFactory} from
     "@berachain/pol/interfaces/IRewardVaultFactory.sol";
-import {IBerachainBGT} from "@interfaces/IBerachainBGT.sol";
-import {IBerachainBGTStaker} from "@interfaces/IBerachainBGTStaker.sol";
+import {IBerachainBGT} from "src/interfaces/IBerachainBGT.sol";
+import {IBerachainBGTStaker} from "src/interfaces/IBerachainBGTStaker.sol";
 
 // Internal dependencies.
-import {DataTypes} from "@utils/DataTypes.sol";
-import {Errors} from "@utils/Errors.sol";
-import {InfraredVaultDeployer} from "@utils/InfraredVaultDeployer.sol";
+import {DataTypes} from "src/utils/DataTypes.sol";
+import {Errors} from "src/utils/Errors.sol";
+import {InfraredVaultDeployer} from "src/utils/InfraredVaultDeployer.sol";
 
-import {IVoter} from "@voting/interfaces/IVoter.sol";
-import {IReward} from "@voting/interfaces/IReward.sol";
+import {IVoter} from "src/voting/interfaces/IVoter.sol";
+import {IReward} from "src/voting/interfaces/IReward.sol";
 
-import {IWBERA} from "@interfaces/IWBERA.sol";
-import {IERC20Mintable} from "@interfaces/IERC20Mintable.sol";
-import {IIBGT} from "@interfaces/IIBGT.sol";
-import {IRED} from "@interfaces/IRED.sol";
-import {IBribeCollector} from "@interfaces/IBribeCollector.sol";
-import {IInfraredDistributor} from "@interfaces/IInfraredDistributor.sol";
-import {IInfraredVault} from "@interfaces/IInfraredVault.sol";
-import {ConfigTypes, IInfrared} from "@interfaces/IInfrared.sol";
+import {IWBERA} from "src/interfaces/IWBERA.sol";
+import {IERC20Mintable} from "src/interfaces/IERC20Mintable.sol";
+import {IIBGT} from "src/interfaces/IIBGT.sol";
+import {IRED} from "src/interfaces/IRED.sol";
+import {IBribeCollector} from "src/interfaces/IBribeCollector.sol";
+import {IInfraredDistributor} from "src/interfaces/IInfraredDistributor.sol";
+import {IInfraredVault} from "src/interfaces/IInfraredVault.sol";
+import {ConfigTypes, IInfrared} from "src/interfaces/IInfrared.sol";
 
-import {InfraredUpgradeable} from "@core/InfraredUpgradeable.sol";
-import {InfraredVault} from "@core/InfraredVault.sol";
-import {IIBERA} from "@interfaces/IIBERA.sol";
+import {InfraredUpgradeable} from "src/core/InfraredUpgradeable.sol";
+import {InfraredVault} from "src/core/InfraredVault.sol";
+import {IIBERA} from "src/interfaces/IIBERA.sol";
 
 import {ValidatorManagerLib} from "./libraries/ValidatorManagerLib.sol";
 import {ValidatorTypes} from "./libraries/ValidatorTypes.sol";

@@ -10,7 +10,7 @@ import {
 import {OwnableUpgradeable} from
     "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
-import {IIBERAClaimor} from "@interfaces/IIBERAClaimor.sol";
+import {IIBERAClaimor} from "src/interfaces/IIBERAClaimor.sol";
 
 /// @title IBERAClaimor
 /// @author bungabear69420

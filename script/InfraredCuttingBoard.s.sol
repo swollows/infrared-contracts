@@ -4,7 +4,7 @@ pragma solidity 0.8.26;
 import "forge-std/Script.sol";
 
 import {IBeraChef} from "@berachain/pol/interfaces/IBeraChef.sol";
-import {IInfrared} from "@interfaces/IInfrared.sol";
+import {IInfrared} from "src/interfaces/IInfrared.sol";
 
 contract InfraredCuttingBoard is Script {
     function run(

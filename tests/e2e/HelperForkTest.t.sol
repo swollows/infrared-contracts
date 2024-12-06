@@ -10,12 +10,12 @@ import {IDistributor as IBerachainDistributor} from
     "@berachain/pol/interfaces/IDistributor.sol";
 import {IRewardVaultFactory as IBerachainRewardsVaultFactory} from
     "@berachain/pol/interfaces/IRewardVaultFactory.sol";
-import {IBerachainBGT} from "@interfaces/IBerachainBGT.sol";
-import {IBerachainBGTStaker} from "@interfaces/IBerachainBGTStaker.sol";
+import {IBerachainBGT} from "src/interfaces/IBerachainBGT.sol";
+import {IBerachainBGTStaker} from "src/interfaces/IBerachainBGTStaker.sol";
 import {IFeeCollector as IBerachainFeeCollector} from
     "@berachain/pol/interfaces/IFeeCollector.sol";
 
-import {IWBERA} from "@interfaces/IWBERA.sol";
+import {IWBERA} from "src/interfaces/IWBERA.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract HelperForkTest is Test {

@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
-import {IInfrared} from "@interfaces/IInfrared.sol";
+import {IInfrared} from "src/interfaces/IInfrared.sol";
 
 interface IInfraredUpgradeable is IAccessControl {
     /// @notice Access control for keeper role

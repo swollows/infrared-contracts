@@ -8,20 +8,20 @@ import {
     SafeERC20
 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
-import {IInfraredDistributor} from "@interfaces/IInfraredDistributor.sol";
-import {IBerachainBGTStaker} from "@interfaces/IBerachainBGTStaker.sol";
-import {IInfraredVault} from "@interfaces/IInfraredVault.sol";
-import {ConfigTypes} from "@core/libraries/ConfigTypes.sol";
-import {IBerachainBGT} from "@interfaces/IBerachainBGT.sol";
-import {IInfrared} from "@interfaces/IInfrared.sol";
-import {IReward} from "@voting/interfaces/IReward.sol";
-import {IVoter} from "@voting/interfaces/IVoter.sol";
-import {DataTypes} from "@utils/DataTypes.sol";
-import {IWBERA} from "@interfaces/IWBERA.sol";
-import {IIBGT} from "@interfaces/IIBGT.sol";
-import {IRED} from "@interfaces/IRED.sol";
-import {IIBERA} from "@interfaces/IIBERA.sol";
-import {Errors} from "@utils/Errors.sol";
+import {IInfraredDistributor} from "src/interfaces/IInfraredDistributor.sol";
+import {IBerachainBGTStaker} from "src/interfaces/IBerachainBGTStaker.sol";
+import {IInfraredVault} from "src/interfaces/IInfraredVault.sol";
+import {ConfigTypes} from "src/core/libraries/ConfigTypes.sol";
+import {IBerachainBGT} from "src/interfaces/IBerachainBGT.sol";
+import {IInfrared} from "src/interfaces/IInfrared.sol";
+import {IReward} from "src/voting/interfaces/IReward.sol";
+import {IVoter} from "src/voting/interfaces/IVoter.sol";
+import {DataTypes} from "src/utils/DataTypes.sol";
+import {IWBERA} from "src/interfaces/IWBERA.sol";
+import {IIBGT} from "src/interfaces/IIBGT.sol";
+import {IRED} from "src/interfaces/IRED.sol";
+import {IIBERA} from "src/interfaces/IIBERA.sol";
+import {Errors} from "src/utils/Errors.sol";
 
 library RewardsLib {
     using SafeERC20 for IERC20;

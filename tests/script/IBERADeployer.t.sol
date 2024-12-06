@@ -4,7 +4,7 @@ pragma solidity ^0.8.26;
 import "forge-std/Test.sol";
 import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {IBERADeployer} from "script/IBERADeployer.s.sol";
-import {IBERA} from "@staking/IBERA.sol";
+import {IBERA} from "src/staking/IBERA.sol";
 
 contract IBERADeployerTest is Test {
     IBERADeployer public deployer;
