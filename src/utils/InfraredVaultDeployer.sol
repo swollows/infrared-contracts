@@ -5,8 +5,8 @@ import {InfraredVault} from "src/core/InfraredVault.sol";
 
 library InfraredVaultDeployer {
     /**
-     * @notice Deploys a new `InfraredVault` or `IBGTVault` contract.
-     * @dev If _stakingToken == IBGT, then deploys `IBGTVault`.
+     * @notice Deploys a new `InfraredVault` or `InfraredBGTVault` contract.
+     * @dev If _stakingToken == InfraredBGT, then deploys `InfraredBGTVault`.
      * @param _stakingToken address The address of the staking token.
      * @param _rewardsDuration The duration of the rewards for the vault.
      * @return _new address The address of the new `InfraredVault` contract.

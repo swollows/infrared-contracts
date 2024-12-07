@@ -1,24 +1,27 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.22;
 
-import {IIBERA} from "src/interfaces/IIBERA.sol";
-import {IIBERAWithdrawor} from "src/interfaces/IIBERAWithdrawor.sol";
-import {IBERAConstants} from "src/staking/IBERAConstants.sol";
+import {IInfraredBERA} from "src/interfaces/IInfraredBERA.sol";
+import {IInfraredBERAWithdrawor} from
+    "src/interfaces/IInfraredBERAWithdrawor.sol";
+import {InfraredBERAConstants} from "src/staking/InfraredBERAConstants.sol";
 
-import {IBERABaseTest} from "./IBERABase.t.sol";
+import {InfraredBERABaseTest} from "./InfraredBERABase.t.sol";
 
-contract IBERAWithdraworTest is IBERABaseTest {
+contract InfraredBERAWithdraworTest is InfraredBERABaseTest {
     function setUp() public virtual override {
         super.setUp();
-        uint256 value = 200 ether + IBERAConstants.MINIMUM_DEPOSIT_FEE;
+        uint256 value = 200 ether + InfraredBERAConstants.MINIMUM_DEPOSIT_FEE;
         ibera.mint{value: value}(alice);
-        uint256 amount = 100 ether + IBERAConstants.MINIMUM_DEPOSIT;
+        uint256 amount = 100 ether + InfraredBERAConstants.MINIMUM_DEPOSIT;
         vm.prank(governor);
         ibera.setDepositSignature(pubkey0, signature0);
         vm.prank(keeper);
-        depositor.execute(pubkey0, IBERAConstants.INITIAL_DEPOSIT);
+        depositor.execute(pubkey0, InfraredBERAConstants.INITIAL_DEPOSIT);
         vm.prank(keeper);
-        depositor.execute(pubkey0, amount - IBERAConstants.INITIAL_DEPOSIT);
+        depositor.execute(
+            pubkey0, amount - InfraredBERAConstants.INITIAL_DEPOSIT
+        );
     }
 
     function testSetUp() public virtual override {
@@ -32,13 +35,17 @@ contract IBERAWithdraworTest is IBERABaseTest {
         assertEq(feeSecond_, 0);
         assertEq(amountFirst_, 0);
         assertEq(amountSecond_, 100 ether);
-        assertEq(ibera.deposits(), 200 ether + IBERAConstants.MINIMUM_DEPOSIT);
-        assertEq(ibera.confirmed(), 100 ether + IBERAConstants.MINIMUM_DEPOSIT);
+        assertEq(
+            ibera.deposits(), 200 ether + InfraredBERAConstants.MINIMUM_DEPOSIT
+        );
+        assertEq(
+            ibera.confirmed(), 100 ether + InfraredBERAConstants.MINIMUM_DEPOSIT
+        );
         assertEq(ibera.pending(), 100 ether);
     }
 
     function testQueueUpdatesFees() public {
-        uint256 fee = IBERAConstants.MINIMUM_WITHDRAW_FEE + 1;
+        uint256 fee = InfraredBERAConstants.MINIMUM_WITHDRAW_FEE + 1;
         uint256 amount = 1 ether;
         address receiver = alice;
         assertTrue(amount <= ibera.confirmed());
@@ -52,7 +59,7 @@ contract IBERAWithdraworTest is IBERABaseTest {
     }
 
     function testQueueUpdatesRebalancingWhenKeeper() public {
-        uint256 fee = IBERAConstants.MINIMUM_WITHDRAW_FEE + 1;
+        uint256 fee = InfraredBERAConstants.MINIMUM_WITHDRAW_FEE + 1;
         uint256 amount = 1 ether;
         address receiver = address(depositor);
         uint256 confirmed = ibera.confirmed();
@@ -65,7 +72,7 @@ contract IBERAWithdraworTest is IBERABaseTest {
     }
 
     function testQueueUpdatesNonce() public {
-        uint256 fee = IBERAConstants.MINIMUM_WITHDRAW_FEE + 1;
+        uint256 fee = InfraredBERAConstants.MINIMUM_WITHDRAW_FEE + 1;
         uint256 amount = 1 ether;
         address receiver = alice;
         uint256 confirmed = ibera.confirmed();
@@ -81,7 +88,7 @@ contract IBERAWithdraworTest is IBERABaseTest {
     function testQueueStoresRequest() public {
         uint256 confirmed = ibera.confirmed();
         assertTrue(1 ether <= confirmed);
-        vm.deal(address(ibera), IBERAConstants.MINIMUM_WITHDRAW_FEE + 1);
+        vm.deal(address(ibera), InfraredBERAConstants.MINIMUM_WITHDRAW_FEE + 1);
         uint256 nonce = withdrawor.nonceRequest();
         (
             address _receiver,
@@ -96,7 +103,7 @@ contract IBERAWithdraworTest is IBERABaseTest {
         assertEq(_amountSubmit, 0);
         assertEq(_amountProcess, 0);
         vm.prank(address(ibera));
-        withdrawor.queue{value: IBERAConstants.MINIMUM_WITHDRAW_FEE + 1}(
+        withdrawor.queue{value: InfraredBERAConstants.MINIMUM_WITHDRAW_FEE + 1}(
             alice, 1 ether
         );
         (
@@ -108,13 +115,13 @@ contract IBERAWithdraworTest is IBERABaseTest {
         ) = withdrawor.requests(nonce);
         assertEq(receiver_, alice);
         assertEq(timestamp_, uint96(block.timestamp));
-        assertEq(fee_, IBERAConstants.MINIMUM_WITHDRAW_FEE + 1);
+        assertEq(fee_, InfraredBERAConstants.MINIMUM_WITHDRAW_FEE + 1);
         assertEq(amountSubmit_, 1 ether);
         assertEq(amountProcess_, 1 ether);
     }
 
     function testQueueEmitsQueue() public {
-        uint256 fee = IBERAConstants.MINIMUM_WITHDRAW_FEE + 1;
+        uint256 fee = InfraredBERAConstants.MINIMUM_WITHDRAW_FEE + 1;
         uint256 amount = 1 ether;
         address receiver = alice;
         uint256 confirmed = ibera.confirmed();
@@ -122,7 +129,7 @@ contract IBERAWithdraworTest is IBERABaseTest {
         vm.deal(address(ibera), 2 * fee);
         uint256 nonce = withdrawor.nonceRequest();
         vm.expectEmit();
-        emit IIBERAWithdrawor.Queue(receiver, nonce, amount);
+        emit IInfraredBERAWithdrawor.Queue(receiver, nonce, amount);
         vm.prank(address(ibera));
         withdrawor.queue{value: fee}(receiver, amount);
     }
@@ -134,7 +141,7 @@ contract IBERAWithdraworTest is IBERABaseTest {
     uint256 reservesT1;
 
     function testQueueMultiple() public {
-        feeT1 = IBERAConstants.MINIMUM_WITHDRAW_FEE;
+        feeT1 = InfraredBERAConstants.MINIMUM_WITHDRAW_FEE;
         uint256 confirmed = ibera.confirmed();
         assertTrue(42 ether <= confirmed);
         vm.deal(address(ibera), 2 * feeT1);
@@ -197,48 +204,48 @@ contract IBERAWithdraworTest is IBERABaseTest {
     }
 
     function testQueueRevertsWhenUnauthorized() public {
-        uint256 fee = IBERAConstants.MINIMUM_WITHDRAW_FEE + 1;
+        uint256 fee = InfraredBERAConstants.MINIMUM_WITHDRAW_FEE + 1;
         uint256 amount = 1 ether;
         address receiver = alice;
         uint256 confirmed = ibera.confirmed();
         assertTrue(amount <= confirmed);
-        vm.expectRevert(IIBERAWithdrawor.Unauthorized.selector);
+        vm.expectRevert(IInfraredBERAWithdrawor.Unauthorized.selector);
         vm.prank(alice);
         withdrawor.queue{value: fee}(receiver, amount);
     }
 
     function testQueueRevertsWhenNotRebalancingReceiverDepositor() public {
-        uint256 fee = IBERAConstants.MINIMUM_WITHDRAW_FEE + 1;
+        uint256 fee = InfraredBERAConstants.MINIMUM_WITHDRAW_FEE + 1;
         uint256 amount = 1 ether;
         address receiver = address(depositor);
         uint256 confirmed = ibera.confirmed();
         assertTrue(amount <= confirmed);
         vm.deal(address(ibera), fee);
-        vm.expectRevert(IIBERAWithdrawor.InvalidReceiver.selector);
+        vm.expectRevert(IInfraredBERAWithdrawor.InvalidReceiver.selector);
         vm.prank(address(ibera));
         withdrawor.queue{value: fee}(receiver, amount);
     }
 
     function testQueueRevertsWhenRebalancingReceiverNotDepositor() public {
-        uint256 fee = IBERAConstants.MINIMUM_WITHDRAW_FEE + 1;
+        uint256 fee = InfraredBERAConstants.MINIMUM_WITHDRAW_FEE + 1;
         uint256 amount = 1 ether;
         address receiver = alice;
         uint256 confirmed = ibera.confirmed();
         assertTrue(amount <= confirmed);
         vm.deal(keeper, fee);
-        vm.expectRevert(IIBERAWithdrawor.InvalidReceiver.selector);
+        vm.expectRevert(IInfraredBERAWithdrawor.InvalidReceiver.selector);
         vm.prank(keeper);
         withdrawor.queue{value: fee}(receiver, amount);
     }
 
     function testQueueRevertsWhenAmountZero() public {
-        uint256 fee = IBERAConstants.MINIMUM_WITHDRAW_FEE + 1;
+        uint256 fee = InfraredBERAConstants.MINIMUM_WITHDRAW_FEE + 1;
         uint256 amount = 0;
         address receiver = alice;
         uint256 confirmed = ibera.confirmed();
         assertTrue(amount <= confirmed);
         vm.deal(address(ibera), fee);
-        vm.expectRevert(IIBERAWithdrawor.InvalidAmount.selector);
+        vm.expectRevert(IInfraredBERAWithdrawor.InvalidAmount.selector);
         vm.prank(address(ibera));
         withdrawor.queue{value: fee}(receiver, amount);
     }
@@ -246,36 +253,36 @@ contract IBERAWithdraworTest is IBERABaseTest {
     function testQueueRevertsWhenRebalancingAmountLessThanMinDepositFee()
         public
     {
-        uint256 fee = IBERAConstants.MINIMUM_WITHDRAW_FEE + 1;
-        uint256 amount = IBERAConstants.MINIMUM_DEPOSIT_FEE;
+        uint256 fee = InfraredBERAConstants.MINIMUM_WITHDRAW_FEE + 1;
+        uint256 amount = InfraredBERAConstants.MINIMUM_DEPOSIT_FEE;
         address receiver = address(depositor);
         uint256 confirmed = ibera.confirmed();
         assertTrue(amount <= confirmed);
         vm.deal(address(ibera), fee);
-        vm.expectRevert(IIBERAWithdrawor.InvalidAmount.selector);
+        vm.expectRevert(IInfraredBERAWithdrawor.InvalidAmount.selector);
         vm.prank(keeper);
         withdrawor.queue{value: fee}(receiver, amount);
     }
 
     function testQueueRevertsWhenAmountGreaterThanConfirmed() public {
-        uint256 fee = IBERAConstants.MINIMUM_WITHDRAW_FEE + 1;
+        uint256 fee = InfraredBERAConstants.MINIMUM_WITHDRAW_FEE + 1;
         address receiver = alice;
         uint256 confirmed = ibera.confirmed();
         uint256 amount = confirmed + 1;
         vm.deal(address(ibera), fee);
-        vm.expectRevert(IIBERAWithdrawor.InvalidAmount.selector);
+        vm.expectRevert(IInfraredBERAWithdrawor.InvalidAmount.selector);
         vm.prank(address(ibera));
         withdrawor.queue{value: fee}(receiver, amount);
     }
 
     function testQueueRevertsWhenFeeLessThanMin() public {
-        uint256 fee = IBERAConstants.MINIMUM_WITHDRAW_FEE - 1;
+        uint256 fee = InfraredBERAConstants.MINIMUM_WITHDRAW_FEE - 1;
         uint256 amount = 1 ether;
         address receiver = alice;
         uint256 confirmed = ibera.confirmed();
         assertTrue(amount <= confirmed);
         vm.deal(address(ibera), fee);
-        vm.expectRevert(IIBERAWithdrawor.InvalidFee.selector);
+        vm.expectRevert(IInfraredBERAWithdrawor.InvalidFee.selector);
         vm.prank(address(ibera));
         withdrawor.queue{value: fee}(receiver, amount);
     }
@@ -628,7 +635,7 @@ contract IBERAWithdraworTest is IBERABaseTest {
         uint256 amount = amountSubmitFirst + amountSubmitSecond / 4;
         assertTrue(amount % 1 gwei == 0);
         vm.expectEmit();
-        emit IIBERAWithdrawor.Execute(
+        emit IInfraredBERAWithdrawor.Execute(
             pubkey0, nonceSubmit, nonceSubmit + 1, amount
         );
         vm.prank(keeper);
@@ -645,7 +652,7 @@ contract IBERAWithdraworTest is IBERABaseTest {
         assertEq(nonceSubmit, 1); // none submitted yet
         assertEq(nonceProcess, 1); // nonce processed yet
         uint256 amount = 0;
-        vm.expectRevert(IIBERAWithdrawor.InvalidAmount.selector);
+        vm.expectRevert(IInfraredBERAWithdrawor.InvalidAmount.selector);
         vm.prank(keeper);
         withdrawor.execute(pubkey0, amount);
     }
@@ -661,7 +668,7 @@ contract IBERAWithdraworTest is IBERABaseTest {
         assertEq(nonceProcess, 1); // nonce processed yet
         uint256 stake = ibera.stakes(pubkey0);
         uint256 amount = stake + 1;
-        vm.expectRevert(IIBERAWithdrawor.InvalidAmount.selector);
+        vm.expectRevert(IInfraredBERAWithdrawor.InvalidAmount.selector);
         vm.prank(keeper);
         withdrawor.execute(pubkey0, amount);
     }
@@ -680,7 +687,7 @@ contract IBERAWithdraworTest is IBERABaseTest {
         uint256 amount = amountSubmitFirst + amountSubmitSecond / 4;
         amount++;
         assertTrue(amount % 1 gwei != 0);
-        vm.expectRevert(IIBERAWithdrawor.InvalidAmount.selector);
+        vm.expectRevert(IInfraredBERAWithdrawor.InvalidAmount.selector);
         vm.prank(keeper);
         withdrawor.execute(pubkey0, amount);
     }
@@ -691,7 +698,7 @@ contract IBERAWithdraworTest is IBERABaseTest {
     //     testQueueMultiple();
     //     uint256 amount = 46 ether;
     //     assertTrue(amount % 1 gwei != 0);
-    //     vm.expectRevert(IIBERAWithdrawor.InvalidAmount.selector);
+    //     vm.expectRevert(IInfraredBERAWithdrawor.InvalidAmount.selector);
     //     vm.prank(keeper);
     //     withdrawor.execute(pubkey0, amount);
     // }
@@ -709,7 +716,7 @@ contract IBERAWithdraworTest is IBERABaseTest {
         (,,, uint256 amountSubmitSecond,) = withdrawor.requests(2);
         uint256 amount = amountSubmitFirst + amountSubmitSecond / 4;
         assertTrue(amount % 1 gwei == 0);
-        vm.expectRevert(IIBERAWithdrawor.Unauthorized.selector);
+        vm.expectRevert(IInfraredBERAWithdrawor.Unauthorized.selector);
         withdrawor.execute(pubkey0, amount);
     }
 
@@ -726,10 +733,10 @@ contract IBERAWithdraworTest is IBERABaseTest {
         (,,, uint256 amountSubmitSecond,) = withdrawor.requests(2);
         uint256 amount = amountSubmitFirst + amountSubmitSecond / 4;
         assertTrue(amount % 1 gwei == 0);
-        vm.expectRevert(IIBERAWithdrawor.Unauthorized.selector);
+        vm.expectRevert(IInfraredBERAWithdrawor.Unauthorized.selector);
         withdrawor.execute(pubkey0, amount);
         // should now succeed
-        vm.warp(block.timestamp + IBERAConstants.FORCED_MIN_DELAY + 1);
+        vm.warp(block.timestamp + InfraredBERAConstants.FORCED_MIN_DELAY + 1);
         withdrawor.execute(pubkey0, amount);
     }
 
@@ -900,10 +907,10 @@ contract IBERAWithdraworTest is IBERABaseTest {
         (uint96 timestampDeposit_, uint256 feeDeposit_, uint256 amountDeposit_)
         = depositor.slips(nonceSlip);
         assertEq(timestampDeposit_, uint96(block.timestamp));
-        assertEq(feeDeposit_, IBERAConstants.MINIMUM_DEPOSIT_FEE);
+        assertEq(feeDeposit_, InfraredBERAConstants.MINIMUM_DEPOSIT_FEE);
         assertEq(
             amountDeposit_,
-            amountProcessFirst - IBERAConstants.MINIMUM_DEPOSIT_FEE
+            amountProcessFirst - InfraredBERAConstants.MINIMUM_DEPOSIT_FEE
         );
     }
 
@@ -975,7 +982,7 @@ contract IBERAWithdraworTest is IBERABaseTest {
         vm.deal(address(withdrawor), balanceWithdrawor + amountProcessFirst);
         // process first request which is a rebalance
         vm.expectEmit();
-        emit IIBERAWithdrawor.Process(
+        emit IInfraredBERAWithdrawor.Process(
             receiverFirst, nonceProcess, amountProcessFirst
         );
         withdrawor.process();
@@ -995,7 +1002,7 @@ contract IBERAWithdraworTest is IBERABaseTest {
         vm.deal(address(withdrawor), balanceWithdrawor + amountProcessSecond);
         // process second request which is a claim for alice
         vm.expectEmit();
-        emit IIBERAWithdrawor.Process(
+        emit IInfraredBERAWithdrawor.Process(
             receiverSecond, nonceProcess + 1, amountProcessSecond
         );
         withdrawor.process();
@@ -1041,7 +1048,7 @@ contract IBERAWithdraworTest is IBERABaseTest {
         withdrawor.process();
         // last should not
         assertEq(withdrawor.nonceProcess(), nonceSubmit);
-        vm.expectRevert(IIBERAWithdrawor.InvalidAmount.selector);
+        vm.expectRevert(IInfraredBERAWithdrawor.InvalidAmount.selector);
         withdrawor.process();
     }
 
@@ -1085,7 +1092,7 @@ contract IBERAWithdraworTest is IBERABaseTest {
         // first should succeed
         withdrawor.process();
         // second should fail
-        vm.expectRevert(IIBERAWithdrawor.InvalidAmount.selector);
+        vm.expectRevert(IInfraredBERAWithdrawor.InvalidAmount.selector);
         withdrawor.process();
     }
     */
@@ -1113,7 +1120,7 @@ contract IBERAWithdraworTest is IBERABaseTest {
             address(withdrawor),
             address(withdrawor).balance + amountProcessFirst - 1
         );
-        vm.expectRevert(IIBERAWithdrawor.InvalidReserves.selector);
+        vm.expectRevert(IInfraredBERAWithdrawor.InvalidReserves.selector);
         withdrawor.process();
     }
 
@@ -1121,7 +1128,7 @@ contract IBERAWithdraworTest is IBERABaseTest {
         // simulate forced withdrawal
         vm.deal(address(withdrawor), 32 ether);
         // test only keeper can access
-        vm.expectRevert(IIBERAWithdrawor.Unauthorized.selector);
+        vm.expectRevert(IInfraredBERAWithdrawor.Unauthorized.selector);
         withdrawor.sweep(32 ether, pubkey0);
 
         vm.prank(keeper);

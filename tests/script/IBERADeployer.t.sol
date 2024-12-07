@@ -3,16 +3,16 @@ pragma solidity ^0.8.26;
 
 import "forge-std/Test.sol";
 import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
-import {IBERADeployer} from "script/IBERADeployer.s.sol";
-import {IBERA} from "src/staking/IBERA.sol";
+import {InfraredBERADeployer} from "script/InfraredBERADeployer.s.sol";
+import {InfraredBERA} from "src/staking/InfraredBERA.sol";
 
-contract IBERADeployerTest is Test {
-    IBERADeployer public deployer;
-    IBERA public ibera;
+contract InfraredBERADeployerTest is Test {
+    InfraredBERADeployer public deployer;
+    InfraredBERA public ibera;
     address public admin;
 
     function setUp() public {
-        deployer = new IBERADeployer();
+        deployer = new InfraredBERADeployer();
         admin = address(this);
     }
 
@@ -52,7 +52,7 @@ contract IBERADeployerTest is Test {
         ibera = deployer.ibera();
 
         // Deploy new implementation
-        IBERA newImplementation = new IBERA();
+        InfraredBERA newImplementation = new InfraredBERA();
 
         // Upgrade proxy
         vm.startPrank(admin);

@@ -11,27 +11,28 @@ import {
 import {OwnableUpgradeable} from
     "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
-import {IIBERA} from "src/interfaces/IIBERA.sol";
-import {IIBERAFeeReceivor} from "src/interfaces/IIBERAFeeReceivor.sol";
+import {IInfraredBERA} from "src/interfaces/IInfraredBERA.sol";
+import {IInfraredBERAFeeReceivor} from
+    "src/interfaces/IInfraredBERAFeeReceivor.sol";
 import {IInfrared} from "src/interfaces/IInfrared.sol";
-import {IBERAConstants} from "./IBERAConstants.sol";
+import {InfraredBERAConstants} from "./InfraredBERAConstants.sol";
 
-/// @title IBERAFeeReceivor
+/// @title InfraredBERAFeeReceivor
 /// @author bungabear69420
 /// @notice Fee receivor receives coinbase priority fees + MEV credited to contract on EL upon block validation
 /// @dev CL validators should set fee_recipient to the address of this contract
-contract IBERAFeeReceivor is
+contract InfraredBERAFeeReceivor is
     Initializable,
     UUPSUpgradeable,
     OwnableUpgradeable,
-    IIBERAFeeReceivor
+    IInfraredBERAFeeReceivor
 {
-    /// @inheritdoc IIBERAFeeReceivor
-    address public IBERA;
+    /// @inheritdoc IInfraredBERAFeeReceivor
+    address public InfraredBERA;
 
     IInfrared public infrared;
 
-    /// @inheritdoc IIBERAFeeReceivor
+    /// @inheritdoc IInfraredBERAFeeReceivor
     uint256 public shareholderFees;
 
     /// @dev Constructor disabled for upgradeable contracts
@@ -59,18 +60,18 @@ contract IBERAFeeReceivor is
         __Ownable_init(admin);
         __UUPSUpgradeable_init();
 
-        IBERA = ibera;
+        InfraredBERA = ibera;
         infrared = IInfrared(_infrared);
     }
 
-    /// @inheritdoc IIBERAFeeReceivor
+    /// @inheritdoc IInfraredBERAFeeReceivor
     function distribution()
         public
         view
         returns (uint256 amount, uint256 fees)
     {
         amount = (address(this).balance - shareholderFees);
-        uint16 feeShareholders = IIBERA(IBERA).feeShareholders();
+        uint16 feeShareholders = IInfraredBERA(InfraredBERA).feeShareholders();
 
         // take protocol fees
         if (feeShareholders > 0) {
@@ -79,27 +80,27 @@ contract IBERAFeeReceivor is
         }
     }
 
-    /// @inheritdoc IIBERAFeeReceivor
+    /// @inheritdoc IInfraredBERAFeeReceivor
     function sweep() external returns (uint256 amount, uint256 fees) {
         (amount, fees) = distribution();
-        // do nothing if IBERA deposit would revert
-        uint256 min =
-            IBERAConstants.MINIMUM_DEPOSIT + IBERAConstants.MINIMUM_DEPOSIT_FEE;
+        // do nothing if InfraredBERA deposit would revert
+        uint256 min = InfraredBERAConstants.MINIMUM_DEPOSIT
+            + InfraredBERAConstants.MINIMUM_DEPOSIT_FEE;
         if (amount < min) return (0, 0);
 
         // add to protocol fees and sweep amount back to ibera to deposit
         if (fees > 0) shareholderFees += fees;
-        if (amount > 0) IIBERA(IBERA).sweep{value: amount}();
-        emit Sweep(IBERA, amount, fees);
+        if (amount > 0) IInfraredBERA(InfraredBERA).sweep{value: amount}();
+        emit Sweep(InfraredBERA, amount, fees);
     }
 
-    /// @inheritdoc IIBERAFeeReceivor
+    /// @inheritdoc IInfraredBERAFeeReceivor
     function collect() external returns (uint256 sharesMinted) {
-        if (msg.sender != IBERA) revert Unauthorized();
+        if (msg.sender != InfraredBERA) revert Unauthorized();
         if (shareholderFees == 0) return 0;
         uint256 shf = shareholderFees;
-        uint256 min =
-            IBERAConstants.MINIMUM_DEPOSIT + IBERAConstants.MINIMUM_DEPOSIT_FEE;
+        uint256 min = InfraredBERAConstants.MINIMUM_DEPOSIT
+            + InfraredBERAConstants.MINIMUM_DEPOSIT_FEE;
         if (shf == 0 || shf < min) {
             revert InvalidAmount();
         }
@@ -107,8 +108,9 @@ contract IBERAFeeReceivor is
         uint256 amount = shf - 1; // gas savings on sweep
         shareholderFees -= amount;
         if (amount > 0) {
-            (, sharesMinted) =
-                IIBERA(IBERA).mint{value: amount}(address(infrared));
+            (, sharesMinted) = IInfraredBERA(InfraredBERA).mint{value: amount}(
+                address(infrared)
+            );
         }
         emit Collect(address(infrared), amount, sharesMinted);
     }

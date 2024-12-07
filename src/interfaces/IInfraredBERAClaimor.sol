@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-interface IIBERAClaimor {
+interface IInfraredBERAClaimor {
     event Queue(address indexed receiver, uint256 amount, uint256 claim);
     event Sweep(address indexed receiver, uint256 amount, uint256 claim);
 

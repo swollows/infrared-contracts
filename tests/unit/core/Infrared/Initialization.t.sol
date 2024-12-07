@@ -16,7 +16,9 @@ contract InfraredInitializationTest is Helper {
 
     function testInitializationParameters() public view {
         assertEq(
-            address(infrared.ibgt()), address(ibgt), "Incorrect IBGT address"
+            address(infrared.ibgt()),
+            address(ibgt),
+            "Incorrect InfraredBGT address"
         );
 
         assertEq(
@@ -224,7 +226,7 @@ contract InfraredInitializationTest is Helper {
         // Test collectBribesWeight (slot 12)
         uint256 testWeight = 5000;
         vm.prank(infraredGovernance);
-        infrared.updateIBERABribesWeight(testWeight);
+        infrared.updateInfraredBERABribesWeight(testWeight);
         assertEq(
             uint256(vm.load(address(infrared), bytes32(uint256(baseSlot) + 2))),
             testWeight,

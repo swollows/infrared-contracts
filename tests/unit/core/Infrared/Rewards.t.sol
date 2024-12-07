@@ -69,7 +69,7 @@ contract InfraredRewardsTest is Helper {
         uint256 vaultBalanceAfter = ibgt.balanceOf(address(vault));
         assertTrue(
             vaultBalanceAfter > vaultBalanceBefore,
-            "Vault should have more IBGT after harvest"
+            "Vault should have more InfraredBGT after harvest"
         );
     }
 
@@ -309,14 +309,14 @@ contract InfraredRewardsTest is Helper {
             vaultBalanceAfter,
             vaultBalanceBefore + 100 ether,
             100,
-            "Incorrect IBGT amount after harvest"
+            "Incorrect InfraredBGT amount after harvest"
         );
 
-        // Assert that BGT balance and IBGT balance are equal
+        // Assert that BGT balance and InfraredBGT balance are equal
         assertEq(
             ibgt.totalSupply(),
             bgt.balanceOf(address(infrared)),
-            "BGT and IBGT total supply mismatch"
+            "BGT and InfraredBGT total supply mismatch"
         );
     }
 
@@ -373,7 +373,7 @@ contract InfraredRewardsTest is Helper {
             vaultBalanceAfter,
             vaultBalanceBefore + netBgtAmt,
             100,
-            "Incorrect IBGT amount to vault"
+            "Incorrect InfraredBGT amount to vault"
         ); // allow small rounding error
 
         // Verify protocol fee amounts with a slightly larger tolerance
@@ -383,14 +383,14 @@ contract InfraredRewardsTest is Helper {
             protocolFeeAmountAfter,
             protocolFeeAmountBefore + protocolFees,
             100, // Allow a slightly larger absolute difference
-            "Incorrect protocol fee amount for IBGT"
+            "Incorrect protocol fee amount for InfraredBGT"
         );
 
-        // Additional verification: Check that the total supply of IBGT matches the expected total
+        // Additional verification: Check that the total supply of InfraredBGT matches the expected total
         assertEq(
             ibgt.totalSupply(),
             bgt.balanceOf(address(infrared)),
-            "BGT and IBGT total supply mismatch"
+            "BGT and InfraredBGT total supply mismatch"
         );
     }
 
@@ -415,7 +415,7 @@ contract InfraredRewardsTest is Helper {
     // infrared.harvestVault(stakingAsset);
 
     // uint256 vaultBalanceAfter = ibgt.balanceOf(address(infraredVault));
-    // // assert that bgt balance and IBGT balance are equal
+    // // assert that bgt balance and InfraredBGT balance are equal
     // assertEq(ibgt.totalSupply(), bgt.balanceOf(address(infrared)));
 
     // vm.warp(1 days);
@@ -584,7 +584,7 @@ contract InfraredRewardsTest is Helper {
         vm.startPrank(infraredGovernance);
         infrared.updateWhiteListedRewardTokens(address(wbera), true);
         infrared.setRed(address(red));
-        infrared.updateRedMintRate(1_500_000); // 1.5x RED per IBGT
+        infrared.updateRedMintRate(1_500_000); // 1.5x RED per InfraredBGT
         vm.stopPrank();
 
         // Setup vault and user stake
@@ -627,17 +627,17 @@ contract InfraredRewardsTest is Helper {
         // Calculate expected amounts
         uint256 harvestedAmount = 99999999999999999000; // From the emitted event
         uint256 netIbgtAmount = harvestedAmount; // No fees applied
-        uint256 expectedRedAmount = (netIbgtAmount * 1_500_000) / 1e6; // 1.5x RED per net IBGT
+        uint256 expectedRedAmount = (netIbgtAmount * 1_500_000) / 1e6; // 1.5x RED per net InfraredBGT
 
         // Verify balances after harvest
         uint256 vaultIbgtAfter = ibgt.balanceOf(address(infraredVault));
         uint256 vaultRedAfter = red.balanceOf(address(infraredVault));
 
-        // Assert IBGT increase matches expected amount
+        // Assert InfraredBGT increase matches expected amount
         assertEq(
             vaultIbgtAfter - vaultIbgtBefore,
             netIbgtAmount,
-            "Incorrect IBGT amount"
+            "Incorrect InfraredBGT amount"
         );
 
         // Assert RED minting matches expected ratio
@@ -647,12 +647,12 @@ contract InfraredRewardsTest is Helper {
             "Incorrect RED minting amount"
         );
 
-        // Verify RED:IBGT ratio is maintained
+        // Verify RED:InfraredBGT ratio is maintained
         assertApproxEqRel(
             (vaultRedAfter - vaultRedBefore) * 1e6,
             (vaultIbgtAfter - vaultIbgtBefore) * 1_500_000,
             1e16, // 1% tolerance
-            "RED:IBGT ratio mismatch"
+            "RED:InfraredBGT ratio mismatch"
         );
     }
 

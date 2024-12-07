@@ -11,29 +11,30 @@ import {
 import {OwnableUpgradeable} from
     "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
-import {IIBERA} from "src/interfaces/IIBERA.sol";
-import {IIBERADepositor} from "src/interfaces/IIBERADepositor.sol";
-import {IIBERAClaimor} from "src/interfaces/IIBERAClaimor.sol";
-import {IIBERAWithdrawor} from "src/interfaces/IIBERAWithdrawor.sol";
+import {IInfraredBERA} from "src/interfaces/IInfraredBERA.sol";
+import {IInfraredBERADepositor} from "src/interfaces/IInfraredBERADepositor.sol";
+import {IInfraredBERAClaimor} from "src/interfaces/IInfraredBERAClaimor.sol";
+import {IInfraredBERAWithdrawor} from
+    "src/interfaces/IInfraredBERAWithdrawor.sol";
 
-import {IBERAConstants} from "./IBERAConstants.sol";
+import {InfraredBERAConstants} from "./InfraredBERAConstants.sol";
 
-/// @title IBERAWithdrawor
+/// @title InfraredBERAWithdrawor
 /// @author bungabear69420
 /// @notice Withdrawor to withdraw BERA from CL for Infrared liquid staking token
 /// @dev Assumes ETH returned via withdraw precompile credited to contract so receive unnecessary
-contract IBERAWithdrawor is
+contract InfraredBERAWithdrawor is
     Initializable,
     UUPSUpgradeable,
     OwnableUpgradeable,
-    IIBERAWithdrawor
+    IInfraredBERAWithdrawor
 {
     uint8 public constant WITHDRAW_REQUEST_TYPE = 0x01;
     address public constant WITHDRAW_PRECOMPILE =
         0x00A3ca265EBcb825B45F985A16CEFB49958cE017; // @dev: EIP7002
 
-    /// @inheritdoc IIBERAWithdrawor
-    address public IBERA;
+    /// @inheritdoc IInfraredBERAWithdrawor
+    address public InfraredBERA;
 
     struct Request {
         /// receiver of withdrawn bera funds
@@ -48,20 +49,20 @@ contract IBERAWithdrawor is
         uint256 amountProcess;
     }
 
-    /// @inheritdoc IIBERAWithdrawor
+    /// @inheritdoc IInfraredBERAWithdrawor
     mapping(uint256 => Request) public requests;
 
-    /// @inheritdoc IIBERAWithdrawor
+    /// @inheritdoc IInfraredBERAWithdrawor
     uint256 public fees;
 
-    /// @inheritdoc IIBERAWithdrawor
+    /// @inheritdoc IInfraredBERAWithdrawor
     uint256 public rebalancing;
 
-    /// @inheritdoc IIBERAWithdrawor
+    /// @inheritdoc IInfraredBERAWithdrawor
     uint256 public nonceRequest;
-    /// @inheritdoc IIBERAWithdrawor
+    /// @inheritdoc IInfraredBERAWithdrawor
     uint256 public nonceSubmit;
-    /// @inheritdoc IIBERAWithdrawor
+    /// @inheritdoc IInfraredBERAWithdrawor
     uint256 public nonceProcess;
 
     /// @dev Constructor disabled for upgradeable contracts
@@ -78,12 +79,12 @@ contract IBERAWithdrawor is
 
     /// @notice Initialize the contract (replaces the constructor)
     /// @param admin Address for admin to upgrade
-    /// @param ibera The initial IBERA address
+    /// @param ibera The initial InfraredBERA address
     function initialize(address admin, address ibera) public initializer {
         if (admin == address(0) || ibera == address(0)) revert ZeroAddress();
         __Ownable_init(admin);
         __UUPSUpgradeable_init();
-        IBERA = ibera;
+        InfraredBERA = ibera;
 
         nonceRequest = 1;
         nonceSubmit = 1;
@@ -100,25 +101,25 @@ contract IBERAWithdrawor is
         returns (bool has)
     {
         unchecked {
-            has = (current - then) >= IBERAConstants.FORCED_MIN_DELAY;
+            has = (current - then) >= InfraredBERAConstants.FORCED_MIN_DELAY;
         }
     }
 
-    /// @inheritdoc IIBERAWithdrawor
+    /// @inheritdoc IInfraredBERAWithdrawor
     function reserves() public view returns (uint256) {
         return address(this).balance - fees;
     }
 
-    /// @inheritdoc IIBERAWithdrawor
+    /// @inheritdoc IInfraredBERAWithdrawor
     function queue(address receiver, uint256 amount)
         external
         payable
         returns (uint256 nonce)
     {
-        bool kpr = IIBERA(IBERA).keeper(msg.sender);
-        address depositor = IIBERA(IBERA).depositor();
+        bool kpr = IInfraredBERA(InfraredBERA).keeper(msg.sender);
+        address depositor = IInfraredBERA(InfraredBERA).depositor();
         // @dev rebalances can be queued by keeper but receiver must be depositor and amount must exceed deposit fee
-        if (msg.sender != IBERA && !kpr) revert Unauthorized();
+        if (msg.sender != InfraredBERA && !kpr) revert Unauthorized();
         if ((kpr && receiver != depositor) || (!kpr && receiver == depositor)) {
             revert InvalidReceiver();
         }
@@ -126,19 +127,19 @@ contract IBERAWithdrawor is
             (receiver != depositor && amount == 0)
                 || (
                     receiver == depositor
-                        && amount <= IBERAConstants.MINIMUM_DEPOSIT_FEE
-                ) || amount > IIBERA(IBERA).confirmed()
+                        && amount <= InfraredBERAConstants.MINIMUM_DEPOSIT_FEE
+                ) || amount > IInfraredBERA(InfraredBERA).confirmed()
         ) {
             revert InvalidAmount();
         }
 
-        if (msg.value < IBERAConstants.MINIMUM_WITHDRAW_FEE) {
+        if (msg.value < InfraredBERAConstants.MINIMUM_WITHDRAW_FEE) {
             revert InvalidFee();
         }
         fees += msg.value;
 
         // account for rebalancing amount
-        // @dev must update *after* IBERA.confirmed checked given used in confirmed view
+        // @dev must update *after* InfraredBERA.confirmed checked given used in confirmed view
         if (kpr) rebalancing += amount;
 
         nonce = nonceRequest++;
@@ -152,14 +153,14 @@ contract IBERAWithdrawor is
         emit Queue(receiver, nonce, amount);
     }
 
-    /// @inheritdoc IIBERAWithdrawor
+    /// @inheritdoc IInfraredBERAWithdrawor
     function execute(bytes calldata pubkey, uint256 amount) external payable {
-        bool kpr = IIBERA(IBERA).keeper(msg.sender);
+        bool kpr = IInfraredBERA(InfraredBERA).keeper(msg.sender);
         // no need to check if in *current* validator set as revert before precompile call if have no stake in pubkey
         // allows for possibly removing stake from validators that were previously removed from validator set on Infrared
         // TODO: check whether precompile ultimately modified for amount / 1 gwei to be consistent with deposits
         if (
-            amount == 0 || IIBERA(IBERA).stakes(pubkey) < amount
+            amount == 0 || IInfraredBERA(InfraredBERA).stakes(pubkey) < amount
                 || (amount % 1 gwei) != 0 || (amount / 1 gwei) > type(uint64).max
         ) {
             revert InvalidAmount();
@@ -227,7 +228,7 @@ contract IBERAWithdrawor is
         uint256 excess = fee - (_balance - address(this).balance);
 
         // register update to stake
-        IIBERA(IBERA).register(pubkey, -int256(amount)); // safe as max fits in uint96
+        IInfraredBERA(InfraredBERA).register(pubkey, -int256(amount)); // safe as max fits in uint96
 
         // sweep excess fee back to keeper to cover gas
         if (excess > 0) SafeTransferLib.safeTransferETH(msg.sender, excess);
@@ -235,10 +236,10 @@ contract IBERAWithdrawor is
         emit Execute(pubkey, _nonce, nonce, amount);
     }
 
-    /// @inheritdoc IIBERAWithdrawor
+    /// @inheritdoc IInfraredBERAWithdrawor
     function process() external {
         uint256 nonce = nonceProcess;
-        address depositor = IIBERA(IBERA).depositor();
+        address depositor = IInfraredBERA(InfraredBERA).depositor();
         Request memory r = requests[nonce];
         if (r.amountSubmit != 0 || r.amountProcess == 0) revert InvalidAmount();
 
@@ -251,13 +252,13 @@ contract IBERAWithdrawor is
         if (r.receiver == depositor) {
             // queue up rebalance to depositor
             rebalancing -= amount;
-            IIBERADepositor(r.receiver).queue{value: amount}(
-                amount - IBERAConstants.MINIMUM_DEPOSIT_FEE
+            IInfraredBERADepositor(r.receiver).queue{value: amount}(
+                amount - InfraredBERAConstants.MINIMUM_DEPOSIT_FEE
             );
         } else {
             // queue up receiver claim to claimor
-            address claimor = IIBERA(IBERA).claimor();
-            IIBERAClaimor(claimor).queue{value: amount}(r.receiver);
+            address claimor = IInfraredBERA(InfraredBERA).claimor();
+            IInfraredBERAClaimor(claimor).queue{value: amount}(r.receiver);
         }
         emit Process(r.receiver, nonce, amount);
     }
@@ -266,15 +267,19 @@ contract IBERAWithdrawor is
         return ERC1967Utils.getImplementation();
     }
 
-    /// @inheritdoc IIBERAWithdrawor
+    /// @inheritdoc IInfraredBERAWithdrawor
     function sweep(uint256 amount, bytes calldata pubkey) external {
         // only callable when withdrawals are not enabled
-        if (IIBERA(IBERA).withdrawalsEnabled()) revert Unauthorized();
+        if (IInfraredBERA(InfraredBERA).withdrawalsEnabled()) {
+            revert Unauthorized();
+        }
         // onlyKeeper call
-        if (!IIBERA(IBERA).keeper(msg.sender)) revert Unauthorized();
-        // do nothing if IBERA deposit would revert
-        uint256 min =
-            IBERAConstants.MINIMUM_DEPOSIT + IBERAConstants.MINIMUM_DEPOSIT_FEE;
+        if (!IInfraredBERA(InfraredBERA).keeper(msg.sender)) {
+            revert Unauthorized();
+        }
+        // do nothing if InfraredBERA deposit would revert
+        uint256 min = InfraredBERAConstants.MINIMUM_DEPOSIT
+            + InfraredBERAConstants.MINIMUM_DEPOSIT_FEE;
         if (amount < min) return;
         // revert if insufficient balance
         if (amount > address(this).balance) revert InvalidAmount();
@@ -282,14 +287,14 @@ contract IBERAWithdrawor is
         // todo: verfiy forced withdrawal against beacon roots
 
         // register new validator delta
-        IIBERA(IBERA).register(pubkey, -int256(amount));
+        IInfraredBERA(InfraredBERA).register(pubkey, -int256(amount));
 
         // re-stake amount back to ibera depositor
-        IIBERADepositor(IIBERA(IBERA).depositor()).queue{value: amount}(
-            amount - IBERAConstants.MINIMUM_DEPOSIT_FEE
-        );
+        IInfraredBERADepositor(IInfraredBERA(InfraredBERA).depositor()).queue{
+            value: amount
+        }(amount - InfraredBERAConstants.MINIMUM_DEPOSIT_FEE);
 
-        emit Sweep(IBERA, amount);
+        emit Sweep(InfraredBERA, amount);
     }
 
     receive() external payable {}

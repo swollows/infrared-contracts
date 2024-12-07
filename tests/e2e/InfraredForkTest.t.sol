@@ -15,7 +15,7 @@ import {IRewardVault as IBerachainRewardsVault} from
 import {Voter} from "src/voting/Voter.sol";
 import {VotingEscrow} from "src/voting/VotingEscrow.sol";
 
-import {IBGT} from "src/core/IBGT.sol";
+import {InfraredBGT} from "src/core/InfraredBGT.sol";
 import {Infrared} from "src/core/Infrared.sol";
 import {InfraredDistributor} from "src/core/InfraredDistributor.sol";
 import {BribeCollector} from "src/core/BribeCollector.sol";
@@ -31,7 +31,7 @@ contract InfraredForkTest is HelperForkTest {
     uint256 public bribeCollectorPayoutAmount = 10 ether;
     address public infraredValidator = makeAddr("validator");
 
-    IBGT public ibgt;
+    InfraredBGT public ibgt;
     ERC20PresetMinterPauser public ired;
     ERC20PresetMinterPauser public ibera;
     ERC20PresetMinterPauser public stakingToken;
@@ -50,7 +50,7 @@ contract InfraredForkTest is HelperForkTest {
     function setUp() public virtual override {
         super.setUp();
 
-        ibgt = new IBGT(address(bgt));
+        ibgt = new InfraredBGT(address(bgt));
         ired = new ERC20PresetMinterPauser("Infrared Token", "iRED");
         ibera = new ERC20PresetMinterPauser("iBERA", "iBERA");
 

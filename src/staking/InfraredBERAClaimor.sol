@@ -10,19 +10,19 @@ import {
 import {OwnableUpgradeable} from
     "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
-import {IIBERAClaimor} from "src/interfaces/IIBERAClaimor.sol";
+import {IInfraredBERAClaimor} from "src/interfaces/IInfraredBERAClaimor.sol";
 
-/// @title IBERAClaimor
+/// @title InfraredBERAClaimor
 /// @author bungabear69420
 /// @notice Claimor to claim BERA withdrawn from CL for Infrared liquid staking token
 /// @dev Separate contract so withdrawor process has trusted contract to forward funds to so no issue with naked bera transfer and receive function
-contract IBERAClaimor is
+contract InfraredBERAClaimor is
     Initializable,
     UUPSUpgradeable,
     OwnableUpgradeable,
-    IIBERAClaimor
+    IInfraredBERAClaimor
 {
-    /// @inheritdoc IIBERAClaimor
+    /// @inheritdoc IInfraredBERAClaimor
     mapping(address => uint256) public claims;
 
     /// @dev Constructor disabled for upgradeable contracts
@@ -37,7 +37,7 @@ contract IBERAClaimor is
         __UUPSUpgradeable_init();
     }
 
-    /// @inheritdoc IIBERAClaimor
+    /// @inheritdoc IInfraredBERAClaimor
     function queue(address receiver) external payable {
         uint256 claim = claims[receiver];
         claim += msg.value;
@@ -45,7 +45,7 @@ contract IBERAClaimor is
         emit Queue(receiver, msg.value, claim);
     }
 
-    /// @inheritdoc IIBERAClaimor
+    /// @inheritdoc IInfraredBERAClaimor
     function sweep(address receiver) external {
         uint256 amount = claims[receiver];
         delete claims[receiver];

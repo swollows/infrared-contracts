@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {IBerachainBGT} from "src/interfaces/IBerachainBGT.sol";
-import {IIBGT} from "src/interfaces/IIBGT.sol";
+import {IInfraredBGT} from "src/interfaces/IInfraredBGT.sol";
 import {Errors} from "src/utils/Errors.sol";
 import {ValidatorTypes} from "./ValidatorTypes.sol";
 import {IInfraredDistributor} from "src/interfaces/IInfraredDistributor.sol";
@@ -127,7 +127,7 @@ library ValidatorManagerLib {
         // are less than or equal to the total supply of iBGT
         if (
             _totalBoosts
-                > IIBGT(ibgt).totalSupply()
+                > IInfraredBGT(ibgt).totalSupply()
                     - (
                         IBerachainBGT(bgt).boosts(address(this))
                             + IBerachainBGT(bgt).queuedBoost(address(this))

@@ -7,7 +7,8 @@ import {BGTStaker} from "@berachain/pol/BGTStaker.sol";
 import "@berachain/pol/rewards/RewardVaultFactory.sol";
 import {IRewardVault as IBerachainRewardsVault} from
     "@berachain/pol/interfaces/IRewardVault.sol";
-import {IIBERAFeeReceivor} from "src/interfaces/IIBERAFeeReceivor.sol";
+import {IInfraredBERAFeeReceivor} from
+    "src/interfaces/IInfraredBERAFeeReceivor.sol";
 import {ValidatorTypes} from "src/core/libraries/ValidatorTypes.sol";
 import {Errors} from "src/utils/Errors.sol";
 import {DataTypes} from "src/utils/DataTypes.sol";
@@ -109,7 +110,7 @@ contract InfraredTest is Helper {
         uint256 vaultBalanceAfter = ibgt.balanceOf(address(vault));
         assertTrue(
             vaultBalanceAfter > vaultBalanceBefore,
-            "Vault should have more IBGT after harvest"
+            "Vault should have more InfraredBGT after harvest"
         );
 
         // Step 6: Claiming Rewards
@@ -179,7 +180,7 @@ contract InfraredTest is Helper {
         // Step 7. Assure that the vaults received the collected bribes.
         assertTrue(
             wbera.balanceOf(address(ibgtVault)) == 3 ether,
-            "IBGTVault should have 1.5 ether"
+            "InfraredBGTVault should have 1.5 ether"
         );
         assertTrue(
             wbera.balanceOf(address(infrared)) == 0 ether,
@@ -245,7 +246,7 @@ contract InfraredTest is Helper {
 
         assertTrue(
             bgt.balanceOf(address(infrared)) > ibgt.totalSupply(),
-            "Infrared should have more BERA than total supply of IBGT"
+            "Infrared should have more BERA than total supply of InfraredBGT"
         );
 
         // Store initial balances
@@ -254,11 +255,11 @@ contract InfraredTest is Helper {
         // 4. Call harvestBase to distribute the rewards
         infrared.harvestBase();
 
-        // Check that ETH was sent to IBERA receivor
+        // Check that ETH was sent to InfraredBERA receivor
         uint256 receivorBalanceAfter = ibera.receivor().balance;
         assertTrue(
             receivorBalanceAfter > receivorBalanceBefore,
-            "IBERA receivor should have received ETH"
+            "InfraredBERA receivor should have received ETH"
         );
 
         // 5. Call harvestOperatorRewards to distribute the rewards
@@ -587,7 +588,7 @@ contract InfraredTest is Helper {
         // Start recording storage access for debugging
         vm.record();
 
-        // Test case 1: Set rate to 0.5 RED per IBGT
+        // Test case 1: Set rate to 0.5 RED per InfraredBGT
         uint256 halfRate = 500_000; // 0.5 * 1e6
         vm.prank(infraredGovernance);
         infrared.updateRedMintRate(halfRate);
@@ -600,7 +601,7 @@ contract InfraredTest is Helper {
             redMintRate, halfRate, "Internal storage mismatch for half rate"
         );
 
-        // Test case 2: Set rate to 2 RED per IBGT
+        // Test case 2: Set rate to 2 RED per InfraredBGT
         uint256 doubleRate = 2_000_000; // 2 * 1e6
         vm.prank(infraredGovernance);
         infrared.updateRedMintRate(doubleRate);
@@ -637,7 +638,7 @@ contract InfraredTest is Helper {
         vm.prank(keeper);
         infrared.harvestVault(address(wbera));
 
-        // Verify RED minting ratio (0.5 RED per IBGT)
+        // Verify RED minting ratio (0.5 RED per InfraredBGT)
         uint256 redBalance = newRed.balanceOf(address(ibgtVault));
         uint256 ibgtBalance = ibgt.balanceOf(address(ibgtVault));
         assertApproxEqRel(redBalance, ibgtBalance / 2, 1e16); // 1% tolerance
@@ -666,7 +667,7 @@ contract InfraredTest is Helper {
         vm.prank(keeper);
         infrared.harvestVault(address(wbera));
 
-        // Verify RED minting ratio (2 RED per IBGT)
+        // Verify RED minting ratio (2 RED per InfraredBGT)
         uint256 redBalance = newRed.balanceOf(address(ibgtVault));
         uint256 ibgtBalance = ibgt.balanceOf(address(ibgtVault));
         assertApproxEqRel(redBalance, ibgtBalance * 2, 1e16); // 1% tolerance
@@ -674,7 +675,7 @@ contract InfraredTest is Helper {
 
     /* TODO: fix
     function testEndToEndHarvestValidator() public {
-        // Staking by User in IBGT Vault
+        // Staking by User in InfraredBGT Vault
         address user = address(10);
         uint256 stakeAmount = 1000 * 1e18;
         ibgt.mint(user, stakeAmount);
@@ -724,12 +725,12 @@ contract InfraredTest is Helper {
         assertEq(
             ibgtVault.totalSupply(),
             0,
-            "IBGT Vault total supply should be zero after withdrawals"
+            "InfraredBGT Vault total supply should be zero after withdrawals"
         );
         assertEq(
             ibgtVault.balanceOf(user),
             0,
-            "User balance in IBGT Vault should be zero after withdrawal"
+            "User balance in InfraredBGT Vault should be zero after withdrawal"
         );
     }
 

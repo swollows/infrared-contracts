@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
-import "src/core/IBGT.sol";
+import "src/core/InfraredBGT.sol";
 import "src/core/InfraredVault.sol";
 import "src/core/Infrared.sol";
 

@@ -25,7 +25,8 @@ import {IVoter} from "src/voting/interfaces/IVoter.sol";
 import {IReward} from "src/voting/interfaces/IReward.sol";
 
 import {IWBERA} from "src/interfaces/IWBERA.sol";
-import {IIBGT} from "src/interfaces/IIBGT.sol";
+import {IInfraredBGT} from "src/interfaces/IInfraredBGT.sol";
+
 import {IRED} from "src/interfaces/IRED.sol";
 import {IBribeCollector} from "src/interfaces/IBribeCollector.sol";
 import {IInfraredDistributor} from "src/interfaces/IInfraredDistributor.sol";
@@ -34,7 +35,7 @@ import {ConfigTypes, IInfrared} from "src/interfaces/IInfrared.sol";
 
 import {InfraredUpgradeable} from "src/core/InfraredUpgradeable.sol";
 import {InfraredVault} from "src/core/InfraredVault.sol";
-import {IIBERA} from "src/interfaces/IIBERA.sol";
+import {IInfraredBERA} from "src/interfaces/IInfraredBERA.sol";
 
 import {ValidatorManagerLib} from "./libraries/ValidatorManagerLib.sol";
 import {ValidatorTypes} from "./libraries/ValidatorTypes.sol";
@@ -49,6 +50,7 @@ import {RewardsLib} from "./libraries/RewardsLib.sol";
  */
 contract Infrared is InfraredUpgradeable, IInfrared {
     using SafeTransferLib for ERC20;
+
     using EnumerableSet for EnumerableSet.Bytes32Set;
 
     using ValidatorManagerLib for ValidatorManagerLib.ValidatorStorage;
@@ -66,7 +68,7 @@ contract Infrared is InfraredUpgradeable, IInfrared {
     IBerachainBGT internal immutable _bgt;
 
     /// @inheritdoc IInfrared
-    IIBGT public immutable ibgt;
+    IInfraredBGT public immutable ibgt;
 
     /// @inheritdoc IInfrared
     IBerachainRewardsVaultFactory public immutable rewardsFactory;
@@ -90,7 +92,7 @@ contract Infrared is InfraredUpgradeable, IInfrared {
     IVoter public voter;
 
     /// @inheritdoc IInfrared
-    IIBERA public ibera;
+    IInfraredBERA public ibera;
 
     /// @inheritdoc IInfrared
     IRED public red;
@@ -180,7 +182,7 @@ contract Infrared is InfraredUpgradeable, IInfrared {
         rewardsFactory = IBerachainRewardsVaultFactory(_rewardsFactory);
         chef = IBeraChef(_chef);
 
-        ibgt = IIBGT(_ibgt);
+        ibgt = IInfraredBGT(_ibgt);
         _bgt = IBerachainBGT(ibgt.bgt());
     }
 
@@ -215,7 +217,7 @@ contract Infrared is InfraredUpgradeable, IInfrared {
         collector = IBribeCollector(_collector);
         distributor = IInfraredDistributor(_distributor);
         voter = IVoter(_voter);
-        ibera = IIBERA(_iBERA);
+        ibera = IInfraredBERA(_iBERA);
 
         if (collector.payoutToken() != address(wbera)) {
             revert Errors.RewardTokenNotSupported();
@@ -351,14 +353,14 @@ contract Infrared is InfraredUpgradeable, IInfrared {
     }
 
     /// @inheritdoc IInfrared
-    function updateIBERABribesWeight(uint256 _weight)
+    function updateInfraredBERABribesWeight(uint256 _weight)
         external
         onlyGovernor
         whenInitialized
     {
         uint256 prevWeight = _rewardsStorage().collectBribesWeight;
-        _rewardsStorage().updateIBERABribesWeight(_weight);
-        emit IBERABribesWeightUpdated(msg.sender, prevWeight, _weight);
+        _rewardsStorage().updateInfraredBERABribesWeight(_weight);
+        emit InfraredBERABribesWeightUpdated(msg.sender, prevWeight, _weight);
     }
 
     /// @inheritdoc IInfrared
@@ -477,7 +479,8 @@ contract Infrared is InfraredUpgradeable, IInfrared {
         if (_token != address(wbera)) {
             revert Errors.RewardTokenNotSupported();
         }
-        (uint256 amtIBERA, uint256 amtIbgtVault) = _rewardsStorage()
+
+        (uint256 amtInfraredBERA, uint256 amtIbgtVault) = _rewardsStorage()
             .collectBribesInWBERA(
             _amount,
             address(wbera),
@@ -487,7 +490,7 @@ contract Infrared is InfraredUpgradeable, IInfrared {
             rewardsDuration()
         );
 
-        emit BribesCollected(msg.sender, _token, amtIBERA, amtIbgtVault);
+        emit BribesCollected(msg.sender, _token, amtInfraredBERA, amtIbgtVault);
     }
 
     function harvestOperatorRewards() public whenInitialized {

@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-interface IIBERA is IERC20, IAccessControl {
+interface IInfraredBERA is IERC20, IAccessControl {
     error Unauthorized();
     error NotInitialized();
     error ZeroAddress();
@@ -48,7 +48,7 @@ interface IIBERA is IERC20, IAccessControl {
     /// @notice Address of the fee receivor contract that receives tx priority fees + MEV on EL
     function receivor() external view returns (address);
 
-    /// @notice Deposits of BERA backing IBERA intended for use in CL by validators
+    /// @notice Deposits of BERA backing InfraredBERA intended for use in CL by validators
     /// @return The amount of BERA for deposits to CL
     function deposits() external view returns (uint256);
 
@@ -80,11 +80,11 @@ interface IIBERA is IERC20, IAccessControl {
     /// @return The amount of BERA confirmed to be deposited to CL
     function confirmed() external view returns (uint256);
 
-    /// @notice Returns whether given account is an IBERA keeper
+    /// @notice Returns whether given account is an InfraredBERA keeper
     /// @return Whether account is a keeper
     function keeper(address account) external view returns (bool);
 
-    /// @notice Returns whether given account is an IBERA governor
+    /// @notice Returns whether given account is an InfraredBERA governor
     /// @return Whether account is a governor
     function governor(address account) external view returns (bool);
 
@@ -92,17 +92,17 @@ interface IIBERA is IERC20, IAccessControl {
     /// @return Whether pubkey in Infrared validator set
     function validator(bytes calldata pubkey) external view returns (bool);
 
-    /// @notice Previews the amount of IBERA shares that would be minted for a given BERA amount
+    /// @notice Previews the amount of InfraredBERA shares that would be minted for a given BERA amount
     /// @param beraAmount The amount of BERA to simulate depositing
-    /// @return shares The amount of IBERA shares that would be minted, returns 0 if the operation would fail
+    /// @return shares The amount of InfraredBERA shares that would be minted, returns 0 if the operation would fail
     /// @return fee The fee that would be charged for the mint operation
     function previewMint(uint256 beraAmount)
         external
         view
         returns (uint256 shares, uint256 fee);
 
-    /// @notice Previews the amount of BERA that would be received for burning IBERA shares
-    /// @param shares The amount of IBERA shares to simulate burning
+    /// @notice Previews the amount of BERA that would be received for burning InfraredBERA shares
+    /// @param shares The amount of InfraredBERA shares to simulate burning
     /// @return beraAmount The amount of BERA that would be received, returns 0 if the operation would fail
     /// @return fee The fee that would be charged for the burn operation
     function previewBurn(uint256 shares)
@@ -110,8 +110,8 @@ interface IIBERA is IERC20, IAccessControl {
         view
         returns (uint256 beraAmount, uint256 fee);
 
-    /// @notice Initializes IBERA to allow for future mints and burns
-    /// @dev Must be called before IBERA can offer deposits and withdraws
+    /// @notice Initializes InfraredBERA to allow for future mints and burns
+    /// @dev Must be called before InfraredBERA can offer deposits and withdraws
     function initialize(
         address admin,
         address _infrared,
@@ -122,7 +122,7 @@ interface IIBERA is IERC20, IAccessControl {
     ) external payable;
 
     /// @notice Compounds accumulated EL yield in fee receivor into deposits
-    /// @dev Called internally at bof whenever IBERA minted or burned
+    /// @dev Called internally at bof whenever InfraredBERA minted or burned
     /// @dev Only sweeps if amount transferred from fee receivor would exceed min deposit thresholds
     function compound() external;
 

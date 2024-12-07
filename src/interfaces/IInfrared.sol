@@ -7,11 +7,12 @@ import {IBeraChef} from "@berachain/pol/interfaces/IBeraChef.sol";
 import {IRewardVaultFactory as IBerachainRewardsVaultFactory} from
     "@berachain/pol/interfaces/IRewardVaultFactory.sol";
 import {IVoter} from "src/voting/interfaces/IVoter.sol";
-import {IIBERA} from "src/interfaces/IIBERA.sol";
+import {IInfraredBERA} from "src/interfaces/IInfraredBERA.sol";
 import {IRED} from "src/interfaces/IRED.sol";
 
 import {IWBERA} from "src/interfaces/IWBERA.sol";
-import {IIBGT} from "src/interfaces/IIBGT.sol";
+import {IInfraredBGT} from "src/interfaces/IInfraredBGT.sol";
+
 import {IBribeCollector} from "src/interfaces/IBribeCollector.sol";
 import {IInfraredDistributor} from "src/interfaces/IInfraredDistributor.sol";
 import {IInfraredVault} from "src/interfaces/IInfraredVault.sol";
@@ -44,10 +45,10 @@ interface IInfrared is IInfraredUpgradeable {
         returns (IInfraredVault);
 
     /**
-     * @notice The IBGT liquid staked token
-     * @return IIBGT The IBGT token contract address
+     * @notice The InfraredBGT liquid staked token
+     * @return IInfraredBGT The InfraredBGT token contract address
      */
-    function ibgt() external view returns (IIBGT);
+    function ibgt() external view returns (IInfraredBGT);
 
     /**
      * @notice The Berachain rewards vault factory address
@@ -65,7 +66,7 @@ interface IInfrared is IInfraredUpgradeable {
     function chef() external view returns (IBeraChef);
 
     /**
-     * @notice The IBGT vault
+     * @notice The InfraredBGT vault
      * @return IInfraredVault instance of the iBGT vault contract address
      */
     function ibgtVault() external view returns (IInfraredVault);
@@ -119,9 +120,9 @@ interface IInfrared is IInfraredUpgradeable {
 
     /**
      * @notice collects all iBERA realted fees and revenue
-     * @return returns IIBERAFeeReceivor instanace of iBeraFeeReceivor
+     * @return returns IInfraredBERAFeeReceivor instanace of iBeraFeeReceivor
      */
-    function ibera() external view returns (IIBERA);
+    function ibera() external view returns (IInfraredBERA);
 
     /**
      * @notice The RED token
@@ -138,7 +139,7 @@ interface IInfrared is IInfraredUpgradeable {
 
     /**
      * @notice Registers a new vault for a given asset
-     * @dev Infrared.sol must be admin over MINTER_ROLE on IBGT to grant minter role to deployed vault
+     * @dev Infrared.sol must be admin over MINTER_ROLE on InfraredBGT to grant minter role to deployed vault
      * @param _asset The address of the asset, such as a specific LP token
      * @return vault The address of the newly created InfraredVault contract
      * @custom:emits NewVault with the caller, asset address, and new vault address.
@@ -241,7 +242,7 @@ interface IInfrared is IInfraredUpgradeable {
      * @notice Updates the weight for iBERA bribes
      * @param _weight uint256 The weight value
      */
-    function updateIBERABribesWeight(uint256 _weight) external;
+    function updateInfraredBERABribesWeight(uint256 _weight) external;
 
     /**
      * @notice Updates the fee rate charged on different harvest functions
@@ -434,9 +435,9 @@ interface IInfrared is IInfraredUpgradeable {
     event VaultRegistrationPauseStatus(bool pause);
 
     /**
-     * @notice Emitted when IBGT tokens are supplied to distributor.
+     * @notice Emitted when InfraredBGT tokens are supplied to distributor.
      * @param _ibera token the rewards are denominated in
-     * @param _distributor The address of the distributor receiving the IBGT tokens.
+     * @param _distributor The address of the distributor receiving the InfraredBGT tokens.
      * @param _amt The amount of WBERA tokens supplied to distributor.
      */
     event OperatorRewardsDistributed(
@@ -444,12 +445,12 @@ interface IInfrared is IInfraredUpgradeable {
     );
 
     /**
-     * @notice Emitted when IBGT tokens are supplied to a vault.
-     * @param _vault The address of the vault receiving the IBGT and IRED tokens.
-     * @param _ibgtAmt The amount of IBGT tokens supplied to vault.
+     * @notice Emitted when InfraredBGT tokens are supplied to a vault.
+     * @param _vault The address of the vault receiving the InfraredBGT and IRED tokens.
+     * @param _ibgtAmt The amount of InfraredBGT tokens supplied to vault.
      * @param _iredAmt The amount of IRED tokens supplied to vault as additional reward from protocol.
      */
-    event IBGTSupplied(
+    event InfraredBGTSupplied(
         address indexed _vault, uint256 _ibgtAmt, uint256 _iredAmt
     );
 
@@ -488,20 +489,22 @@ interface IInfrared is IInfraredUpgradeable {
     event RewardTokenNotSupported(address _token);
 
     /**
-     * @notice Emitted when the IBGT token address is updated.
+     * @notice Emitted when the InfraredBGT token address is updated.
      * @param _sender The address that initiated the update.
-     * @param _oldIbgt The previous address of the IBGT token.
-     * @param _newIbgt The new address of the IBGT token.
+     * @param _oldIbgt The previous address of the InfraredBGT token.
+     * @param _newIbgt The new address of the InfraredBGT token.
      */
-    event IBGTUpdated(address _sender, address _oldIbgt, address _newIbgt);
+    event InfraredBGTUpdated(
+        address _sender, address _oldIbgt, address _newIbgt
+    );
 
     /**
-     * @notice Emitted when the IBGT vault address is updated.
+     * @notice Emitted when the InfraredBGT vault address is updated.
      * @param _sender The address that initiated the update.
-     * @param _oldIbgtVault The previous address of the IBGT vault.
-     * @param _newIbgtVault The new address of the IBGT vault.
+     * @param _oldIbgtVault The previous address of the InfraredBGT vault.
+     * @param _newIbgtVault The new address of the InfraredBGT vault.
      */
-    event IBGTVaultUpdated(
+    event InfraredBGTVaultUpdated(
         address _sender, address _oldIbgtVault, address _newIbgtVault
     );
 
@@ -530,7 +533,7 @@ interface IInfrared is IInfraredUpgradeable {
     );
 
     /**
-     * @notice Emitted when the IRED mint rate per unit IBGT is updated.
+     * @notice Emitted when the IRED mint rate per unit InfraredBGT is updated.
      * @param _sender The address that initiated the update.
      * @param _oldMintRate The previous IRED mint rate.
      * @param _newMintRate The new IRED mint rate.
@@ -545,7 +548,7 @@ interface IInfrared is IInfraredUpgradeable {
      * @param _oldWeight The old value of the weight.
      * @param _newWeight The new value of the weight.
      */
-    event IBERABribesWeightUpdated(
+    event InfraredBERABribesWeightUpdated(
         address _sender, uint256 _oldWeight, uint256 _newWeight
     );
 

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-interface IIBERADepositor {
+interface IInfraredBERADepositor {
     error Unauthorized();
     error InvalidValidator();
     error InvalidAmount();
@@ -12,8 +12,8 @@ interface IIBERADepositor {
     event Queue(uint256 nonce, uint256 amount);
     event Execute(bytes pubkey, uint256 start, uint256 end, uint256 amount);
 
-    /// @notice The address of IBERA
-    function IBERA() external view returns (address);
+    /// @notice The address of InfraredBERA
+    function InfraredBERA() external view returns (address);
 
     /// @notice Outstanding slips for deposits on previously minted ibera
     /// @param nonce The nonce associated with the slip
@@ -37,7 +37,7 @@ interface IIBERADepositor {
     /// @notice The next nonce to submit deposit slip for
     function nonceSubmit() external view returns (uint256);
 
-    /// @notice Queues a deposit from IBERA for chain deposit precompile escrowing msg.value in contract
+    /// @notice Queues a deposit from InfraredBERA for chain deposit precompile escrowing msg.value in contract
     /// @param amount The amount of funds to deposit
     /// @return nonce The nonce created when queueing the deposit
     function queue(uint256 amount) external payable returns (uint256 nonce);

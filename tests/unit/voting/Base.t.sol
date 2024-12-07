@@ -12,7 +12,7 @@ import "@berachain/pol/rewards/RewardVaultFactory.sol";
 import "src/voting/VotingEscrow.sol";
 import "src/voting/Voter.sol";
 
-import "src/core/IBGT.sol";
+import "src/core/InfraredBGT.sol";
 import "src/core/Infrared.sol";
 
 import "forge-std/Script.sol";
@@ -24,7 +24,7 @@ abstract contract Base is Test {
     MockERC20 public ired;
     MockERC20 public honey;
     address[] public stakingTokens;
-    IBGT public ibgt;
+    InfraredBGT public ibgt;
     address public bgt;
 
     /// @dev Core v2 Deployment
@@ -65,7 +65,7 @@ abstract contract Base is Test {
         ired = new MockERC20("IRED", "IRED", 18);
         // Mock non transferable token BGT token
         bgt = address(new MockERC20("BGT", "BGT", 18));
-        ibgt = new IBGT(bgt);
+        ibgt = new InfraredBGT(bgt);
         WBERA = new MockWbera();
         honey = new MockERC20("HONEY", "HONEY", 18);
         ibera = new MockERC20("iBERA", "iBERA", 18);

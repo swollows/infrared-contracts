@@ -5,7 +5,7 @@ import {EnumerableSet} from
     "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {IRewardVaultFactory as IBerachainRewardsVaultFactory} from
     "@berachain/pol/interfaces/IRewardVaultFactory.sol";
-import {IIBGT} from "src/interfaces/IIBGT.sol";
+import {IInfraredBGT} from "src/interfaces/IInfraredBGT.sol";
 import {IERC20Mintable} from "src/interfaces/IERC20Mintable.sol";
 import {IInfraredVault} from "src/interfaces/IInfraredVault.sol";
 
@@ -13,7 +13,7 @@ import {IInfraredVault} from "src/interfaces/IInfraredVault.sol";
 contract MockInfrared {
     using EnumerableSet for EnumerableSet.AddressSet;
 
-    IIBGT public immutable ibgt;
+    IInfraredBGT public immutable ibgt;
     IERC20Mintable public immutable ired;
     IBerachainRewardsVaultFactory public immutable rewardsFactory;
 
@@ -27,7 +27,7 @@ contract MockInfrared {
     mapping(address => IInfraredVault) public vaultRegistry;
 
     constructor(address _ibgt, address _ired, address _rewardsFactory) {
-        ibgt = IIBGT(_ibgt);
+        ibgt = IInfraredBGT(_ibgt);
         ired = IERC20Mintable(_ired);
         rewardsFactory = IBerachainRewardsVaultFactory(_rewardsFactory);
     }

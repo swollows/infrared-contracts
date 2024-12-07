@@ -11,27 +11,27 @@ import {ERC20PresetMinterPauser} from
 import {Voter} from "src/voting/Voter.sol";
 import {VotingEscrow} from "src/voting/VotingEscrow.sol";
 
-import {IBGT} from "src/core/IBGT.sol";
+import {InfraredBGT} from "src/core/InfraredBGT.sol";
 import {Infrared} from "src/core/Infrared.sol";
 import {BribeCollector} from "src/core/BribeCollector.sol";
 import {InfraredDistributor} from "src/core/InfraredDistributor.sol";
 
-import {IBERA} from "src/staking/IBERA.sol";
-import {IBERAClaimor} from "src/staking/IBERAClaimor.sol";
-import {IBERADepositor} from "src/staking/IBERADepositor.sol";
-import {IBERAWithdrawor} from "src/staking/IBERAWithdrawor.sol";
-import {IBERAFeeReceivor} from "src/staking/IBERAFeeReceivor.sol";
-import {IBERAConstants} from "src/staking/IBERAConstants.sol";
+import {InfraredBERA} from "src/staking/InfraredBERA.sol";
+import {InfraredBERAClaimor} from "src/staking/InfraredBERAClaimor.sol";
+import {InfraredBERADepositor} from "src/staking/InfraredBERADepositor.sol";
+import {InfraredBERAWithdrawor} from "src/staking/InfraredBERAWithdrawor.sol";
+import {InfraredBERAFeeReceivor} from "src/staking/InfraredBERAFeeReceivor.sol";
+import {InfraredBERAConstants} from "src/staking/InfraredBERAConstants.sol";
 
 contract InfraredDeployer is Script {
-    IBGT public ibgt;
+    InfraredBGT public ibgt;
     ERC20PresetMinterPauser public ired;
 
-    IBERA public ibera;
-    IBERADepositor public depositor;
-    IBERAWithdrawor public withdrawor;
-    IBERAClaimor public claimor;
-    IBERAFeeReceivor public receivor;
+    InfraredBERA public ibera;
+    InfraredBERADepositor public depositor;
+    InfraredBERAWithdrawor public withdrawor;
+    InfraredBERAClaimor public claimor;
+    InfraredBERAFeeReceivor public receivor;
 
     BribeCollector public collector;
     InfraredDistributor public distributor;
@@ -55,7 +55,7 @@ contract InfraredDeployer is Script {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
 
-        ibgt = new IBGT(_bgt);
+        ibgt = new InfraredBGT(_bgt);
 
         infrared = Infrared(
             setupProxy(
@@ -83,15 +83,19 @@ contract InfraredDeployer is Script {
             _votingKeeper, address(ired), address(voter), address(infrared)
         );
 
-        // IBERA
-        ibera = IBERA(setupProxy(address(new IBERA())));
+        // InfraredBERA
+        ibera = InfraredBERA(setupProxy(address(new InfraredBERA())));
 
-        depositor = IBERADepositor(setupProxy(address(new IBERADepositor())));
-        withdrawor =
-            IBERAWithdrawor(payable(setupProxy(address(new IBERAWithdrawor()))));
-        claimor = IBERAClaimor(setupProxy(address(new IBERAClaimor())));
-        receivor = IBERAFeeReceivor(
-            payable(setupProxy(address(new IBERAFeeReceivor())))
+        depositor = InfraredBERADepositor(
+            setupProxy(address(new InfraredBERADepositor()))
+        );
+        withdrawor = InfraredBERAWithdrawor(
+            payable(setupProxy(address(new InfraredBERAWithdrawor())))
+        );
+        claimor =
+            InfraredBERAClaimor(setupProxy(address(new InfraredBERAClaimor())));
+        receivor = InfraredBERAFeeReceivor(
+            payable(setupProxy(address(new InfraredBERAFeeReceivor())))
         );
 
         // initialize proxies
@@ -114,8 +118,8 @@ contract InfraredDeployer is Script {
         receivor.initialize(_admin, address(ibera), address(infrared));
 
         // init deposit to avoid inflation attack
-        uint256 _value =
-            IBERAConstants.MINIMUM_DEPOSIT + IBERAConstants.MINIMUM_DEPOSIT_FEE;
+        uint256 _value = InfraredBERAConstants.MINIMUM_DEPOSIT
+            + InfraredBERAConstants.MINIMUM_DEPOSIT_FEE;
 
         ibera.initialize{value: _value}(
             _admin,

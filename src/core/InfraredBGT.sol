@@ -4,10 +4,10 @@ pragma solidity 0.8.26;
 import {ERC20PresetMinterPauser} from "../vendors/ERC20PresetMinterPauser.sol";
 
 /**
- * @title IBGT
- * @notice This contract is the IBGT token.
+ * @title InfraredBGT
+ * @notice This contract is the InfraredBGT token.
  */
-contract IBGT is ERC20PresetMinterPauser {
+contract InfraredBGT is ERC20PresetMinterPauser {
     error ZeroAddress();
 
     address public immutable bgt;

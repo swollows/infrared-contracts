@@ -9,21 +9,21 @@ import {MockInfrared} from "tests/unit/mocks/MockInfrared.sol";
 
 import {BeaconDeposit} from "@berachain/pol/BeaconDeposit.sol";
 
-import {IBERA} from "src/staking/IBERA.sol";
-import {IBERADepositor} from "src/staking/IBERADepositor.sol";
-import {IBERAWithdrawor} from "src/staking/IBERAWithdrawor.sol";
-import {IBERAClaimor} from "src/staking/IBERAClaimor.sol";
-import {IBERAFeeReceivor} from "src/staking/IBERAFeeReceivor.sol";
-import {IBERAConstants} from "src/staking/IBERAConstants.sol";
-import {IBERADeployer} from "script/IBERADeployer.s.sol";
+import {InfraredBERA} from "src/staking/InfraredBERA.sol";
+import {InfraredBERADepositor} from "src/staking/InfraredBERADepositor.sol";
+import {InfraredBERAWithdrawor} from "src/staking/InfraredBERAWithdrawor.sol";
+import {InfraredBERAClaimor} from "src/staking/InfraredBERAClaimor.sol";
+import {InfraredBERAFeeReceivor} from "src/staking/InfraredBERAFeeReceivor.sol";
+import {InfraredBERAConstants} from "src/staking/InfraredBERAConstants.sol";
+import {InfraredBERADeployer} from "script/InfraredBERADeployer.s.sol";
 
-contract IBERABaseTest is Test {
-    IBERA public ibera;
-    IBERADepositor public depositor;
-    IBERAWithdrawor public withdrawor;
-    IBERAClaimor public claimor;
-    IBERAFeeReceivor public receivor;
-    IBERADeployer public deployerScript;
+contract InfraredBERABaseTest is Test {
+    InfraredBERA public ibera;
+    InfraredBERADepositor public depositor;
+    InfraredBERAWithdrawor public withdrawor;
+    InfraredBERAClaimor public claimor;
+    InfraredBERAFeeReceivor public receivor;
+    InfraredBERADeployer public deployerScript;
 
     BeaconDeposit public depositContract;
     bytes public constant withdrawPrecompile = abi.encodePacked(
@@ -53,7 +53,7 @@ contract IBERABaseTest is Test {
     function setUp() public virtual {
         infrared = new MockInfrared(ibgt, ired, rewardsFactory);
 
-        deployerScript = new IBERADeployer();
+        deployerScript = new InfraredBERADeployer();
 
         // Call deploy script
         deployerScript.run(address(infrared));
@@ -74,9 +74,9 @@ contract IBERABaseTest is Test {
         address WITHDRAW_PRECOMPILE = withdrawor.WITHDRAW_PRECOMPILE();
         vm.etch(WITHDRAW_PRECOMPILE, withdrawPrecompile);
 
-        // initialize IBERA
+        // initialize InfraredBERA
         // uint256 value =
-        //     IBERAConstants.MINIMUM_DEPOSIT + IBERAConstants.MINIMUM_DEPOSIT_FEE;
+        //     InfraredBERAConstants.MINIMUM_DEPOSIT + InfraredBERAConstants.MINIMUM_DEPOSIT_FEE;
         // ibera.initialize{value: value}();
 
         // deal to alice and bob + approve ibera to spend for them

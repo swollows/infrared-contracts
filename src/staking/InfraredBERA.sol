@@ -11,46 +11,48 @@ import {ERC20Upgradeable} from
     "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 
 import {IInfrared} from "src/interfaces/IInfrared.sol";
-import {IIBERADepositor} from "src/interfaces/IIBERADepositor.sol";
-import {IIBERAWithdrawor} from "src/interfaces/IIBERAWithdrawor.sol";
-import {IIBERAFeeReceivor} from "src/interfaces/IIBERAFeeReceivor.sol";
-import {IIBERA} from "src/interfaces/IIBERA.sol";
+import {IInfraredBERADepositor} from "src/interfaces/IInfraredBERADepositor.sol";
+import {IInfraredBERAWithdrawor} from
+    "src/interfaces/IInfraredBERAWithdrawor.sol";
+import {IInfraredBERAFeeReceivor} from
+    "src/interfaces/IInfraredBERAFeeReceivor.sol";
+import {IInfraredBERA} from "src/interfaces/IInfraredBERA.sol";
 
-import {IBERAConstants} from "./IBERAConstants.sol";
-import {IBERADepositor} from "./IBERADepositor.sol";
-import {IBERAWithdrawor} from "./IBERAWithdrawor.sol";
-import {IBERAClaimor} from "./IBERAClaimor.sol";
-import {IBERAFeeReceivor} from "./IBERAFeeReceivor.sol";
+import {InfraredBERAConstants} from "./InfraredBERAConstants.sol";
+import {InfraredBERADepositor} from "./InfraredBERADepositor.sol";
+import {InfraredBERAWithdrawor} from "./InfraredBERAWithdrawor.sol";
+import {InfraredBERAClaimor} from "./InfraredBERAClaimor.sol";
+import {InfraredBERAFeeReceivor} from "./InfraredBERAFeeReceivor.sol";
 
-/// @title IBERA
+/// @title InfraredBERA
 /// @author bungabear69420
 /// @notice Infrared liquid staking token for BERA
 /// @dev Assumes BERA balances do *not* change at the CL
-contract IBERA is
+contract InfraredBERA is
     ERC20Upgradeable,
     AccessControlUpgradeable,
     UUPSUpgradeable,
-    IIBERA
+    IInfraredBERA
 {
-    /// @inheritdoc IIBERA
+    /// @inheritdoc IInfraredBERA
     bool public withdrawalsEnabled;
 
     // Access control constants
     bytes32 public constant KEEPER_ROLE = keccak256("KEEPER_ROLE");
     bytes32 public constant GOVERNANCE_ROLE = keccak256("GOVERNANCE_ROLE");
 
-    /// @inheritdoc IIBERA
+    /// @inheritdoc IInfraredBERA
     address public infrared;
-    /// @inheritdoc IIBERA
+    /// @inheritdoc IInfraredBERA
     address public depositor;
-    /// @inheritdoc IIBERA
+    /// @inheritdoc IInfraredBERA
     address public withdrawor;
-    /// @inheritdoc IIBERA
+    /// @inheritdoc IInfraredBERA
     address public claimor;
-    /// @inheritdoc IIBERA
+    /// @inheritdoc IInfraredBERA
     address public receivor;
 
-    /// @inheritdoc IIBERA
+    /// @inheritdoc IInfraredBERA
     uint256 public deposits;
 
     mapping(bytes32 pubkeyHash => uint256 stake) internal _stakes;
@@ -59,7 +61,7 @@ contract IBERA is
 
     mapping(bytes32 pubkeyHash => bytes) internal _signatures;
 
-    /// @inheritdoc IIBERA
+    /// @inheritdoc IInfraredBERA
     uint16 public feeShareholders;
 
     /// @notice Whether initial mint to address(this) has happened
@@ -70,7 +72,7 @@ contract IBERA is
         _disableInitializers(); // Ensure the contract cannot be initialized through the logic contract
     }
 
-    /// @inheritdoc IIBERA
+    /// @inheritdoc IInfraredBERA
     function initialize(
         address admin,
         address _infrared,
@@ -114,15 +116,15 @@ contract IBERA is
         if (!_initialized) revert NotInitialized();
 
         // calculate amount as value less deposit fee
-        uint256 min = IBERAConstants.MINIMUM_DEPOSIT;
-        fee = IBERAConstants.MINIMUM_DEPOSIT_FEE;
+        uint256 min = InfraredBERAConstants.MINIMUM_DEPOSIT;
+        fee = InfraredBERAConstants.MINIMUM_DEPOSIT_FEE;
         if (value < min + fee) revert InvalidAmount();
 
         amount = value - fee;
         // update tracked deposits with validators
         deposits += amount;
         // escrow funds to depositor contract to eventually forward to precompile
-        nonce = IIBERADepositor(depositor).queue{value: value}(amount);
+        nonce = IInfraredBERADepositor(depositor).queue{value: value}(amount);
     }
 
     function _withdraw(address receiver, uint256 amount, uint256 fee)
@@ -132,51 +134,53 @@ contract IBERA is
         if (!_initialized) revert NotInitialized();
 
         // request to withdrawor contract to eventually forward to precompile
-        nonce = IIBERAWithdrawor(withdrawor).queue{value: fee}(receiver, amount);
+        nonce = IInfraredBERAWithdrawor(withdrawor).queue{value: fee}(
+            receiver, amount
+        );
         // update tracked deposits with validators *after* queue given used by withdrawor via confirmed
         deposits -= amount;
     }
 
-    /// @inheritdoc IIBERA
+    /// @inheritdoc IInfraredBERA
     function pending() public view returns (uint256) {
         return (
-            IIBERADepositor(depositor).reserves()
-                + IIBERAWithdrawor(withdrawor).rebalancing()
+            IInfraredBERADepositor(depositor).reserves()
+                + IInfraredBERAWithdrawor(withdrawor).rebalancing()
         );
     }
 
-    /// @inheritdoc IIBERA
+    /// @inheritdoc IInfraredBERA
     function confirmed() external view returns (uint256) {
         return (deposits - pending());
     }
 
-    /// @inheritdoc IIBERA
+    /// @inheritdoc IInfraredBERA
     function keeper(address account) public view returns (bool) {
         return hasRole(KEEPER_ROLE, account);
     }
 
-    /// @inheritdoc IIBERA
+    /// @inheritdoc IInfraredBERA
     function governor(address account) public view returns (bool) {
         return hasRole(GOVERNANCE_ROLE, account);
     }
 
-    /// @inheritdoc IIBERA
+    /// @inheritdoc IInfraredBERA
     function validator(bytes calldata pubkey) external view returns (bool) {
         return IInfrared(infrared).isInfraredValidator(pubkey);
     }
 
-    /// @inheritdoc IIBERA
+    /// @inheritdoc IInfraredBERA
     function compound() public {
-        IIBERAFeeReceivor(receivor).sweep();
+        IInfraredBERAFeeReceivor(receivor).sweep();
     }
 
-    /// @inheritdoc IIBERA
+    /// @inheritdoc IInfraredBERA
     function sweep() external payable {
         _deposit(msg.value);
         emit Sweep(msg.value);
     }
 
-    /// @inheritdoc IIBERA
+    /// @inheritdoc IInfraredBERA
     function mint(address receiver)
         public
         payable
@@ -202,7 +206,7 @@ contract IBERA is
         emit Mint(receiver, nonce, amount, shares, fee);
     }
 
-    /// @inheritdoc IIBERA
+    /// @inheritdoc IInfraredBERA
     function burn(address receiver, uint256 shares)
         external
         payable
@@ -229,7 +233,7 @@ contract IBERA is
         emit Burn(receiver, nonce, amount, shares, fee);
     }
 
-    /// @inheritdoc IIBERA
+    /// @inheritdoc IInfraredBERA
     function register(bytes calldata pubkey, int256 delta) external {
         if (msg.sender != depositor && msg.sender != withdrawor) {
             revert Unauthorized();
@@ -247,14 +251,14 @@ contract IBERA is
         emit Register(pubkey, delta, stake);
     }
 
-    /// @inheritdoc IIBERA
+    /// @inheritdoc IInfraredBERA
     function setFeeShareholders(uint16 to) external {
         if (!governor(msg.sender)) revert Unauthorized();
         emit SetFeeShareholders(feeShareholders, to);
         feeShareholders = to;
     }
 
-    /// @inheritdoc IIBERA
+    /// @inheritdoc IInfraredBERA
     function setDepositSignature(
         bytes calldata pubkey,
         bytes calldata signature
@@ -306,13 +310,13 @@ contract IBERA is
         return ERC1967Utils.getImplementation();
     }
 
-    /// @inheritdoc IIBERA
+    /// @inheritdoc IInfraredBERA
     function collect() external returns (uint256 sharesMinted) {
         if (msg.sender != address(infrared)) revert Unauthorized();
-        sharesMinted = IIBERAFeeReceivor(receivor).collect();
+        sharesMinted = IInfraredBERAFeeReceivor(receivor).collect();
     }
 
-    /// @inheritdoc IIBERA
+    /// @inheritdoc IInfraredBERA
     function previewMint(uint256 beraAmount)
         public
         view
@@ -323,11 +327,12 @@ contract IBERA is
         }
 
         // First simulate compound effects like in actual mint
-        (uint256 compoundAmount,) = IIBERAFeeReceivor(receivor).distribution();
+        (uint256 compoundAmount,) =
+            IInfraredBERAFeeReceivor(receivor).distribution();
 
         // Calculate fee
-        fee = IBERAConstants.MINIMUM_DEPOSIT_FEE;
-        uint256 min = IBERAConstants.MINIMUM_DEPOSIT;
+        fee = InfraredBERAConstants.MINIMUM_DEPOSIT_FEE;
+        uint256 min = InfraredBERAConstants.MINIMUM_DEPOSIT;
 
         if (beraAmount < min + fee) {
             return (0, fee);
@@ -341,7 +346,7 @@ contract IBERA is
 
         // First simulate compound effect on deposits
         if (compoundAmount > 0) {
-            uint256 compoundFee = IBERAConstants.MINIMUM_DEPOSIT_FEE;
+            uint256 compoundFee = InfraredBERAConstants.MINIMUM_DEPOSIT_FEE;
             if (compoundAmount > compoundFee) {
                 depositsAfterCompound += (compoundAmount - compoundFee);
             }
@@ -360,53 +365,54 @@ contract IBERA is
         }
     }
 
-    /// @inheritdoc IIBERA
+    /// @inheritdoc IInfraredBERA
     function previewBurn(uint256 shareAmount)
         public
         view
         returns (uint256 beraAmount, uint256 fee)
     {
         if (!_initialized || shareAmount == 0) {
-            return (0, IBERAConstants.MINIMUM_WITHDRAW_FEE);
+            return (0, InfraredBERAConstants.MINIMUM_WITHDRAW_FEE);
         }
 
         // First simulate compound effects like in actual burn
-        (uint256 compoundAmount,) = IIBERAFeeReceivor(receivor).distribution();
+        (uint256 compoundAmount,) =
+            IInfraredBERAFeeReceivor(receivor).distribution();
 
         uint256 ts = totalSupply();
         if (ts == 0) {
-            return (0, IBERAConstants.MINIMUM_WITHDRAW_FEE);
+            return (0, InfraredBERAConstants.MINIMUM_WITHDRAW_FEE);
         }
 
         // Calculate amount considering compound effect
         uint256 depositsAfterCompound = deposits;
 
         if (compoundAmount > 0) {
-            uint256 compoundFee = IBERAConstants.MINIMUM_DEPOSIT_FEE;
+            uint256 compoundFee = InfraredBERAConstants.MINIMUM_DEPOSIT_FEE;
             if (compoundAmount > compoundFee) {
                 depositsAfterCompound += (compoundAmount - compoundFee);
             }
         }
 
         beraAmount = depositsAfterCompound * shareAmount / ts;
-        fee = IBERAConstants.MINIMUM_WITHDRAW_FEE;
+        fee = InfraredBERAConstants.MINIMUM_WITHDRAW_FEE;
 
         if (beraAmount == 0) {
             return (0, fee);
         }
     }
 
-    /// @inheritdoc IIBERA
+    /// @inheritdoc IInfraredBERA
     function stakes(bytes calldata pubkey) external view returns (uint256) {
         return _stakes[keccak256(pubkey)];
     }
 
-    /// @inheritdoc IIBERA
+    /// @inheritdoc IInfraredBERA
     function staked(bytes calldata pubkey) external view returns (bool) {
         return _staked[keccak256(pubkey)];
     }
 
-    /// @inheritdoc IIBERA
+    /// @inheritdoc IInfraredBERA
     function signatures(bytes calldata pubkey)
         external
         view

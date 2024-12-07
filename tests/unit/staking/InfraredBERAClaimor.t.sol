@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.22;
 
-import {IIBERAClaimor} from "src/interfaces/IIBERAClaimor.sol";
-import {IBERABaseTest} from "./IBERABase.t.sol";
+import {IInfraredBERAClaimor} from "src/interfaces/IInfraredBERAClaimor.sol";
+import {InfraredBERABaseTest} from "./InfraredBERABase.t.sol";
 
-contract IBERAClaimorTest is IBERABaseTest {
+contract InfraredBERAClaimorTest is InfraredBERABaseTest {
     function testQueueUpdatesClaims() public {
         uint256 claim = claimor.claims(alice);
         uint256 balance = address(claimor).balance;
@@ -20,7 +20,7 @@ contract IBERAClaimorTest is IBERABaseTest {
         uint256 amount = 1 ether;
 
         vm.expectEmit();
-        emit IIBERAClaimor.Queue(alice, amount, claim + amount);
+        emit IInfraredBERAClaimor.Queue(alice, amount, claim + amount);
         claimor.queue{value: amount}(alice);
     }
 
@@ -50,7 +50,7 @@ contract IBERAClaimorTest is IBERABaseTest {
         assertTrue(claim > 0);
 
         vm.expectEmit();
-        emit IIBERAClaimor.Sweep(alice, claim, 0);
+        emit IInfraredBERAClaimor.Sweep(alice, claim, 0);
         claimor.sweep(alice);
     }
 }

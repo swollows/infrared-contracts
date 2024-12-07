@@ -16,9 +16,9 @@ import {IReward} from "src/voting/interfaces/IReward.sol";
 import {IVoter} from "src/voting/interfaces/IVoter.sol";
 import {DataTypes} from "src/utils/DataTypes.sol";
 import {IWBERA} from "src/interfaces/IWBERA.sol";
-import {IIBGT} from "src/interfaces/IIBGT.sol";
+import {IInfraredBGT} from "src/interfaces/IInfraredBGT.sol";
 import {IRED} from "src/interfaces/IRED.sol";
-import {IIBERA} from "src/interfaces/IIBERA.sol";
+import {IInfraredBERA} from "src/interfaces/IInfraredBERA.sol";
 import {Errors} from "src/utils/Errors.sol";
 
 library RewardsLib {
@@ -109,7 +109,7 @@ library RewardsLib {
         address ibgt,
         address ibera
     ) external returns (uint256 bgtAmt) {
-        uint256 minted = IIBGT(ibgt).totalSupply();
+        uint256 minted = IInfraredBGT(ibgt).totalSupply();
         uint256 bgtBalance = _getBGTBalance(bgt);
         // @dev should never happen but check in case
         if (bgtBalance < minted) revert Errors.UnderFlow();
@@ -117,10 +117,10 @@ library RewardsLib {
         bgtAmt = bgtBalance - minted;
         if (bgtAmt == 0) return 0;
 
-        // Redeem BGT for BERA and send to IBERA receivor
+        // Redeem BGT for BERA and send to InfraredBERA receivor
         // No fee deduction needed here as fees will be handled by
-        // subsequent harvest calls through the IBERA receiver's logic
-        IBerachainBGT(bgt).redeem(IIBERA(ibera).receivor(), bgtAmt);
+        // subsequent harvest calls through the InfraredBERA receiver's logic
+        IBerachainBGT(bgt).redeem(IInfraredBERA(ibera).receivor(), bgtAmt);
     }
 
     function harvestVault(
@@ -150,14 +150,8 @@ library RewardsLib {
         // If no BGT rewards were received, exit early
         if (bgtAmt == 0) return bgtAmt;
 
-        // Mint IBGT tokens equivalent to the BGT rewards
-        IIBGT(ibgt).mint(address(this), bgtAmt);
-
-        // Retrieve the total and protocol fee rates
-        // uint256 feeTotal =
-        //     $.fees[uint256(ConfigTypes.FeeType.HarvestVaultFeeRate)];
-        // uint256 feeProtocol =
-        //     $.fees[uint256(ConfigTypes.FeeType.HarvestVaultProtocolRate)];
+        // Mint InfraredBGT tokens equivalent to the BGT rewards
+        IInfraredBGT(ibgt).mint(address(this), bgtAmt);
 
         // Calculate and distribute fees on the BGT rewards
         (uint256 _amt, uint256 _amtVoter, uint256 _amtProtocol) =
@@ -170,7 +164,7 @@ library RewardsLib {
             $.protocolFeeAmounts, voter, ibgt, _amtVoter, _amtProtocol
         );
 
-        // Send the remaining IBGT rewards to the vault
+        // Send the remaining InfraredBGT rewards to the vault
         if (_amt > 0) {
             ERC20(ibgt).safeApprove(address(vault), _amt);
             vault.notifyRewardAmount(ibgt, _amt);
@@ -243,18 +237,18 @@ library RewardsLib {
         address ibgtVault,
         address voter,
         uint256 rewardsDuration
-    ) external returns (uint256 amtIBERA, uint256 amtIbgtVault) {
+    ) external returns (uint256 amtInfraredBERA, uint256 amtIbgtVault) {
         if (ibera == address(0)) revert Errors.ZeroAddress();
         ERC20(wbera).safeTransferFrom(msg.sender, address(this), _amount);
 
-        // determine proportion of bribe amount designated for IBERA
-        amtIBERA = _amount * $.collectBribesWeight / WEIGHT_UNIT;
-        amtIbgtVault = _amount - amtIBERA;
+        // determine proportion of bribe amount designated for InfraredBERA
+        amtInfraredBERA = _amount * $.collectBribesWeight / WEIGHT_UNIT;
+        amtIbgtVault = _amount - amtInfraredBERA;
 
-        address rec = IIBERA(ibera).receivor();
+        address rec = IInfraredBERA(ibera).receivor();
         if (rec == address(0)) revert Errors.ZeroAddress();
         // Redeem WBERA for BERA and send to IBERA receivor
-        (bool success,) = rec.call{value: amtIBERA}("");
+        (bool success,) = rec.call{value: amtInfraredBERA}("");
         if (!success) revert Errors.ETHTransferFailed();
 
         // get total and protocol fee rates
@@ -316,7 +310,7 @@ library RewardsLib {
         address voter,
         address distributor
     ) external returns (uint256 _amt) {
-        uint256 iBERAShares = IIBERA(ibera).collect();
+        uint256 iBERAShares = IInfraredBERA(ibera).collect();
 
         if (iBERAShares == 0) return 0;
 
@@ -331,7 +325,7 @@ library RewardsLib {
     }
 
     /**
-     * @notice Handles non-IBGT token rewards to the vault.
+     * @notice Handles non-InfraredBGT token rewards to the vault.
      * @param _vault       IInfraredVault   The address of the vault.
      * @param _token       address          The reward token.
      * @param _amount      uint256          The amount of reward token to send to vault.
@@ -374,7 +368,7 @@ library RewardsLib {
     }
 
     /**
-     * @notice Handles non-IBGT token bribe rewards to a non-vault receiver address.
+     * @notice Handles non-InfraredBGT token bribe rewards to a non-vault receiver address.
      * @dev Does *not* take protocol fee on bribe coin, as taken on bribe collector payout token in eventual callback.
      * @param _recipient address  The address of the recipient.
      * @param _token     address  The address of the token to forward to recipient.
@@ -438,9 +432,10 @@ library RewardsLib {
         IBerachainBGT(bgt).delegate(_delegatee);
     }
 
-    function updateIBERABribesWeight(RewardsStorage storage $, uint256 _weight)
-        external
-    {
+    function updateInfraredBERABribesWeight(
+        RewardsStorage storage $,
+        uint256 _weight
+    ) external {
         if (_weight > WEIGHT_UNIT) revert Errors.InvalidWeight();
         $.collectBribesWeight = _weight;
     }

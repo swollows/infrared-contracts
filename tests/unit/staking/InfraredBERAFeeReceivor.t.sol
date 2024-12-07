@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.22;
 
-import {IIBERAFeeReceivor} from "src/interfaces/IIBERAFeeReceivor.sol";
-import {IBERAConstants} from "src/staking/IBERAConstants.sol";
+import {IInfraredBERAFeeReceivor} from
+    "src/interfaces/IInfraredBERAFeeReceivor.sol";
+import {InfraredBERAConstants} from "src/staking/InfraredBERAConstants.sol";
 
-import {IBERABaseTest} from "./IBERABase.t.sol";
+import {InfraredBERABaseTest} from "./InfraredBERABase.t.sol";
 
 import {console2} from "@forge-std/console2.sol";
 
-contract IBERAFeeReceivorTest is IBERABaseTest {
+contract InfraredBERAFeeReceivorTest is InfraredBERABaseTest {
     function testDistributionReturnsWhenFeeZero() public {
         uint256 value = 1 ether;
         (bool success,) = address(receivor).call{value: value}("");
@@ -207,12 +208,12 @@ contract IBERAFeeReceivorTest is IBERABaseTest {
         assertEq(fees, value / feeShareholders);
 
         vm.expectEmit();
-        emit IIBERAFeeReceivor.Sweep(address(ibera), amount, fees);
+        emit IInfraredBERAFeeReceivor.Sweep(address(ibera), amount, fees);
         receivor.sweep();
     }
 
     function testSweepPassesBelowMin() public {
-        uint256 value = IBERAConstants.MINIMUM_DEPOSIT;
+        uint256 value = InfraredBERAConstants.MINIMUM_DEPOSIT;
         (bool success,) = address(receivor).call{value: value}("");
         assertTrue(success);
         assertEq(address(receivor).balance, value);
@@ -220,8 +221,8 @@ contract IBERAFeeReceivorTest is IBERABaseTest {
         (uint256 amount, uint256 fees) = receivor.distribution();
         assertTrue(
             amount
-                < IBERAConstants.MINIMUM_DEPOSIT
-                    + IBERAConstants.MINIMUM_DEPOSIT_FEE
+                < InfraredBERAConstants.MINIMUM_DEPOSIT
+                    + InfraredBERAConstants.MINIMUM_DEPOSIT_FEE
         );
         assertEq(fees, 0);
 
@@ -278,7 +279,7 @@ contract IBERAFeeReceivorTest is IBERABaseTest {
         uint256 shareholderFees = receivor.shareholderFees();
         assertTrue(shareholderFees > 0);
 
-        vm.expectRevert(IIBERAFeeReceivor.Unauthorized.selector);
+        vm.expectRevert(IInfraredBERAFeeReceivor.Unauthorized.selector);
         receivor.collect();
     }
 

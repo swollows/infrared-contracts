@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-interface IIBERAWithdrawor {
+interface IInfraredBERAWithdrawor {
     error Unauthorized();
     error InvalidFee();
     error InvalidAmount();
@@ -15,10 +15,10 @@ interface IIBERAWithdrawor {
     event Process(address indexed receiver, uint256 nonce, uint256 amount);
     event Sweep(address indexed receiver, uint256 amount);
 
-    /// @notice The address of IBERA
-    function IBERA() external view returns (address);
+    /// @notice The address of InfraredBERA
+    function InfraredBERA() external view returns (address);
 
-    /// @notice Sweeps forced withdrawals to IBERA to re-stake principal
+    /// @notice Sweeps forced withdrawals to InfraredBERA to re-stake principal
     function sweep(uint256 amount, bytes calldata pubkey) external;
 
     /// @notice Outstanding requests for claims on previously burnt ibera
@@ -57,7 +57,7 @@ interface IIBERAWithdrawor {
     /// @notice The next nonce in queue to process claims for
     function nonceProcess() external view returns (uint256);
 
-    /// @notice Queues a withdraw from IBERA for chain withdraw precompile escrowing minimum fees for request to withdraw precompile
+    /// @notice Queues a withdraw from InfraredBERA for chain withdraw precompile escrowing minimum fees for request to withdraw precompile
     /// @param receiver The address to receive withdrawn funds
     /// @param amount The amount of funds to withdraw
     /// @return nonce The nonce created when queueing the withdraw

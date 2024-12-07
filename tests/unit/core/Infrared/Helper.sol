@@ -11,12 +11,12 @@ import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol"
 
 import {Voter} from "src/voting/Voter.sol";
 import {VotingEscrow} from "src/voting/VotingEscrow.sol";
-import {IBERA} from "src/staking/IBERA.sol";
-import {IBERAClaimor} from "src/staking/IBERAClaimor.sol";
-import {IBERADepositor} from "src/staking/IBERADepositor.sol";
-import {IBERAWithdrawor} from "src/staking/IBERAWithdrawor.sol";
-import {IBERAFeeReceivor} from "src/staking/IBERAFeeReceivor.sol";
-import {IBERAConstants} from "src/staking/IBERAConstants.sol";
+import {InfraredBERA} from "src/staking/InfraredBERA.sol";
+import {InfraredBERAClaimor} from "src/staking/InfraredBERAClaimor.sol";
+import {InfraredBERADepositor} from "src/staking/InfraredBERADepositor.sol";
+import {InfraredBERAWithdrawor} from "src/staking/InfraredBERAWithdrawor.sol";
+import {InfraredBERAFeeReceivor} from "src/staking/InfraredBERAFeeReceivor.sol";
+import {InfraredBERAConstants} from "src/staking/InfraredBERAConstants.sol";
 
 import {InfraredDistributor} from "src/core/InfraredDistributor.sol";
 import {BribeCollector} from "src/core/BribeCollector.sol";
@@ -24,7 +24,7 @@ import {BribeCollector} from "src/core/BribeCollector.sol";
 // internal
 import {ERC20, Infrared} from "src/core/Infrared.sol";
 import {InfraredDistributor} from "src/core/InfraredDistributor.sol";
-import {IBGT} from "src/core/IBGT.sol";
+import {InfraredBGT} from "src/core/InfraredBGT.sol";
 import {RED} from "src/core/RED.sol";
 import {IInfraredVault, InfraredVault} from "src/core/InfraredVault.sol";
 import {DataTypes} from "src/utils/DataTypes.sol";
@@ -38,17 +38,17 @@ import {POLTest} from "@berachain/../test/pol/POL.t.sol";
 
 abstract contract Helper is POLTest {
     Infrared public infrared;
-    IBGT public ibgt;
+    InfraredBGT public ibgt;
     RED public red;
 
     Voter public voter;
     VotingEscrow public ired;
 
-    IBERA public ibera;
-    IBERADepositor public depositor;
-    IBERAWithdrawor public withdrawor;
-    IBERAClaimor public claimor;
-    IBERAFeeReceivor public receivor;
+    InfraredBERA public ibera;
+    InfraredBERADepositor public depositor;
+    InfraredBERAWithdrawor public withdrawor;
+    InfraredBERAClaimor public claimor;
+    InfraredBERAFeeReceivor public receivor;
 
     BribeCollector public collector;
     InfraredDistributor public infraredDistributor;
@@ -83,8 +83,8 @@ abstract contract Helper is POLTest {
     function setUp() public virtual override {
         super.setUp();
 
-        ibgt = new IBGT(address(bgt));
-        wibera = new MockERC20("WIBERA", "WIBERA", 18);
+        ibgt = new InfraredBGT(address(bgt));
+        wibera = new MockERC20("WInfraredBERA", "WInfraredBERA", 18);
         honey = new MockERC20("HONEY", "HONEY", 18);
 
         // Set up addresses for roles
@@ -94,7 +94,7 @@ abstract contract Helper is POLTest {
 
         stakingAsset = address(wbera);
 
-        // deploy a rewards vault for IBGT
+        // deploy a rewards vault for InfraredBGT
         address rewardsVault = factory.createRewardVault(address(ibgt));
         assertEq(rewardsVault, factory.getVault(address(ibgt)));
 
@@ -116,16 +116,20 @@ abstract contract Helper is POLTest {
             )
         );
 
-        // ibera = new IBERA(address(infrared));
-        // IBERA
-        ibera = IBERA(setupProxy(address(new IBERA())));
+        // ibera = new InfraredBERA(address(infrared));
+        // InfraredBERA
+        ibera = InfraredBERA(setupProxy(address(new InfraredBERA())));
 
-        depositor = IBERADepositor(setupProxy(address(new IBERADepositor())));
-        withdrawor =
-            IBERAWithdrawor(payable(setupProxy(address(new IBERAWithdrawor()))));
-        claimor = IBERAClaimor(setupProxy(address(new IBERAClaimor())));
-        receivor = IBERAFeeReceivor(
-            payable(setupProxy(address(new IBERAFeeReceivor())))
+        depositor = InfraredBERADepositor(
+            setupProxy(address(new InfraredBERADepositor()))
+        );
+        withdrawor = InfraredBERAWithdrawor(
+            payable(setupProxy(address(new InfraredBERAWithdrawor())))
+        );
+        claimor =
+            InfraredBERAClaimor(setupProxy(address(new InfraredBERAClaimor())));
+        receivor = InfraredBERAFeeReceivor(
+            payable(setupProxy(address(new InfraredBERAFeeReceivor())))
         );
 
         collector = BribeCollector(
@@ -162,8 +166,8 @@ abstract contract Helper is POLTest {
         receivor.initialize(admin, address(ibera), address(infrared));
 
         // init deposit to avoid inflation attack
-        uint256 _value =
-            IBERAConstants.MINIMUM_DEPOSIT + IBERAConstants.MINIMUM_DEPOSIT_FEE;
+        uint256 _value = InfraredBERAConstants.MINIMUM_DEPOSIT
+            + InfraredBERAConstants.MINIMUM_DEPOSIT_FEE;
 
         ibera.initialize{value: _value}(
             admin,

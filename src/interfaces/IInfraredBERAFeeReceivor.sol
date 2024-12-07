@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-interface IIBERAFeeReceivor {
+interface IInfraredBERAFeeReceivor {
     error Unauthorized();
     error InvalidAmount();
     error ZeroAddress();
@@ -11,21 +11,21 @@ interface IIBERAFeeReceivor {
         address indexed receiver, uint256 amount, uint256 sharesMinted
     );
 
-    /// @notice The address of IBERA
-    function IBERA() external view returns (address);
+    /// @notice The address of InfraredBERA
+    function InfraredBERA() external view returns (address);
 
     /// @notice Accumulated protocol fees in contract to be claimed by governor
     function shareholderFees() external view returns (uint256);
 
-    /// @notice Amount of BERA swept to IBERA and fees taken for protool on next call to sweep
-    /// @return amount THe amount of BERA forwarded to IBERA on next sweep
+    /// @notice Amount of BERA swept to InfraredBERA and fees taken for protool on next call to sweep
+    /// @return amount THe amount of BERA forwarded to InfraredBERA on next sweep
     /// @return fees The protocol fees taken on next sweep
     function distribution()
         external
         view
         returns (uint256 amount, uint256 fees);
 
-    /// @notice Sweeps accumulated coinbase priority fees + MEV to IBERA to autocompound principal
+    /// @notice Sweeps accumulated coinbase priority fees + MEV to InfraredBERA to autocompound principal
     function sweep() external returns (uint256 amount, uint256 fees);
 
     /// @notice Collects accumulated shareholder fees

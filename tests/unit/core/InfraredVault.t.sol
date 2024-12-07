@@ -12,7 +12,7 @@ import {
 } from "src/core/InfraredVault.sol";
 import {IMultiRewards} from "src/interfaces/IMultiRewards.sol";
 
-import {IBGT} from "src/core/IBGT.sol";
+import {InfraredBGT} from "src/core/InfraredBGT.sol";
 
 import {IInfrared} from "src/interfaces/IInfrared.sol";
 
@@ -28,7 +28,7 @@ import {stdStorage, StdStorage} from "forge-std/Test.sol";
 import {Helper} from "./Infrared/Helper.sol";
 
 contract InfraredVaultTest is Helper {
-    IBGT public rewardsToken;
+    InfraredBGT public rewardsToken;
 
     MockERC20 public stakingToken;
 
@@ -887,14 +887,16 @@ contract InfraredVaultTest is Helper {
         // Get all reward tokens
         address[] memory allRewards = infraredVault.getAllRewardTokens();
 
-        // Verify results - note that IBGT is already added in setup
+        // Verify results - note that InfraredBGT is already added in setup
         assertEq(
-            allRewards.length, 3, "Should have 3 reward tokens (including IBGT)"
+            allRewards.length,
+            3,
+            "Should have 3 reward tokens (including InfraredBGT)"
         );
         assertTrue(
             allRewards[0] == address(ibgt) || allRewards[1] == address(ibgt)
                 || allRewards[2] == address(ibgt),
-            "IBGT should be in rewards"
+            "InfraredBGT should be in rewards"
         );
         assertTrue(
             allRewards[0] == address(rewardToken1)
@@ -956,7 +958,9 @@ contract InfraredVaultTest is Helper {
 
         // Verify results
         assertEq(rewards.length, 2, "Should have 2 reward tokens");
-        assertTrue(rewards[0].amount > 0, "User should have rewards for IBGT");
+        assertTrue(
+            rewards[0].amount > 0, "User should have rewards for InfraredBGT"
+        );
         assertTrue(
             rewards[0].token == address(ibgt),
             "User should have rewards for rewardToken"
@@ -995,11 +999,12 @@ contract InfraredVaultTest is Helper {
             infraredVault.getAllRewardsForUser(user2);
         assertEq(user2Rewards.length, 1, "Should have 1 reward token");
         assertTrue(
-            user2Rewards[0].amount > 0, "User should have rewards for IBGT"
+            user2Rewards[0].amount > 0,
+            "User should have rewards for InfraredBGT"
         );
         assertTrue(
             user2Rewards[0].token == address(ibgt),
-            "User should have rewards for IBGT"
+            "User should have rewards for InfraredBGT"
         );
 
         // get rewards for user and verify amount is greater
@@ -1008,11 +1013,11 @@ contract InfraredVaultTest is Helper {
         assertEq(userRewards.length, 2, "Should have 1 reward token");
         assertTrue(
             userRewards[0].amount > user2Rewards[0].amount,
-            "User should have rewards for IBGT"
+            "User should have rewards for InfraredBGT"
         );
         assertTrue(
             userRewards[0].token == address(ibgt),
-            "User should have rewards for IBGT"
+            "User should have rewards for InfraredBGT"
         );
     }
 

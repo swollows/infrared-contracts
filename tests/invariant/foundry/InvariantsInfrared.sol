@@ -16,7 +16,7 @@ import {VotingEscrow} from "src/voting/VotingEscrow.sol";
 
 // internal
 import "src/core/Infrared.sol";
-import "src/core/IBGT.sol";
+import "src/core/InfraredBGT.sol";
 import "src/core/InfraredVault.sol";
 import "src/utils/DataTypes.sol";
 
@@ -24,8 +24,6 @@ import "src/utils/DataTypes.sol";
 import {MockERC20} from "tests/unit/mocks/MockERC20.sol";
 import "tests/unit/mocks/MockWbera.sol";
 import "@berachain/pol/rewards/RewardVaultFactory.sol";
-// import "tests/unit/mocks/MockBeaconDepositContract.sol";
-// TODO: fix import "tests/unit/mocks/MockBerachef.sol";
 
 import "./handlers/Governance.sol";
 import "./handlers/Keeper.sol";
@@ -35,7 +33,7 @@ import "src/core/MultiRewards.sol";
 
 contract InvariantsInfrared is Test {
     Infrared public infrared;
-    IBGT public ibgt;
+    InfraredBGT public ibgt;
 
     BribeCollector public collector;
     InfraredDistributor public distributor;
@@ -74,9 +72,9 @@ contract InvariantsInfrared is Test {
         // Mock non transferable token BGT token
         bgt = new MockERC20("BGT", "BGT", 18);
         // Mock contract instantiations
-        ibgt = new IBGT(address(bgt));
+        ibgt = new InfraredBGT(address(bgt));
         ired = new MockERC20("IRED", "IRED", 18);
-        ibera = new MockERC20("WIBERA", "WIBERA", 18);
+        ibera = new MockERC20("WInfraredBERA", "WInfraredBERA", 18);
         honey = new MockERC20("HONEY", "HONEY", 18);
         mockWbera = new MockWbera();
 
@@ -89,7 +87,7 @@ contract InvariantsInfrared is Test {
         mockPool = new MockERC20("Mock Asset", "MAS", 18);
         stakingAsset = address(mockPool);
 
-        // deploy a rewards vault for IBGT
+        // deploy a rewards vault for InfraredBGT
         rewardsFactory = new RewardVaultFactory();
 
         // Set up the chef
@@ -194,7 +192,7 @@ contract InvariantsInfrared is Test {
         assertEq(
             ibgt.totalSupply(),
             bgt.balanceOf(address(infrared)),
-            "Invariant: Minted IBGT should be equal to total BGT rewards"
+            "Invariant: Minted InfraredBGT should be equal to total BGT rewards"
         );
     }
 
@@ -218,14 +216,12 @@ contract InvariantsInfrared is Test {
     }
 
     /// forge-config: default.invariant.fail-on-revert = false
-    function invariant_delegated_amount_not_bigger_than_IBGT_total_supply()
-        public
-        view
-    {
+    function invariant_delegated_amount_not_bigger_than_InfraredBGT_total_supply(
+    ) public view {
         // assert that the total delegated bgt is not bigger than the total bgt rewards
         assertTrue(
             governanceHandler.totalDelegatedBgt() <= ibgt.totalSupply(),
-            "Invariant: Delegated BGT amount should not be bigger than IBGT total supply"
+            "Invariant: Delegated BGT amount should not be bigger than InfraredBGT total supply"
         );
     }
 
@@ -243,7 +239,7 @@ contract InvariantsInfrared is Test {
 
         assertTrue(
             userRewards <= ibgt.totalSupply(),
-            "Invariant: Users should earn IBGT rewards"
+            "Invariant: Users should earn InfraredBGT rewards"
         );
     }
 
@@ -251,7 +247,7 @@ contract InvariantsInfrared is Test {
                     Validator Rewards Invariants
     //////////////////////////////////////////////////////////////*/
 
-    // function invariant_only_whitelisted_reward_tokens_are_distributed_to_IBGTVault(
+    // function invariant_only_whitelisted_reward_tokens_are_distributed_to_InfraredBGTVault(
     // ) public {
     //     address otherToken = ibgtVaultHandler.otherToken(); // non whitelisted token that can be part of the rewards array in the harvestValidator function
     //     // assert that only whitelisted reward tokens are distributed
@@ -269,9 +265,9 @@ contract InvariantsInfrared is Test {
     //     // address ired = address(ibgtVaultHandler.ired());
     //     // address wbera = address(ibgtVaultHandler.wbera());
     //     // assert that the total rewards are distributed to the ibgt vault
-    //     // assertTrue(ibgtVaultHandler.ibgtRewards() > 0 && ibgtVault.rewardPerToken(ibgt) > 0 , "Invariant: Rewards should be distributed to IBGT vault");
-    //     // assertTrue(ibgtVaultHandler.iredRewards() > 0 && ibgtVault.rewardPerToken(ired) > 0 , "Invariant: Rewards should be distributed to IBGT vault");
-    //     // assertTrue(ibgtVaultHandler.wberaRewards() > 0 && ibgtVault.rewardPerToken(wbera) > 0 , "Invariant: Rewards should be distributed to IBGT vault");
+    //     // assertTrue(ibgtVaultHandler.ibgtRewards() > 0 && ibgtVault.rewardPerToken(ibgt) > 0 , "Invariant: Rewards should be distributed to InfraredBGT vault");
+    //     // assertTrue(ibgtVaultHandler.iredRewards() > 0 && ibgtVault.rewardPerToken(ired) > 0 , "Invariant: Rewards should be distributed to InfraredBGT vault");
+    //     // assertTrue(ibgtVaultHandler.wberaRewards() > 0 && ibgtVault.rewardPerToken(wbera) > 0 , "Invariant: Rewards should be distributed to InfraredBGT vault");
     // }
 
     // function invariant_users_earn_ibgt_rewards() public {
@@ -279,7 +275,7 @@ contract InvariantsInfrared is Test {
     //     uint256 user1Rewards = userHandler.userClaimed(userHandler.user1());
     //     assertTrue(
     //         ibgt.balanceOf(userHandler.user1()) == user1Rewards,
-    //         "Invariant: Users should earn IBGT rewards"
+    //         "Invariant: Users should earn InfraredBGT rewards"
     //     );
     // }
 }
