@@ -2,15 +2,8 @@
 pragma solidity 0.8.26;
 
 import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
-import {Initializable} from
-    "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import {
-    ERC1967Utils,
-    UUPSUpgradeable
-} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import {OwnableUpgradeable} from
-    "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
+import {Errors, Upgradeable} from "src/utils/Upgradeable.sol";
 import {IInfraredBERA} from "src/interfaces/IInfraredBERA.sol";
 import {IInfraredBERADepositor} from "src/interfaces/IInfraredBERADepositor.sol";
 import {IInfraredBERAClaimor} from "src/interfaces/IInfraredBERAClaimor.sol";
@@ -23,12 +16,7 @@ import {InfraredBERAConstants} from "./InfraredBERAConstants.sol";
 /// @author bungabear69420
 /// @notice Withdrawor to withdraw BERA from CL for Infrared liquid staking token
 /// @dev Assumes ETH returned via withdraw precompile credited to contract so receive unnecessary
-contract InfraredBERAWithdrawor is
-    Initializable,
-    UUPSUpgradeable,
-    OwnableUpgradeable,
-    IInfraredBERAWithdrawor
-{
+contract InfraredBERAWithdrawor is Upgradeable, IInfraredBERAWithdrawor {
     uint8 public constant WITHDRAW_REQUEST_TYPE = 0x01;
     address public constant WITHDRAW_PRECOMPILE =
         0x00A3ca265EBcb825B45F985A16CEFB49958cE017; // @dev: EIP7002
@@ -65,30 +53,21 @@ contract InfraredBERAWithdrawor is
     /// @inheritdoc IInfraredBERAWithdrawor
     uint256 public nonceProcess;
 
-    /// @dev Constructor disabled for upgradeable contracts
-    constructor() {
-        _disableInitializers();
-    }
-
-    /// @notice Ensure that only the governor or the contract itself can authorize upgrades
-    function _authorizeUpgrade(address newImplementation)
-        internal
-        override
-        onlyOwner
-    {}
-
     /// @notice Initialize the contract (replaces the constructor)
     /// @param admin Address for admin to upgrade
     /// @param ibera The initial InfraredBERA address
     function initialize(address admin, address ibera) public initializer {
-        if (admin == address(0) || ibera == address(0)) revert ZeroAddress();
-        __Ownable_init(admin);
-        __UUPSUpgradeable_init();
+        if (admin == address(0) || ibera == address(0)) {
+            revert Errors.ZeroAddress();
+        }
+        __Upgradeable_init();
         InfraredBERA = ibera;
 
         nonceRequest = 1;
         nonceSubmit = 1;
         nonceProcess = 1;
+
+        _grantRole(DEFAULT_ADMIN_ROLE, admin);
     }
 
     /// @notice Checks whether enough time has passed beyond min delay
@@ -119,9 +98,11 @@ contract InfraredBERAWithdrawor is
         bool kpr = IInfraredBERA(InfraredBERA).keeper(msg.sender);
         address depositor = IInfraredBERA(InfraredBERA).depositor();
         // @dev rebalances can be queued by keeper but receiver must be depositor and amount must exceed deposit fee
-        if (msg.sender != InfraredBERA && !kpr) revert Unauthorized();
+        if (msg.sender != InfraredBERA && !kpr) {
+            revert Errors.Unauthorized(msg.sender);
+        }
         if ((kpr && receiver != depositor) || (!kpr && receiver == depositor)) {
-            revert InvalidReceiver();
+            revert Errors.InvalidReceiver();
         }
         if (
             (receiver != depositor && amount == 0)
@@ -130,11 +111,11 @@ contract InfraredBERAWithdrawor is
                         && amount <= InfraredBERAConstants.MINIMUM_DEPOSIT_FEE
                 ) || amount > IInfraredBERA(InfraredBERA).confirmed()
         ) {
-            revert InvalidAmount();
+            revert Errors.InvalidAmount();
         }
 
         if (msg.value < InfraredBERAConstants.MINIMUM_WITHDRAW_FEE) {
-            revert InvalidFee();
+            revert Errors.InvalidFee();
         }
         fees += msg.value;
 
@@ -163,7 +144,7 @@ contract InfraredBERAWithdrawor is
             amount == 0 || IInfraredBERA(InfraredBERA).stakes(pubkey) < amount
                 || (amount % 1 gwei) != 0 || (amount / 1 gwei) > type(uint64).max
         ) {
-            revert InvalidAmount();
+            revert Errors.InvalidAmount();
         }
 
         // cache for event after the bundling while loop
@@ -177,12 +158,12 @@ contract InfraredBERAWithdrawor is
         while (remaining > 0) {
             nonce = nonceSubmit;
             Request memory r = requests[nonce];
-            if (r.amountSubmit == 0) revert InvalidAmount();
+            if (r.amountSubmit == 0) revert Errors.InvalidAmount();
 
             // @dev allow user to force withdraw from infrared validator if enough time has passed
             // TODO: check signature not needed (ignored) on second deposit to pubkey (think so)
             if (!kpr && !_enoughtime(r.timestamp, uint96(block.timestamp))) {
-                revert Unauthorized();
+                revert Errors.Unauthorized(msg.sender);
             }
 
             // first time loop ever hits request dedicate fee to this call
@@ -221,7 +202,7 @@ contract InfraredBERAWithdrawor is
             uint64(amount / 1 gwei) // amount in gwei
         );
         (bool success,) = WITHDRAW_PRECOMPILE.call{value: fee}(encoded);
-        if (!success) revert CallFailed();
+        if (!success) revert Errors.CallFailed();
 
         // calculate excess from withdraw precompile call to refund
         // TODO: test excess value passed over fee actually refunded
@@ -241,10 +222,12 @@ contract InfraredBERAWithdrawor is
         uint256 nonce = nonceProcess;
         address depositor = IInfraredBERA(InfraredBERA).depositor();
         Request memory r = requests[nonce];
-        if (r.amountSubmit != 0 || r.amountProcess == 0) revert InvalidAmount();
+        if (r.amountSubmit != 0 || r.amountProcess == 0) {
+            revert Errors.InvalidAmount();
+        }
 
         uint256 amount = r.amountProcess;
-        if (amount > reserves()) revert InvalidReserves();
+        if (amount > reserves()) revert Errors.InvalidReserves();
         r.amountProcess -= amount;
         nonceProcess++;
         requests[nonce] = r;
@@ -263,26 +246,22 @@ contract InfraredBERAWithdrawor is
         emit Process(r.receiver, nonce, amount);
     }
 
-    function implementation() external view returns (address) {
-        return ERC1967Utils.getImplementation();
-    }
-
     /// @inheritdoc IInfraredBERAWithdrawor
     function sweep(uint256 amount, bytes calldata pubkey) external {
         // only callable when withdrawals are not enabled
         if (IInfraredBERA(InfraredBERA).withdrawalsEnabled()) {
-            revert Unauthorized();
+            revert Errors.Unauthorized(msg.sender);
         }
         // onlyKeeper call
         if (!IInfraredBERA(InfraredBERA).keeper(msg.sender)) {
-            revert Unauthorized();
+            revert Errors.Unauthorized(msg.sender);
         }
         // do nothing if InfraredBERA deposit would revert
         uint256 min = InfraredBERAConstants.MINIMUM_DEPOSIT
             + InfraredBERAConstants.MINIMUM_DEPOSIT_FEE;
         if (amount < min) return;
         // revert if insufficient balance
-        if (amount > address(this).balance) revert InvalidAmount();
+        if (amount > address(this).balance) revert Errors.InvalidAmount();
 
         // todo: verfiy forced withdrawal against beacon roots
 

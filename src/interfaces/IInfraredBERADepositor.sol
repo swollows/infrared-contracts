@@ -2,13 +2,6 @@
 pragma solidity ^0.8.0;
 
 interface IInfraredBERADepositor {
-    error Unauthorized();
-    error InvalidValidator();
-    error InvalidAmount();
-    error InvalidFee();
-    error ZeroAddress();
-    error InvalidSignature();
-
     event Queue(uint256 nonce, uint256 amount);
     event Execute(bytes pubkey, uint256 start, uint256 end, uint256 amount);
 

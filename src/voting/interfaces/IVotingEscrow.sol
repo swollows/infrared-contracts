@@ -9,7 +9,7 @@ import {IERC6372} from "@openzeppelin/contracts/interfaces/IERC6372.sol";
 import {IERC4906} from "@openzeppelin/contracts/interfaces/IERC4906.sol";
 import {IERC165} from "@openzeppelin/contracts/interfaces/IERC165.sol";
 import {IVotes} from "./IVotes.sol";
-import {IInfrared} from "src/interfaces/IInfrared.sol";
+import {IInfraredUpgradeable} from "src/interfaces/IInfraredUpgradeable.sol";
 
 interface IVotingEscrow is IVotes, IERC4906, IERC6372, IERC721Metadata {
     /*//////////////////////////////////////////////////////////////
@@ -234,7 +234,7 @@ interface IVotingEscrow is IVotes, IERC4906, IERC6372, IERC721Metadata {
      * @notice Address of Infrared contract
      * @return IInfrared instance of contract address
      */
-    function infrared() external view returns (IInfrared);
+    function infrared() external view returns (IInfraredUpgradeable);
 
     /*///////////////////////////////////////////////////////////////
                             MANAGED NFT STORAGE

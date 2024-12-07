@@ -53,4 +53,13 @@ library Errors {
     error MaxProtocolFeeAmount();
     error BoostExceedsSupply();
     error ETHTransferFailed();
+
+    // iBERA erros
+    error InvalidAmount();
+    error InvalidShares();
+    error WithdrawalsNotEnabled();
+    error InvalidSignature();
+    error InvalidReceiver();
+    error CallFailed();
+    error InvalidReserves();
 }

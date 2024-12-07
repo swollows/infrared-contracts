@@ -2,15 +2,8 @@
 pragma solidity 0.8.26;
 
 import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
-import {Initializable} from
-    "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import {
-    ERC1967Utils,
-    UUPSUpgradeable
-} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import {OwnableUpgradeable} from
-    "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
+import {Errors, Upgradeable} from "src/utils/Upgradeable.sol";
 import {IInfraredBERA} from "src/interfaces/IInfraredBERA.sol";
 import {IInfraredBERAFeeReceivor} from
     "src/interfaces/IInfraredBERAFeeReceivor.sol";
@@ -21,12 +14,7 @@ import {InfraredBERAConstants} from "./InfraredBERAConstants.sol";
 /// @author bungabear69420
 /// @notice Fee receivor receives coinbase priority fees + MEV credited to contract on EL upon block validation
 /// @dev CL validators should set fee_recipient to the address of this contract
-contract InfraredBERAFeeReceivor is
-    Initializable,
-    UUPSUpgradeable,
-    OwnableUpgradeable,
-    IInfraredBERAFeeReceivor
-{
+contract InfraredBERAFeeReceivor is Upgradeable, IInfraredBERAFeeReceivor {
     /// @inheritdoc IInfraredBERAFeeReceivor
     address public InfraredBERA;
 
@@ -34,18 +22,6 @@ contract InfraredBERAFeeReceivor is
 
     /// @inheritdoc IInfraredBERAFeeReceivor
     uint256 public shareholderFees;
-
-    /// @dev Constructor disabled for upgradeable contracts
-    constructor() {
-        _disableInitializers();
-    }
-
-    /// @notice Ensure that only the governor or the contract itself can authorize upgrades
-    function _authorizeUpgrade(address newImplementation)
-        internal
-        override
-        onlyOwner
-    {}
 
     /// @notice Initializer function (replaces constructor)
     /// @param admin Address of the initial admin
@@ -56,12 +32,13 @@ contract InfraredBERAFeeReceivor is
         if (
             admin == address(0) || ibera == address(0)
                 || _infrared == address(0)
-        ) revert ZeroAddress();
-        __Ownable_init(admin);
-        __UUPSUpgradeable_init();
+        ) revert Errors.ZeroAddress();
+        __Upgradeable_init();
 
         InfraredBERA = ibera;
         infrared = IInfrared(_infrared);
+
+        _grantRole(DEFAULT_ADMIN_ROLE, admin);
     }
 
     /// @inheritdoc IInfraredBERAFeeReceivor
@@ -96,13 +73,13 @@ contract InfraredBERAFeeReceivor is
 
     /// @inheritdoc IInfraredBERAFeeReceivor
     function collect() external returns (uint256 sharesMinted) {
-        if (msg.sender != InfraredBERA) revert Unauthorized();
+        if (msg.sender != InfraredBERA) revert Errors.Unauthorized(msg.sender);
         if (shareholderFees == 0) return 0;
         uint256 shf = shareholderFees;
         uint256 min = InfraredBERAConstants.MINIMUM_DEPOSIT
             + InfraredBERAConstants.MINIMUM_DEPOSIT_FEE;
         if (shf == 0 || shf < min) {
-            revert InvalidAmount();
+            revert Errors.InvalidAmount();
         }
 
         uint256 amount = shf - 1; // gas savings on sweep
@@ -116,8 +93,4 @@ contract InfraredBERAFeeReceivor is
     }
 
     receive() external payable {}
-
-    function implementation() external view returns (address) {
-        return ERC1967Utils.getImplementation();
-    }
 }

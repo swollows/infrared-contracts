@@ -15,7 +15,7 @@ import {DelegationLogicLibrary} from "./libraries/DelegationLogicLibrary.sol";
 import {BalanceLogicLibrary} from "./libraries/BalanceLogicLibrary.sol";
 
 import {SafeCastLib} from "lib/solady/src/utils/SafeCastLib.sol";
-import {IInfrared} from "src/interfaces/IInfrared.sol";
+import {IInfraredUpgradeable} from "src/interfaces/IInfraredUpgradeable.sol";
 
 /// @title Voting Escrow Infrared
 /// @notice veNFT implementation that escrows ERC-20 tokens in the form of an ERC-721 NFT
@@ -69,7 +69,7 @@ contract VotingEscrow is IVotingEscrow, ReentrancyGuard {
     uint256 public tokenId;
 
     /// @inheritdoc IVotingEscrow
-    IInfrared public immutable infrared;
+    IInfraredUpgradeable public immutable infrared;
 
     /**
      * @notice Initializes VotingEscrow contract
@@ -91,7 +91,7 @@ contract VotingEscrow is IVotingEscrow, ReentrancyGuard {
         keeper = _keeper;
         token = _token;
         voter = _voter;
-        infrared = IInfrared(_infrared);
+        infrared = IInfraredUpgradeable(_infrared);
 
         _pointHistory[0].blk = block.number;
         _pointHistory[0].ts = block.timestamp;

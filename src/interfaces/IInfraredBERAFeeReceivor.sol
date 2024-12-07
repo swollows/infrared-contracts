@@ -2,10 +2,6 @@
 pragma solidity ^0.8.0;
 
 interface IInfraredBERAFeeReceivor {
-    error Unauthorized();
-    error InvalidAmount();
-    error ZeroAddress();
-
     event Sweep(address indexed receiver, uint256 amount, uint256 fees);
     event Collect(
         address indexed receiver, uint256 amount, uint256 sharesMinted

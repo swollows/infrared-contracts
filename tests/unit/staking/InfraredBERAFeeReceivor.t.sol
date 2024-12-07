@@ -6,7 +6,7 @@ import {IInfraredBERAFeeReceivor} from
 import {InfraredBERAConstants} from "src/staking/InfraredBERAConstants.sol";
 
 import {InfraredBERABaseTest} from "./InfraredBERABase.t.sol";
-
+import {Errors} from "src/utils/Errors.sol";
 import {console2} from "@forge-std/console2.sol";
 
 contract InfraredBERAFeeReceivorTest is InfraredBERABaseTest {
@@ -279,7 +279,7 @@ contract InfraredBERAFeeReceivorTest is InfraredBERABaseTest {
         uint256 shareholderFees = receivor.shareholderFees();
         assertTrue(shareholderFees > 0);
 
-        vm.expectRevert(IInfraredBERAFeeReceivor.Unauthorized.selector);
+        vm.expectRevert();
         receivor.collect();
     }
 

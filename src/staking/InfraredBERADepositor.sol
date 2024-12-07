@@ -2,30 +2,17 @@
 pragma solidity 0.8.26;
 
 import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
-import {Initializable} from
-    "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import {
-    ERC1967Utils,
-    UUPSUpgradeable
-} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import {OwnableUpgradeable} from
-    "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-
 import {IBeaconDeposit} from "@berachain/pol/interfaces/IBeaconDeposit.sol";
+
+import {Errors, Upgradeable} from "src/utils/Upgradeable.sol";
 import {IInfraredBERA} from "src/interfaces/IInfraredBERA.sol";
 import {IInfraredBERADepositor} from "src/interfaces/IInfraredBERADepositor.sol";
-
 import {InfraredBERAConstants} from "./InfraredBERAConstants.sol";
 
 /// @title InfraredBERADepositor
 /// @author bungabear69420
 /// @notice Depositor to deposit BERA to CL for Infrared liquid staking token
-contract InfraredBERADepositor is
-    Initializable,
-    UUPSUpgradeable,
-    OwnableUpgradeable,
-    IInfraredBERADepositor
-{
+contract InfraredBERADepositor is Upgradeable, IInfraredBERADepositor {
     uint8 public constant ETH1_ADDRESS_WITHDRAWAL_PREFIX = 0x01;
     address public constant DEPOSIT_CONTRACT =
         0x00000000219ab540356cBB839Cbe05303d7705Fa; // TODO: change if different for berachain
@@ -53,28 +40,18 @@ contract InfraredBERADepositor is
     /// @inheritdoc IInfraredBERADepositor
     uint256 public nonceSubmit = 1;
 
-    /// @dev Constructor disabled for upgradeable contracts
-    constructor() {
-        _disableInitializers();
-    }
-
-    /// @notice Ensure that only the governor or the contract itself can authorize upgrades
-    function _authorizeUpgrade(address newImplementation)
-        internal
-        override
-        onlyOwner
-    {}
-
     /// @notice Initialize the contract (replaces the constructor)
     /// @param admin Address for admin to upgrade
     /// @param ibera The initial InfraredBERA address
     function initialize(address admin, address ibera) public initializer {
-        if (admin == address(0) || ibera == address(0)) revert ZeroAddress();
-        __Ownable_init(admin);
-        __UUPSUpgradeable_init();
+        if (admin == address(0) || ibera == address(0)) {
+            revert Errors.ZeroAddress();
+        }
+        __Upgradeable_init();
         InfraredBERA = ibera;
         nonceSlip = 1;
         nonceSubmit = 1;
+        _grantRole(DEFAULT_ADMIN_ROLE, admin);
     }
 
     /// @notice Checks whether enough time has passed beyond min delay
@@ -103,13 +80,13 @@ contract InfraredBERADepositor is
             msg.sender != InfraredBERA
                 && msg.sender != IInfraredBERA(InfraredBERA).withdrawor()
         ) {
-            revert Unauthorized();
+            revert Errors.Unauthorized(msg.sender);
         }
 
-        if (amount == 0 || msg.value < amount) revert InvalidAmount();
+        if (amount == 0 || msg.value < amount) revert Errors.InvalidAmount();
         uint256 fee = msg.value - amount;
         if (fee < InfraredBERAConstants.MINIMUM_DEPOSIT_FEE) {
-            revert InvalidFee();
+            revert Errors.InvalidFee();
         }
         fees += fee;
 
@@ -124,7 +101,7 @@ contract InfraredBERADepositor is
         bool kpr = IInfraredBERA(InfraredBERA).keeper(msg.sender);
         // check if in *current* validator set on Infrared
         if (!IInfraredBERA(InfraredBERA).validator(pubkey)) {
-            revert InvalidValidator();
+            revert Errors.InvalidValidator();
         }
         // check stake + amount divided by 1 gwei fits in uint64
         if (
@@ -136,11 +113,11 @@ contract InfraredBERADepositor is
                         && amount != InfraredBERAConstants.INITIAL_DEPOSIT
                 )
         ) {
-            revert InvalidAmount();
+            revert Errors.InvalidAmount();
         }
         // check if governor has added a valid deposit signature to avoid keeper mistakenly burning
         bytes memory signature = IInfraredBERA(InfraredBERA).signatures(pubkey);
-        if (signature.length == 0) revert InvalidSignature();
+        if (signature.length == 0) revert Errors.InvalidSignature();
 
         // cache for event after the bundling while loop
         address withdrawor = IInfraredBERA(InfraredBERA).withdrawor();
@@ -154,12 +131,12 @@ contract InfraredBERADepositor is
         while (remaining > 0) {
             nonce = nonceSubmit;
             Slip memory s = slips[nonce];
-            if (s.amount == 0) revert InvalidAmount();
+            if (s.amount == 0) revert Errors.InvalidAmount();
 
             // @dev allow user to force stake into infrared validator if enough time has passed
             // TODO: check signature not needed (ignored) on second deposit to pubkey (think so)
             if (!kpr && !_enoughtime(s.timestamp, uint96(block.timestamp))) {
-                revert Unauthorized();
+                revert Errors.Unauthorized(msg.sender);
             }
 
             // first time loop ever hits slip dedicate fee to this call
@@ -206,9 +183,5 @@ contract InfraredBERADepositor is
         if (fee > 0) SafeTransferLib.safeTransferETH(msg.sender, fee);
 
         emit Execute(pubkey, _nonce, nonce, amount);
-    }
-
-    function implementation() external view returns (address) {
-        return ERC1967Utils.getImplementation();
     }
 }

@@ -19,11 +19,11 @@ import {IInfraredVault} from "src/interfaces/IInfraredVault.sol";
 
 import {DataTypes} from "src/utils/DataTypes.sol";
 
-import {IInfraredUpgradeable} from "./IInfraredUpgradeable.sol";
+// import {IInfraredUpgradeable} from "./IInfraredUpgradeable.sol";
 import {ValidatorTypes} from "src/core/libraries/ValidatorTypes.sol";
 import {ConfigTypes} from "src/core/libraries/ConfigTypes.sol";
 
-interface IInfrared is IInfraredUpgradeable {
+interface IInfrared {
     /**
      * @notice Checks if a token is a whitelisted reward token
      * @param _token The address of the token to check

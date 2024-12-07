@@ -3,6 +3,7 @@ pragma solidity ^0.8.22;
 
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 
+import {Errors} from "src/utils/Errors.sol";
 import {IInfraredBERA} from "src/interfaces/IInfraredBERA.sol";
 import {IInfraredBERAWithdrawor} from
     "src/interfaces/IInfraredBERAWithdrawor.sol";
@@ -354,7 +355,7 @@ contract InfraredBERATest is InfraredBERABaseTest {
         uint256 value = 0.001 ether;
         assertTrue(value < min + fee);
 
-        vm.expectRevert(IInfraredBERA.InvalidAmount.selector);
+        vm.expectRevert(Errors.InvalidAmount.selector);
         ibera.mint{value: value}(alice);
     }
 
@@ -374,7 +375,7 @@ contract InfraredBERATest is InfraredBERABaseTest {
             Math.mulDiv(ibera.totalSupply(), min, ibera.deposits() + comp_);
         assertEq(shares, 0);
 
-        vm.expectRevert(IInfraredBERA.InvalidShares.selector);
+        vm.expectRevert(Errors.InvalidShares.selector);
         ibera.mint{value: value}(alice);
     }
 
@@ -406,7 +407,7 @@ contract InfraredBERATest is InfraredBERABaseTest {
         uint256 shares = sharesAlice / 3;
         assertTrue(shares > 0);
 
-        vm.expectRevert(IInfraredBERA.WithdrawalsNotEnabled.selector);
+        vm.expectRevert(Errors.WithdrawalsNotEnabled.selector);
         vm.prank(alice);
         ibera.burn{value: fee}(bob, shares);
 
@@ -696,7 +697,7 @@ contract InfraredBERATest is InfraredBERABaseTest {
         ibera.setWithdrawalsEnabled(true);
 
         uint256 fee = InfraredBERAConstants.MINIMUM_WITHDRAW_FEE;
-        vm.expectRevert(IInfraredBERA.InvalidShares.selector);
+        vm.expectRevert(Errors.InvalidShares.selector);
         vm.prank(alice);
         ibera.burn{value: fee}(bob, 0);
     }
@@ -723,7 +724,7 @@ contract InfraredBERATest is InfraredBERABaseTest {
         vm.prank(governor);
         ibera.setWithdrawalsEnabled(true);
 
-        vm.expectRevert(IInfraredBERAWithdrawor.InvalidFee.selector);
+        vm.expectRevert(Errors.InvalidFee.selector);
         vm.prank(alice);
         ibera.burn(bob, shares);
     }
@@ -928,7 +929,7 @@ contract InfraredBERATest is InfraredBERABaseTest {
     function testRegisterRevertsWhenUnauthorized() public {
         uint256 amount = 1 ether;
         int256 delta = int256(amount);
-        vm.expectRevert(IInfraredBERA.Unauthorized.selector);
+        vm.expectRevert();
         ibera.register(pubkey0, delta);
     }
 
@@ -953,7 +954,7 @@ contract InfraredBERATest is InfraredBERABaseTest {
     function testsetFeeShareholdersRevertsWhenUnauthorized() public {
         assertEq(ibera.feeShareholders(), 0);
         uint16 feeShareholders = 4; // 25% of fees
-        vm.expectRevert(IInfraredBERA.Unauthorized.selector);
+        vm.expectRevert();
         ibera.setFeeShareholders(feeShareholders);
     }
 

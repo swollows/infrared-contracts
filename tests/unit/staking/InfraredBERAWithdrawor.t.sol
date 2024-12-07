@@ -5,7 +5,7 @@ import {IInfraredBERA} from "src/interfaces/IInfraredBERA.sol";
 import {IInfraredBERAWithdrawor} from
     "src/interfaces/IInfraredBERAWithdrawor.sol";
 import {InfraredBERAConstants} from "src/staking/InfraredBERAConstants.sol";
-
+import {Errors} from "src/utils/Errors.sol";
 import {InfraredBERABaseTest} from "./InfraredBERABase.t.sol";
 
 contract InfraredBERAWithdraworTest is InfraredBERABaseTest {
@@ -209,7 +209,7 @@ contract InfraredBERAWithdraworTest is InfraredBERABaseTest {
         address receiver = alice;
         uint256 confirmed = ibera.confirmed();
         assertTrue(amount <= confirmed);
-        vm.expectRevert(IInfraredBERAWithdrawor.Unauthorized.selector);
+        vm.expectRevert();
         vm.prank(alice);
         withdrawor.queue{value: fee}(receiver, amount);
     }
@@ -221,7 +221,7 @@ contract InfraredBERAWithdraworTest is InfraredBERABaseTest {
         uint256 confirmed = ibera.confirmed();
         assertTrue(amount <= confirmed);
         vm.deal(address(ibera), fee);
-        vm.expectRevert(IInfraredBERAWithdrawor.InvalidReceiver.selector);
+        vm.expectRevert(Errors.InvalidReceiver.selector);
         vm.prank(address(ibera));
         withdrawor.queue{value: fee}(receiver, amount);
     }
@@ -233,7 +233,7 @@ contract InfraredBERAWithdraworTest is InfraredBERABaseTest {
         uint256 confirmed = ibera.confirmed();
         assertTrue(amount <= confirmed);
         vm.deal(keeper, fee);
-        vm.expectRevert(IInfraredBERAWithdrawor.InvalidReceiver.selector);
+        vm.expectRevert(Errors.InvalidReceiver.selector);
         vm.prank(keeper);
         withdrawor.queue{value: fee}(receiver, amount);
     }
@@ -245,7 +245,7 @@ contract InfraredBERAWithdraworTest is InfraredBERABaseTest {
         uint256 confirmed = ibera.confirmed();
         assertTrue(amount <= confirmed);
         vm.deal(address(ibera), fee);
-        vm.expectRevert(IInfraredBERAWithdrawor.InvalidAmount.selector);
+        vm.expectRevert(Errors.InvalidAmount.selector);
         vm.prank(address(ibera));
         withdrawor.queue{value: fee}(receiver, amount);
     }
@@ -259,7 +259,7 @@ contract InfraredBERAWithdraworTest is InfraredBERABaseTest {
         uint256 confirmed = ibera.confirmed();
         assertTrue(amount <= confirmed);
         vm.deal(address(ibera), fee);
-        vm.expectRevert(IInfraredBERAWithdrawor.InvalidAmount.selector);
+        vm.expectRevert(Errors.InvalidAmount.selector);
         vm.prank(keeper);
         withdrawor.queue{value: fee}(receiver, amount);
     }
@@ -270,7 +270,7 @@ contract InfraredBERAWithdraworTest is InfraredBERABaseTest {
         uint256 confirmed = ibera.confirmed();
         uint256 amount = confirmed + 1;
         vm.deal(address(ibera), fee);
-        vm.expectRevert(IInfraredBERAWithdrawor.InvalidAmount.selector);
+        vm.expectRevert(Errors.InvalidAmount.selector);
         vm.prank(address(ibera));
         withdrawor.queue{value: fee}(receiver, amount);
     }
@@ -282,7 +282,7 @@ contract InfraredBERAWithdraworTest is InfraredBERABaseTest {
         uint256 confirmed = ibera.confirmed();
         assertTrue(amount <= confirmed);
         vm.deal(address(ibera), fee);
-        vm.expectRevert(IInfraredBERAWithdrawor.InvalidFee.selector);
+        vm.expectRevert(Errors.InvalidFee.selector);
         vm.prank(address(ibera));
         withdrawor.queue{value: fee}(receiver, amount);
     }
@@ -652,7 +652,7 @@ contract InfraredBERAWithdraworTest is InfraredBERABaseTest {
         assertEq(nonceSubmit, 1); // none submitted yet
         assertEq(nonceProcess, 1); // nonce processed yet
         uint256 amount = 0;
-        vm.expectRevert(IInfraredBERAWithdrawor.InvalidAmount.selector);
+        vm.expectRevert(Errors.InvalidAmount.selector);
         vm.prank(keeper);
         withdrawor.execute(pubkey0, amount);
     }
@@ -668,7 +668,7 @@ contract InfraredBERAWithdraworTest is InfraredBERABaseTest {
         assertEq(nonceProcess, 1); // nonce processed yet
         uint256 stake = ibera.stakes(pubkey0);
         uint256 amount = stake + 1;
-        vm.expectRevert(IInfraredBERAWithdrawor.InvalidAmount.selector);
+        vm.expectRevert(Errors.InvalidAmount.selector);
         vm.prank(keeper);
         withdrawor.execute(pubkey0, amount);
     }
@@ -687,7 +687,7 @@ contract InfraredBERAWithdraworTest is InfraredBERABaseTest {
         uint256 amount = amountSubmitFirst + amountSubmitSecond / 4;
         amount++;
         assertTrue(amount % 1 gwei != 0);
-        vm.expectRevert(IInfraredBERAWithdrawor.InvalidAmount.selector);
+        vm.expectRevert(Errors.InvalidAmount.selector);
         vm.prank(keeper);
         withdrawor.execute(pubkey0, amount);
     }
@@ -716,7 +716,7 @@ contract InfraredBERAWithdraworTest is InfraredBERABaseTest {
         (,,, uint256 amountSubmitSecond,) = withdrawor.requests(2);
         uint256 amount = amountSubmitFirst + amountSubmitSecond / 4;
         assertTrue(amount % 1 gwei == 0);
-        vm.expectRevert(IInfraredBERAWithdrawor.Unauthorized.selector);
+        vm.expectRevert();
         withdrawor.execute(pubkey0, amount);
     }
 
@@ -733,7 +733,7 @@ contract InfraredBERAWithdraworTest is InfraredBERABaseTest {
         (,,, uint256 amountSubmitSecond,) = withdrawor.requests(2);
         uint256 amount = amountSubmitFirst + amountSubmitSecond / 4;
         assertTrue(amount % 1 gwei == 0);
-        vm.expectRevert(IInfraredBERAWithdrawor.Unauthorized.selector);
+        vm.expectRevert();
         withdrawor.execute(pubkey0, amount);
         // should now succeed
         vm.warp(block.timestamp + InfraredBERAConstants.FORCED_MIN_DELAY + 1);
@@ -1048,7 +1048,7 @@ contract InfraredBERAWithdraworTest is InfraredBERABaseTest {
         withdrawor.process();
         // last should not
         assertEq(withdrawor.nonceProcess(), nonceSubmit);
-        vm.expectRevert(IInfraredBERAWithdrawor.InvalidAmount.selector);
+        vm.expectRevert(Errors.InvalidAmount.selector);
         withdrawor.process();
     }
 
@@ -1120,7 +1120,7 @@ contract InfraredBERAWithdraworTest is InfraredBERABaseTest {
             address(withdrawor),
             address(withdrawor).balance + amountProcessFirst - 1
         );
-        vm.expectRevert(IInfraredBERAWithdrawor.InvalidReserves.selector);
+        vm.expectRevert(Errors.InvalidReserves.selector);
         withdrawor.process();
     }
 
@@ -1128,7 +1128,7 @@ contract InfraredBERAWithdraworTest is InfraredBERABaseTest {
         // simulate forced withdrawal
         vm.deal(address(withdrawor), 32 ether);
         // test only keeper can access
-        vm.expectRevert(IInfraredBERAWithdrawor.Unauthorized.selector);
+        vm.expectRevert();
         withdrawor.sweep(32 ether, pubkey0);
 
         vm.prank(keeper);

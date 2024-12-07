@@ -5,14 +5,6 @@ import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol"
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 interface IInfraredBERA is IERC20, IAccessControl {
-    error Unauthorized();
-    error NotInitialized();
-    error ZeroAddress();
-    error InvalidShares();
-    error InvalidAmount();
-    error InvalidSignature();
-    error WithdrawalsNotEnabled();
-
     event Mint(
         address indexed receiver,
         uint256 nonce,

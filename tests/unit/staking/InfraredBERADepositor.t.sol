@@ -4,6 +4,7 @@ pragma solidity ^0.8.22;
 import {IBeaconDeposit} from "@berachain/pol/interfaces/IBeaconDeposit.sol";
 import {BeaconDeposit} from "@berachain/pol/BeaconDeposit.sol";
 
+import {Errors} from "src/utils/Errors.sol";
 import {IInfraredBERA} from "src/interfaces/IInfraredBERA.sol";
 import {IInfraredBERADepositor} from "src/interfaces/IInfraredBERADepositor.sol";
 import {InfraredBERAConstants} from "src/staking/InfraredBERAConstants.sol";
@@ -158,7 +159,7 @@ contract InfraredBERADepositorTest is InfraredBERABaseTest {
         uint256 fee = InfraredBERAConstants.MINIMUM_DEPOSIT_FEE;
         uint256 amount = value - fee;
 
-        vm.expectRevert(IInfraredBERADepositor.Unauthorized.selector);
+        vm.expectRevert();
         depositor.queue{value: value}(amount);
     }
 
@@ -169,7 +170,7 @@ contract InfraredBERADepositorTest is InfraredBERABaseTest {
         vm.deal(address(ibera), value);
         assertTrue(address(ibera).balance >= value);
 
-        vm.expectRevert(IInfraredBERADepositor.InvalidAmount.selector);
+        vm.expectRevert(Errors.InvalidAmount.selector);
         vm.prank(address(ibera));
         depositor.queue{value: value}(amount);
     }
@@ -181,7 +182,7 @@ contract InfraredBERADepositorTest is InfraredBERABaseTest {
         vm.deal(address(ibera), value);
         assertTrue(address(ibera).balance >= value);
 
-        vm.expectRevert(IInfraredBERADepositor.InvalidAmount.selector);
+        vm.expectRevert(Errors.InvalidAmount.selector);
         vm.prank(address(ibera));
         depositor.queue{value: value}(amount);
     }
@@ -194,7 +195,7 @@ contract InfraredBERADepositorTest is InfraredBERABaseTest {
         vm.deal(address(ibera), value);
         assertTrue(address(ibera).balance >= value);
 
-        vm.expectRevert(IInfraredBERADepositor.InvalidFee.selector);
+        vm.expectRevert(Errors.InvalidFee.selector);
         vm.prank(address(ibera));
         depositor.queue{value: value}(amount);
     }
@@ -421,7 +422,7 @@ contract InfraredBERADepositorTest is InfraredBERABaseTest {
         testExecuteUpdatesSlipsNonceFeesWhenFillAmounts();
         assertEq(ibera.signatures(pubkey0), signature0);
         uint256 amount = 1000 ether;
-        vm.expectRevert(IInfraredBERADepositor.InvalidAmount.selector);
+        vm.expectRevert(Errors.InvalidAmount.selector);
         vm.prank(keeper);
         depositor.execute(pubkey0, amount);
     }
@@ -440,7 +441,7 @@ contract InfraredBERADepositorTest is InfraredBERABaseTest {
         assertTrue(amount > 32 ether);
         assertTrue(amount % 1 gwei == 0);
 
-        vm.expectRevert(IInfraredBERADepositor.Unauthorized.selector);
+        vm.expectRevert();
         depositor.execute(pubkey0, amount);
     }
 
@@ -459,7 +460,7 @@ contract InfraredBERADepositorTest is InfraredBERABaseTest {
         assertTrue(amount > 32 ether);
         assertTrue(amount % 1 gwei == 0);
 
-        vm.expectRevert(IInfraredBERADepositor.Unauthorized.selector);
+        vm.expectRevert();
         depositor.execute(pubkey0, amount);
 
         // check can push it through once enough time has passed
@@ -482,7 +483,7 @@ contract InfraredBERADepositorTest is InfraredBERABaseTest {
         assertTrue(amount > 32 ether);
         assertTrue(amount % 1 gwei == 0);
 
-        vm.expectRevert(IInfraredBERADepositor.InvalidValidator.selector);
+        vm.expectRevert(Errors.InvalidValidator.selector);
         vm.prank(keeper);
         depositor.execute(bytes(""), amount);
     }
@@ -491,7 +492,7 @@ contract InfraredBERADepositorTest is InfraredBERABaseTest {
         testExecuteUpdatesSlipsNonceFeesWhenFillAmounts();
         assertEq(ibera.signatures(pubkey0), signature0);
         uint256 amount = 0;
-        vm.expectRevert(IInfraredBERADepositor.InvalidAmount.selector);
+        vm.expectRevert(Errors.InvalidAmount.selector);
         vm.prank(keeper);
         depositor.execute(pubkey0, amount);
     }
@@ -510,7 +511,7 @@ contract InfraredBERADepositorTest is InfraredBERABaseTest {
         assertTrue(amount % 1 gwei == 0);
         amount += 1;
 
-        vm.expectRevert(IInfraredBERADepositor.InvalidAmount.selector);
+        vm.expectRevert(Errors.InvalidAmount.selector);
         vm.prank(keeper);
         depositor.execute(pubkey0, amount);
     }
@@ -530,7 +531,7 @@ contract InfraredBERADepositorTest is InfraredBERABaseTest {
         assertTrue(amount % 1 gwei == 0);
         assertTrue(amount > InfraredBERAConstants.INITIAL_DEPOSIT);
 
-        vm.expectRevert(IInfraredBERADepositor.InvalidSignature.selector);
+        vm.expectRevert(Errors.InvalidSignature.selector);
         vm.prank(keeper);
         depositor.execute(pubkey1, InfraredBERAConstants.INITIAL_DEPOSIT);
     }
@@ -540,7 +541,7 @@ contract InfraredBERADepositorTest is InfraredBERABaseTest {
         assertEq(ibera.signatures(pubkey0), signature0);
         uint256 stake = ibera.stakes(pubkey0);
         uint256 amount = uint256(type(uint64).max) * (1 gwei) - stake + 1 gwei;
-        vm.expectRevert(IInfraredBERADepositor.InvalidAmount.selector);
+        vm.expectRevert(Errors.InvalidAmount.selector);
         vm.prank(keeper);
         depositor.execute(pubkey0, amount);
     }

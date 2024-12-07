@@ -50,6 +50,7 @@ contract InfraredBERADeployerTest is Test {
         // Deploy and initialize
         deployer.run(_infrared);
         ibera = deployer.ibera();
+        ibera.grantRole(ibera.GOVERNANCE_ROLE(), address(this));
 
         // Deploy new implementation
         InfraredBERA newImplementation = new InfraredBERA();

@@ -1,15 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.26;
 
-import {
-    ERC1967Utils,
-    UUPSUpgradeable
-} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import {AccessControlUpgradeable} from
-    "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import {ERC20Upgradeable} from
     "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 
+import {Errors, Upgradeable} from "src/utils/Upgradeable.sol";
 import {IInfrared} from "src/interfaces/IInfrared.sol";
 import {IInfraredBERADepositor} from "src/interfaces/IInfraredBERADepositor.sol";
 import {IInfraredBERAWithdrawor} from
@@ -28,19 +23,9 @@ import {InfraredBERAFeeReceivor} from "./InfraredBERAFeeReceivor.sol";
 /// @author bungabear69420
 /// @notice Infrared liquid staking token for BERA
 /// @dev Assumes BERA balances do *not* change at the CL
-contract InfraredBERA is
-    ERC20Upgradeable,
-    AccessControlUpgradeable,
-    UUPSUpgradeable,
-    IInfraredBERA
-{
+contract InfraredBERA is ERC20Upgradeable, Upgradeable, IInfraredBERA {
     /// @inheritdoc IInfraredBERA
     bool public withdrawalsEnabled;
-
-    // Access control constants
-    bytes32 public constant KEEPER_ROLE = keccak256("KEEPER_ROLE");
-    bytes32 public constant GOVERNANCE_ROLE = keccak256("GOVERNANCE_ROLE");
-
     /// @inheritdoc IInfraredBERA
     address public infrared;
     /// @inheritdoc IInfraredBERA
@@ -51,7 +36,6 @@ contract InfraredBERA is
     address public claimor;
     /// @inheritdoc IInfraredBERA
     address public receivor;
-
     /// @inheritdoc IInfraredBERA
     uint256 public deposits;
 
@@ -67,11 +51,6 @@ contract InfraredBERA is
     /// @notice Whether initial mint to address(this) has happened
     bool private _initialized;
 
-    /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor() {
-        _disableInitializers(); // Ensure the contract cannot be initialized through the logic contract
-    }
-
     /// @inheritdoc IInfraredBERA
     function initialize(
         address admin,
@@ -85,10 +64,9 @@ contract InfraredBERA is
             admin == address(0) || _infrared == address(0)
                 || _depositor == address(0) || _withdrawor == address(0)
                 || _claimor == address(0) || _receivor == address(0)
-        ) revert ZeroAddress();
+        ) revert Errors.ZeroAddress();
         __ERC20_init("Infrared BERA", "iBERA");
-        __AccessControl_init();
-        __UUPSUpgradeable_init();
+        __Upgradeable_init();
 
         infrared = _infrared;
         depositor = _depositor;
@@ -102,8 +80,7 @@ contract InfraredBERA is
         mint(address(this));
     }
 
-    function setWithdrawalsEnabled(bool flag) external {
-        if (!governor(msg.sender)) revert Unauthorized();
+    function setWithdrawalsEnabled(bool flag) external onlyGovernor {
         withdrawalsEnabled = flag;
         emit WithdrawalFlagSet(flag);
     }
@@ -113,12 +90,12 @@ contract InfraredBERA is
         returns (uint256 nonce, uint256 amount, uint256 fee)
     {
         // @dev check at internal deposit level to prevent donations prior
-        if (!_initialized) revert NotInitialized();
+        if (!_initialized) revert Errors.NotInitialized();
 
         // calculate amount as value less deposit fee
         uint256 min = InfraredBERAConstants.MINIMUM_DEPOSIT;
         fee = InfraredBERAConstants.MINIMUM_DEPOSIT_FEE;
-        if (value < min + fee) revert InvalidAmount();
+        if (value < min + fee) revert Errors.InvalidAmount();
 
         amount = value - fee;
         // update tracked deposits with validators
@@ -131,7 +108,7 @@ contract InfraredBERA is
         private
         returns (uint256 nonce)
     {
-        if (!_initialized) revert NotInitialized();
+        if (!_initialized) revert Errors.NotInitialized();
 
         // request to withdrawor contract to eventually forward to precompile
         nonce = IInfraredBERAWithdrawor(withdrawor).queue{value: fee}(
@@ -200,7 +177,7 @@ contract InfraredBERA is
 
         // mint shares to receiver of ibera
         shares = (d != 0 && ts != 0) ? ts * amount / d : amount;
-        if (shares == 0) revert InvalidShares();
+        if (shares == 0) revert Errors.InvalidShares();
         _mint(receiver, shares);
 
         emit Mint(receiver, nonce, amount, shares, fee);
@@ -212,15 +189,15 @@ contract InfraredBERA is
         payable
         returns (uint256 nonce, uint256 amount)
     {
-        if (!withdrawalsEnabled) revert WithdrawalsNotEnabled();
+        if (!withdrawalsEnabled) revert Errors.WithdrawalsNotEnabled();
         // compound yield earned from EL rewards first
         compound();
 
         uint256 ts = totalSupply();
-        if (shares == 0 || ts == 0) revert InvalidShares();
+        if (shares == 0 || ts == 0) revert Errors.InvalidShares();
 
         amount = deposits * shares / ts;
-        if (amount == 0) revert InvalidAmount();
+        if (amount == 0) revert Errors.InvalidAmount();
 
         // burn shares from sender of ibera
         _burn(msg.sender, shares);
@@ -236,7 +213,7 @@ contract InfraredBERA is
     /// @inheritdoc IInfraredBERA
     function register(bytes calldata pubkey, int256 delta) external {
         if (msg.sender != depositor && msg.sender != withdrawor) {
-            revert Unauthorized();
+            revert Errors.Unauthorized(msg.sender);
         }
         // update validator pubkey stake for delta
         uint256 stake = _stakes[keccak256(pubkey)];
@@ -252,8 +229,7 @@ contract InfraredBERA is
     }
 
     /// @inheritdoc IInfraredBERA
-    function setFeeShareholders(uint16 to) external {
-        if (!governor(msg.sender)) revert Unauthorized();
+    function setFeeShareholders(uint16 to) external onlyGovernor {
         emit SetFeeShareholders(feeShareholders, to);
         feeShareholders = to;
     }
@@ -262,57 +238,39 @@ contract InfraredBERA is
     function setDepositSignature(
         bytes calldata pubkey,
         bytes calldata signature
-    ) external {
-        if (!governor(msg.sender)) revert Unauthorized();
-        if (signature.length != 96) revert InvalidSignature();
+    ) external onlyGovernor {
+        if (signature.length != 96) revert Errors.InvalidSignature();
         emit SetDepositSignature(
             pubkey, _signatures[keccak256(pubkey)], signature
         );
         _signatures[keccak256(pubkey)] = signature;
     }
 
-    function _authorizeUpgrade(address newImplementation)
-        internal
-        override
-        onlyRole(DEFAULT_ADMIN_ROLE)
-    {}
-
-    function setDepositor(address _depositor)
-        public
-        onlyRole(DEFAULT_ADMIN_ROLE)
-    {
-        if (_depositor == address(0)) revert ZeroAddress();
+    function setDepositor(address _depositor) public onlyGovernor {
+        if (_depositor == address(0)) revert Errors.ZeroAddress();
         depositor = _depositor;
     }
 
-    function setWithdrawor(address _withdrawor)
-        public
-        onlyRole(DEFAULT_ADMIN_ROLE)
-    {
-        if (_withdrawor == address(0)) revert ZeroAddress();
+    function setWithdrawor(address _withdrawor) public onlyGovernor {
+        if (_withdrawor == address(0)) revert Errors.ZeroAddress();
         withdrawor = _withdrawor;
     }
 
-    function setClaimor(address _claimor) public onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (_claimor == address(0)) revert ZeroAddress();
+    function setClaimor(address _claimor) public onlyGovernor {
+        if (_claimor == address(0)) revert Errors.ZeroAddress();
         claimor = _claimor;
     }
 
-    function setReceivor(address _receivor)
-        public
-        onlyRole(DEFAULT_ADMIN_ROLE)
-    {
-        if (_receivor == address(0)) revert ZeroAddress();
+    function setReceivor(address _receivor) public onlyGovernor {
+        if (_receivor == address(0)) revert Errors.ZeroAddress();
         receivor = _receivor;
-    }
-
-    function implementation() external view returns (address) {
-        return ERC1967Utils.getImplementation();
     }
 
     /// @inheritdoc IInfraredBERA
     function collect() external returns (uint256 sharesMinted) {
-        if (msg.sender != address(infrared)) revert Unauthorized();
+        if (msg.sender != address(infrared)) {
+            revert Errors.Unauthorized(msg.sender);
+        }
         sharesMinted = IInfraredBERAFeeReceivor(receivor).collect();
     }
 

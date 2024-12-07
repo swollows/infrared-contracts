@@ -2,14 +2,6 @@
 pragma solidity ^0.8.0;
 
 interface IInfraredBERAWithdrawor {
-    error Unauthorized();
-    error InvalidFee();
-    error InvalidAmount();
-    error InvalidReceiver();
-    error InvalidReserves();
-    error ZeroAddress();
-    error CallFailed();
-
     event Queue(address indexed receiver, uint256 nonce, uint256 amount);
     event Execute(bytes pubkey, uint256 start, uint256 end, uint256 amount);
     event Process(address indexed receiver, uint256 nonce, uint256 amount);
