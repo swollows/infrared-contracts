@@ -21,7 +21,7 @@ import "src/core/InfraredVault.sol";
 import "src/utils/DataTypes.sol";
 
 // mocks
-import "tests/unit/mocks/MockERC20.sol";
+import {MockERC20} from "tests/unit/mocks/MockERC20.sol";
 import "tests/unit/mocks/MockWbera.sol";
 import "@berachain/pol/rewards/RewardVaultFactory.sol";
 // import "tests/unit/mocks/MockBeaconDepositContract.sol";

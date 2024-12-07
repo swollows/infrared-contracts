@@ -209,133 +209,6 @@ contract InfraredInitializationTest is Helper {
         // Get base slot from contract
         bytes32 baseSlot = infrared.REWARDS_STORAGE_LOCATION();
 
-        // Verify all address slots
-        assertEq(
-            address(
-                uint160(
-                    uint256(
-                        vm.load(
-                            address(infrared), bytes32(uint256(baseSlot) + 0)
-                        )
-                    )
-                )
-            ),
-            address(collector),
-            "collector slot mismatch"
-        );
-
-        assertEq(
-            address(
-                uint160(
-                    uint256(
-                        vm.load(
-                            address(infrared), bytes32(uint256(baseSlot) + 1)
-                        )
-                    )
-                )
-            ),
-            address(infraredDistributor),
-            "distributor slot mismatch"
-        );
-
-        assertEq(
-            address(
-                uint160(
-                    uint256(
-                        vm.load(
-                            address(infrared), bytes32(uint256(baseSlot) + 2)
-                        )
-                    )
-                )
-            ),
-            address(wbera),
-            "wbera slot mismatch"
-        );
-
-        assertEq(
-            address(
-                uint160(
-                    uint256(
-                        vm.load(
-                            address(infrared), bytes32(uint256(baseSlot) + 3)
-                        )
-                    )
-                )
-            ),
-            address(bgt),
-            "bgt slot mismatch"
-        );
-
-        assertEq(
-            address(
-                uint160(
-                    uint256(
-                        vm.load(
-                            address(infrared), bytes32(uint256(baseSlot) + 4)
-                        )
-                    )
-                )
-            ),
-            address(ibgt),
-            "ibgt slot mismatch"
-        );
-
-        assertEq(
-            address(
-                uint160(
-                    uint256(
-                        vm.load(
-                            address(infrared), bytes32(uint256(baseSlot) + 5)
-                        )
-                    )
-                )
-            ),
-            address(voter),
-            "voter slot mismatch"
-        );
-
-        assertEq(
-            address(
-                uint160(
-                    uint256(
-                        vm.load(
-                            address(infrared), bytes32(uint256(baseSlot) + 6)
-                        )
-                    )
-                )
-            ),
-            address(ibgtVault),
-            "ibgtVault slot mismatch"
-        );
-
-        assertEq(
-            address(
-                uint160(
-                    uint256(
-                        vm.load(
-                            address(infrared), bytes32(uint256(baseSlot) + 7)
-                        )
-                    )
-                )
-            ),
-            address(ibera),
-            "ibera slot mismatch"
-        );
-
-        assertEq(
-            address(
-                uint160(
-                    uint256(
-                        vm.load(
-                            address(infrared), bytes32(uint256(baseSlot) + 8)
-                        )
-                    )
-                )
-            ),
-            address(red),
-            "red slot mismatch"
-        );
-
         // Test Slot 9 in separate function testRewardsStorageLayoutSlot9();
 
         // Test redMintRate (slot 10)
@@ -343,16 +216,9 @@ contract InfraredInitializationTest is Helper {
         vm.prank(infraredGovernance);
         infrared.updateRedMintRate(testRate);
         assertEq(
-            uint256(vm.load(address(infrared), bytes32(uint256(baseSlot) + 10))),
+            uint256(vm.load(address(infrared), bytes32(uint256(baseSlot) + 1))),
             testRate,
             "redMintRate slot mismatch"
-        );
-
-        // Test rewardsDuration (slot 11)
-        assertEq(
-            uint256(vm.load(address(infrared), bytes32(uint256(baseSlot) + 11))),
-            1 days, // Set in initialize()
-            "rewardsDuration slot mismatch"
         );
 
         // Test collectBribesWeight (slot 12)
@@ -360,7 +226,7 @@ contract InfraredInitializationTest is Helper {
         vm.prank(infraredGovernance);
         infrared.updateIBERABribesWeight(testWeight);
         assertEq(
-            uint256(vm.load(address(infrared), bytes32(uint256(baseSlot) + 12))),
+            uint256(vm.load(address(infrared), bytes32(uint256(baseSlot) + 2))),
             testWeight,
             "collectBribesWeight slot mismatch"
         );
@@ -389,7 +255,7 @@ contract InfraredInitializationTest is Helper {
             infrared.updateFee(feeType, testFees[i]);
 
             // Calculate the slot for this fee in the mapping
-            bytes32 feeSlot = keccak256(abi.encode(i, uint256(baseSlot) + 13));
+            bytes32 feeSlot = keccak256(abi.encode(i, uint256(baseSlot) + 3));
 
             // Verify the stored value
             assertEq(
@@ -453,49 +319,6 @@ contract InfraredInitializationTest is Helper {
 
     function testValidatorStorageLayout() public {
         bytes32 baseSlot = infrared.VALIDATOR_STORAGE_LOCATION();
-
-        // Verify address slots with correct offsets
-        assertEq(
-            address(
-                uint160(
-                    uint256(
-                        vm.load(
-                            address(infrared), bytes32(uint256(baseSlot) + 3)
-                        )
-                    )
-                )
-            ),
-            address(infraredDistributor),
-            "distributor slot mismatch"
-        );
-
-        assertEq(
-            address(
-                uint160(
-                    uint256(
-                        vm.load(
-                            address(infrared), bytes32(uint256(baseSlot) + 4)
-                        )
-                    )
-                )
-            ),
-            address(bgt),
-            "bgt slot mismatch"
-        );
-
-        assertEq(
-            address(
-                uint160(
-                    uint256(
-                        vm.load(
-                            address(infrared), bytes32(uint256(baseSlot) + 5)
-                        )
-                    )
-                )
-            ),
-            address(ibgt),
-            "ibgt slot mismatch"
-        );
 
         // Add a validator to test EnumerableSet storage
         ValidatorTypes.Validator[] memory validators =

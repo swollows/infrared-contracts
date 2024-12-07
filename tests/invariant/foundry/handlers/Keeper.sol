@@ -9,7 +9,7 @@ import "src/core/MultiRewards.sol";
 
 import "forge-std/Test.sol";
 
-import "tests/unit/mocks/MockERC20.sol";
+import {MockERC20} from "tests/unit/mocks/MockERC20.sol";
 
 import "@berachain/pol/rewards/RewardVaultFactory.sol";
 

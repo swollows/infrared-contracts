@@ -3,9 +3,8 @@ pragma solidity 0.8.26;
 
 import {IReward} from "../interfaces/IReward.sol";
 import {IVoter} from "../interfaces/IVoter.sol";
-import {SafeERC20} from
-    "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {ERC20} from "@solmate/tokens/ERC20.sol";
+import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {ERC2771Context} from "@openzeppelin/contracts/metatx/ERC2771Context.sol";
 import {ReentrancyGuard} from
     "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
@@ -18,7 +17,7 @@ import {VelodromeTimeLibrary} from "../libraries/VelodromeTimeLibrary.sol";
  * @dev Abstract contract providing core reward distribution functionality
  */
 abstract contract Reward is IReward, ReentrancyGuard {
-    using SafeERC20 for IERC20;
+    using SafeTransferLib for ERC20;
 
     /// @inheritdoc IReward
     uint256 public constant DURATION = 7 days;
@@ -287,7 +286,7 @@ abstract contract Reward is IReward, ReentrancyGuard {
         for (uint256 i = 0; i < _length; i++) {
             uint256 _reward = earned(tokens[i], tokenId);
             lastEarn[tokens[i]][tokenId] = block.timestamp;
-            if (_reward > 0) IERC20(tokens[i]).safeTransfer(recipient, _reward);
+            if (_reward > 0) ERC20(tokens[i]).safeTransfer(recipient, _reward);
 
             emit ClaimRewards(recipient, tokens[i], _reward);
         }
@@ -331,7 +330,7 @@ abstract contract Reward is IReward, ReentrancyGuard {
         internal
     {
         if (amount == 0) revert ZeroAmount();
-        IERC20(token).safeTransferFrom(sender, address(this), amount);
+        ERC20(token).safeTransferFrom(sender, address(this), amount);
 
         uint256 epochStart = VelodromeTimeLibrary.epochStart(block.timestamp);
         tokenRewardsPerEpoch[token][epochStart] += amount;

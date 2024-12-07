@@ -20,6 +20,33 @@ contract InfraredTest is Helper {
                END TO END TESTS, FULL LIFE CYCLE
     //////////////////////////////////////////////////////////////*/
 
+    function testStorage() public view {
+        assertEq(
+            infrared.VALIDATOR_STORAGE_LOCATION(),
+            keccak256(
+                abi.encode(
+                    uint256(keccak256(bytes("infrared.validatorStorage"))) - 1
+                )
+            ) & ~bytes32(uint256(0xff))
+        );
+        assertEq(
+            infrared.VAULT_STORAGE_LOCATION(),
+            keccak256(
+                abi.encode(
+                    uint256(keccak256(bytes("infrared.vaultStorage"))) - 1
+                )
+            ) & ~bytes32(uint256(0xff))
+        );
+        assertEq(
+            infrared.REWARDS_STORAGE_LOCATION(),
+            keccak256(
+                abi.encode(
+                    uint256(keccak256(bytes("infrared.rewardsStorage"))) - 1
+                )
+            ) & ~bytes32(uint256(0xff))
+        );
+    }
+
     function testEndToEndFlow() public {
         address[] memory rewardTokens = new address[](2);
         rewardTokens[0] = address(ibgt);
@@ -488,12 +515,6 @@ contract InfraredTest is Helper {
         // Grant MINTER_ROLE to infrared contract
         newRed.grantRole(newRed.MINTER_ROLE(), address(infrared));
 
-        // Get the base slot from the public constant
-        bytes32 baseSlot = infrared.REWARDS_STORAGE_LOCATION();
-
-        // The red address is at offset 8 in the struct
-        bytes32 redSlot = bytes32(uint256(baseSlot) + 8);
-
         // Start recording storage access
         vm.record();
 
@@ -501,9 +522,7 @@ contract InfraredTest is Helper {
         vm.prank(infraredGovernance);
         infrared.setRed(address(newRed));
 
-        // Verify the calculated slot contains newRed address
-        bytes32 storedValue = vm.load(address(infrared), redSlot);
-        assertEq(address(uint160(uint256(storedValue))), address(newRed));
+        assertEq(address(infrared.red()), address(newRed));
     }
 
     function testSetRedFailsZeroAddress() public {
@@ -563,7 +582,7 @@ contract InfraredTest is Helper {
         bytes32 baseSlot = infrared.REWARDS_STORAGE_LOCATION();
 
         // redMintRate is after 9 addresses and 1 mapping in the struct
-        bytes32 redMintRateSlot = bytes32(uint256(baseSlot) + 10);
+        bytes32 redMintRateSlot = bytes32(uint256(baseSlot) + 1);
 
         // Start recording storage access for debugging
         vm.record();

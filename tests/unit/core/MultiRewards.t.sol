@@ -3,7 +3,7 @@ pragma solidity ^0.8.26;
 
 import "forge-std/Test.sol";
 import "src/core/MultiRewards.sol";
-import "tests/unit/mocks/MockERC20.sol";
+import {MockERC20} from "tests/unit/mocks/MockERC20.sol";
 
 contract MultiRewardsConcrete is MultiRewards {
     constructor(address _stakingToken) MultiRewards(_stakingToken) {}

@@ -6,7 +6,7 @@ import "src/core/InfraredVault.sol";
 import "src/core/Infrared.sol";
 
 import "forge-std/Test.sol";
-import "tests/unit/mocks/MockERC20.sol";
+import {MockERC20} from "tests/unit/mocks/MockERC20.sol";
 
 contract Governance is Test {
     Infrared public infrared;

@@ -3,10 +3,8 @@ pragma solidity ^0.8.0;
 
 import {IRewardVault as IBerachainRewardsVault} from
     "@berachain/pol/interfaces/IRewardVault.sol";
-import {
-    IERC20,
-    SafeERC20
-} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {ERC20} from "@solmate/tokens/ERC20.sol";
+import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 
 import {IInfraredDistributor} from "src/interfaces/IInfraredDistributor.sol";
 import {IBerachainBGTStaker} from "src/interfaces/IBerachainBGTStaker.sol";
@@ -24,21 +22,11 @@ import {IIBERA} from "src/interfaces/IIBERA.sol";
 import {Errors} from "src/utils/Errors.sol";
 
 library RewardsLib {
-    using SafeERC20 for IERC20;
+    using SafeTransferLib for ERC20;
 
     struct RewardsStorage {
-        address collector;
-        address distributor;
-        address wbera;
-        address bgt;
-        address ibgt;
-        address voter;
-        address ibgtVault;
-        address ibera;
-        address red;
         mapping(address => uint256) protocolFeeAmounts; // Tracks accumulated protocol fees per token
         uint256 redMintRate; // Rate for minting IRED tokens
-        uint256 rewardsDuration; // Duration for reward programs
         uint256 collectBribesWeight;
         mapping(uint256 => uint256) fees; // Fee configuration
     }
@@ -68,21 +56,15 @@ library RewardsLib {
         uint256 _feeTotal,
         uint256 _feeProtocol
     )
-        public
+        external
         pure
         returns (uint256 amtRecipient, uint256 amtVoter, uint256 amtProtocol)
     {
-        amtRecipient = _amt;
-        if (_feeTotal == 0) return (amtRecipient, 0, 0);
-
-        uint256 _amtTotal = amtRecipient * _feeTotal / FEE_UNIT; // FEE_UNIT = 1e6
-        amtProtocol =
-            amtRecipient * _feeTotal * _feeProtocol / (FEE_UNIT * FEE_UNIT); // Protocol's share
-        amtVoter = _amtTotal - amtProtocol; // Remainder for voter
-        amtRecipient -= (amtProtocol + amtVoter); // Deduct fees from recipient
+        (amtRecipient, amtVoter, amtProtocol) =
+            _chargedFeesOnRewards(_amt, _feeTotal, _feeProtocol);
     }
 
-    function chargedFeesOnRewardsInternal(
+    function _chargedFeesOnRewards(
         uint256 _amt,
         uint256 _feeTotal,
         uint256 _feeProtocol
@@ -114,19 +96,21 @@ library RewardsLib {
         // forward voter fees
         if (_amtVoter > 0) {
             address voterFeeVault = IVoter(_voter).feeVault();
-            IERC20(_token).safeIncreaseAllowance(voterFeeVault, _amtVoter);
+            ERC20(_token).safeApprove(voterFeeVault, _amtVoter);
             IReward(voterFeeVault).notifyRewardAmount(_token, _amtVoter);
         }
 
         emit IInfrared.ProtocolFees(_token, _amtProtocol, _amtVoter);
     }
 
-    function harvestBase(RewardsStorage storage $)
-        external
-        returns (uint256 bgtAmt)
-    {
-        uint256 minted = IIBGT($.ibgt).totalSupply();
-        uint256 bgtBalance = _getBGTBalance($);
+    function harvestBase(
+        RewardsStorage storage,
+        address bgt,
+        address ibgt,
+        address ibera
+    ) external returns (uint256 bgtAmt) {
+        uint256 minted = IIBGT(ibgt).totalSupply();
+        uint256 bgtBalance = _getBGTBalance(bgt);
         // @dev should never happen but check in case
         if (bgtBalance < minted) revert Errors.UnderFlow();
 
@@ -136,83 +120,98 @@ library RewardsLib {
         // Redeem BGT for BERA and send to IBERA receivor
         // No fee deduction needed here as fees will be handled by
         // subsequent harvest calls through the IBERA receiver's logic
-        IBerachainBGT($.bgt).redeem(IIBERA($.ibera).receivor(), bgtAmt);
+        IBerachainBGT(bgt).redeem(IIBERA(ibera).receivor(), bgtAmt);
     }
 
-    function harvestVault(RewardsStorage storage $, IInfraredVault vault)
-        external
-        returns (uint256 bgtAmt)
-    {
+    function harvestVault(
+        RewardsStorage storage $,
+        IInfraredVault vault,
+        address bgt,
+        address ibgt,
+        address voter,
+        address red,
+        uint256 rewardsDuration
+    ) external returns (uint256 bgtAmt) {
         // Ensure the vault is valid
         if (vault == IInfraredVault(address(0))) {
             revert Errors.VaultNotSupported();
         }
 
         // Record the BGT balance before claiming rewards
-        uint256 balanceBefore = _getBGTBalance($);
+        uint256 balanceBefore = _getBGTBalance(bgt);
 
         // Get the rewards from the vault's reward vault
         IBerachainRewardsVault rewardsVault = vault.rewardsVault();
         rewardsVault.getReward(address(vault), address(this));
 
         // Calculate the amount of BGT rewards received
-        bgtAmt = _getBGTBalance($) - balanceBefore;
-
-        // Retrieve the total and protocol fee rates
-        uint256 feeTotal =
-            $.fees[uint256(ConfigTypes.FeeType.HarvestVaultFeeRate)];
-        uint256 feeProtocol =
-            $.fees[uint256(ConfigTypes.FeeType.HarvestVaultProtocolRate)];
+        bgtAmt = _getBGTBalance(bgt) - balanceBefore;
 
         // If no BGT rewards were received, exit early
         if (bgtAmt == 0) return bgtAmt;
 
         // Mint IBGT tokens equivalent to the BGT rewards
-        IIBGT($.ibgt).mint(address(this), bgtAmt);
+        IIBGT(ibgt).mint(address(this), bgtAmt);
+
+        // Retrieve the total and protocol fee rates
+        // uint256 feeTotal =
+        //     $.fees[uint256(ConfigTypes.FeeType.HarvestVaultFeeRate)];
+        // uint256 feeProtocol =
+        //     $.fees[uint256(ConfigTypes.FeeType.HarvestVaultProtocolRate)];
 
         // Calculate and distribute fees on the BGT rewards
         (uint256 _amt, uint256 _amtVoter, uint256 _amtProtocol) =
-            chargedFeesOnRewardsInternal(bgtAmt, feeTotal, feeProtocol);
+        _chargedFeesOnRewards(
+            bgtAmt,
+            $.fees[uint256(ConfigTypes.FeeType.HarvestVaultFeeRate)],
+            $.fees[uint256(ConfigTypes.FeeType.HarvestVaultProtocolRate)]
+        );
         _distributeFeesOnRewards(
-            $.protocolFeeAmounts, $.voter, $.ibgt, _amtVoter, _amtProtocol
+            $.protocolFeeAmounts, voter, ibgt, _amtVoter, _amtProtocol
         );
 
         // Send the remaining IBGT rewards to the vault
         if (_amt > 0) {
-            IERC20($.ibgt).safeIncreaseAllowance(address(vault), _amt);
-            vault.notifyRewardAmount($.ibgt, _amt);
+            ERC20(ibgt).safeApprove(address(vault), _amt);
+            vault.notifyRewardAmount(ibgt, _amt);
         }
 
-        // If RED token is set and mint rate is greater than zero, handle RED rewards
-        if (address($.red) != address(0) && $.redMintRate > 0) {
-            // Calculate the amount of RED tokens to mint
-            uint256 redAmt = bgtAmt * $.redMintRate / RATE_UNIT;
-            IRED($.red).mint(address(this), redAmt);
+        uint256 mintRate = $.redMintRate;
 
-            // Check if RED is already a reward token in the vault
-            (, uint256 redRewardsDuration,,,,,) = vault.rewardData($.red);
-            if (redRewardsDuration == 0) {
-                // Add RED as a reward token if not already added
-                vault.addReward($.red, $.rewardsDuration);
+        // If RED token is set and mint rate is greater than zero, handle RED rewards
+        if (red != address(0) && mintRate > 0) {
+            // Calculate the amount of RED tokens to mint
+            uint256 redAmt = bgtAmt * mintRate / RATE_UNIT;
+            IRED(red).mint(address(this), redAmt);
+
+            {
+                // Check if RED is already a reward token in the vault
+                (, uint256 redRewardsDuration,,,,,) = vault.rewardData(red);
+                if (redRewardsDuration == 0) {
+                    // Add RED as a reward token if not already added
+                    vault.addReward(red, rewardsDuration);
+                }
             }
 
             // Calculate and distribute fees on the RED rewards
             (_amt, _amtVoter, _amtProtocol) =
-                chargedFeesOnRewardsInternal(redAmt, 0, 0);
+                _chargedFeesOnRewards(redAmt, 0, 0);
             _distributeFeesOnRewards(
-                $.protocolFeeAmounts, $.voter, $.red, _amtVoter, _amtProtocol
+                $.protocolFeeAmounts, voter, red, _amtVoter, _amtProtocol
             );
 
             // Send the remaining RED rewards to the vault
             if (_amt > 0) {
-                IERC20($.red).safeIncreaseAllowance(address(vault), _amt);
-                vault.notifyRewardAmount($.red, _amt);
+                ERC20(red).safeApprove(address(vault), _amt);
+                vault.notifyRewardAmount(red, _amt);
             }
         }
     }
 
     function harvestBribes(
         RewardsStorage storage $,
+        address wbera,
+        address collector,
         address[] memory _tokens,
         bool[] memory whitelisted
     ) external returns (address[] memory tokens, uint256[] memory _amounts) {
@@ -224,30 +223,38 @@ library RewardsLib {
             if (!whitelisted[i]) continue;
             address _token = _tokens[i];
             if (_token == DataTypes.NATIVE_ASSET) {
-                IWBERA($.wbera).deposit{value: address(this).balance}();
-                _token = $.wbera;
+                IWBERA(wbera).deposit{value: address(this).balance}();
+                _token = wbera;
             }
             // amount to forward is balance of this address less existing protocol fees
-            uint256 _amount = IERC20(_token).balanceOf(address(this))
+            uint256 _amount = ERC20(_token).balanceOf(address(this))
                 - $.protocolFeeAmounts[_token];
             _amounts[i] = _amount;
             tokens[i] = _token;
-            _handleTokenBribesForReceiver($, $.collector, _token, _amount);
+            _handleTokenBribesForReceiver($, collector, _token, _amount);
         }
     }
 
-    function collectBribesInWBERA(RewardsStorage storage $, uint256 _amount)
-        external
-        returns (uint256 amtIBERA, uint256 amtIbgtVault)
-    {
-        IERC20($.wbera).safeTransferFrom(msg.sender, address(this), _amount);
+    function collectBribesInWBERA(
+        RewardsStorage storage $,
+        uint256 _amount,
+        address wbera,
+        address ibera,
+        address ibgtVault,
+        address voter,
+        uint256 rewardsDuration
+    ) external returns (uint256 amtIBERA, uint256 amtIbgtVault) {
+        if (ibera == address(0)) revert Errors.ZeroAddress();
+        ERC20(wbera).safeTransferFrom(msg.sender, address(this), _amount);
 
         // determine proportion of bribe amount designated for IBERA
         amtIBERA = _amount * $.collectBribesWeight / WEIGHT_UNIT;
         amtIbgtVault = _amount - amtIBERA;
 
+        address rec = IIBERA(ibera).receivor();
+        if (rec == address(0)) revert Errors.ZeroAddress();
         // Redeem WBERA for BERA and send to IBERA receivor
-        (bool success,) = IIBERA($.ibera).receivor().call{value: amtIBERA}("");
+        (bool success,) = rec.call{value: amtIBERA}("");
         if (!success) revert Errors.ETHTransferFailed();
 
         // get total and protocol fee rates
@@ -258,26 +265,31 @@ library RewardsLib {
 
         _handleTokenRewardsForVault(
             $,
-            IInfraredVault($.ibgtVault),
-            $.wbera,
+            IInfraredVault(ibgtVault),
+            wbera,
+            voter,
             amtIbgtVault,
             feeTotal,
-            feeProtocol
+            feeProtocol,
+            rewardsDuration
         );
     }
 
-    function harvestBoostRewards(RewardsStorage storage $)
-        external
-        returns (address _vault, address _token, uint256 _amount)
-    {
-        IBerachainBGTStaker _bgtStaker = IBerachainBGT($.bgt).staker();
+    function harvestBoostRewards(
+        RewardsStorage storage $,
+        address bgt,
+        address ibgtVault,
+        address voter,
+        uint256 rewardsDuration
+    ) external returns (address _vault, address _token, uint256 _amount) {
+        IBerachainBGTStaker _bgtStaker = IBerachainBGT(bgt).staker();
         _token = address(_bgtStaker.rewardToken());
 
         // claim boost reward
         // @dev not trusting return from bgt staker in case transfer fees
-        uint256 balanceBefore = IERC20(_token).balanceOf(address(this));
+        uint256 balanceBefore = ERC20(_token).balanceOf(address(this));
         _bgtStaker.getReward();
-        _amount = IERC20(_token).balanceOf(address(this)) - balanceBefore;
+        _amount = ERC20(_token).balanceOf(address(this)) - balanceBefore;
 
         // get total and protocol fee rates
         uint256 feeTotal =
@@ -285,22 +297,26 @@ library RewardsLib {
         uint256 feeProtocol =
             $.fees[uint256(ConfigTypes.FeeType.HarvestBoostProtocolRate)];
 
-        _vault = $.ibgtVault;
+        _vault = ibgtVault;
         _handleTokenRewardsForVault(
             $,
-            IInfraredVault($.ibgtVault),
+            IInfraredVault(ibgtVault),
             _token,
+            voter,
             _amount,
             feeTotal,
-            feeProtocol
+            feeProtocol,
+            rewardsDuration
         );
     }
 
-    function harvestOperatorRewards(RewardsStorage storage $)
-        external
-        returns (uint256 _amt)
-    {
-        uint256 iBERAShares = IIBERA($.ibera).collect();
+    function harvestOperatorRewards(
+        RewardsStorage storage $,
+        address ibera,
+        address voter,
+        address distributor
+    ) external returns (uint256 _amt) {
+        uint256 iBERAShares = IIBERA(ibera).collect();
 
         if (iBERAShares == 0) return 0;
 
@@ -309,7 +325,9 @@ library RewardsLib {
         uint256 feeProtocol =
             $.fees[uint256(ConfigTypes.FeeType.HarvestOperatorProtocolRate)];
 
-        _amt = _handleRewardsForOperators($, iBERAShares, feeTotal, feeProtocol);
+        _amt = _handleRewardsForOperators(
+            $, ibera, voter, distributor, iBERAShares, feeTotal, feeProtocol
+        );
     }
 
     /**
@@ -324,16 +342,18 @@ library RewardsLib {
         RewardsStorage storage $,
         IInfraredVault _vault,
         address _token,
+        address voter,
         uint256 _amount,
         uint256 _feeTotal,
-        uint256 _feeProtocol
+        uint256 _feeProtocol,
+        uint256 rewardsDuration
     ) internal {
         if (_amount == 0) return;
 
         // add reward if not already added
         (, uint256 _vaultRewardsDuration,,,,,) = _vault.rewardData(_token);
         if (_vaultRewardsDuration == 0) {
-            _vault.addReward(_token, $.rewardsDuration);
+            _vault.addReward(_token, rewardsDuration);
         }
 
         uint256 _amtVoter;
@@ -341,14 +361,14 @@ library RewardsLib {
 
         // calculate and distribute fees on rewards
         (_amount, _amtVoter, _amtProtocol) =
-            chargedFeesOnRewards($, _amount, _feeTotal, _feeProtocol);
+            _chargedFeesOnRewards(_amount, _feeTotal, _feeProtocol);
         _distributeFeesOnRewards(
-            $.protocolFeeAmounts, $.voter, _token, _amtVoter, _amtProtocol
+            $.protocolFeeAmounts, voter, _token, _amtVoter, _amtProtocol
         );
 
         // increase allowance then notify vault of new rewards
         if (_amount > 0) {
-            IERC20(_token).safeIncreaseAllowance(address(_vault), _amount);
+            ERC20(_token).safeApprove(address(_vault), _amount);
             _vault.notifyRewardAmount(_token, _amount);
         }
     }
@@ -368,7 +388,7 @@ library RewardsLib {
         if (_amount == 0) return;
 
         // transfer rewards to recipient
-        IERC20(_token).safeTransfer(_recipient, _amount);
+        ERC20(_token).safeTransfer(_recipient, _amount);
     }
 
     /**
@@ -379,6 +399,9 @@ library RewardsLib {
      */
     function _handleRewardsForOperators(
         RewardsStorage storage $,
+        address ibera,
+        address voter,
+        address distributor,
         uint256 _iBERAShares,
         uint256 _feeTotal,
         uint256 _feeProtocol
@@ -386,35 +409,37 @@ library RewardsLib {
         // pass if no bgt rewards
         if (_iBERAShares == 0) return 0;
 
-        address _token = $.ibera;
+        address _token = ibera;
 
         uint256 _amtVoter;
         uint256 _amtProtocol;
 
         // calculate and distribute fees on rewards
         (_amt, _amtVoter, _amtProtocol) =
-            chargedFeesOnRewards($, _iBERAShares, _feeTotal, _feeProtocol);
+            _chargedFeesOnRewards(_iBERAShares, _feeTotal, _feeProtocol);
         _distributeFeesOnRewards(
-            $.protocolFeeAmounts, $.voter, _token, _amtVoter, _amtProtocol
+            $.protocolFeeAmounts, voter, _token, _amtVoter, _amtProtocol
         );
 
         // send token rewards less fee to vault
         if (_amt > 0) {
-            IERC20(_token).safeIncreaseAllowance($.distributor, _amt);
-            IInfraredDistributor($.distributor).notifyRewardAmount(_amt);
+            ERC20(_token).safeApprove(distributor, _amt);
+            IInfraredDistributor(distributor).notifyRewardAmount(_amt);
         }
     }
 
-    function delegateBGT(RewardsStorage storage $, address _delegatee)
-        internal
-    {
+    function delegateBGT(
+        RewardsStorage storage,
+        address _delegatee,
+        address bgt
+    ) external {
         if (_delegatee == address(0)) revert Errors.ZeroAddress();
         if (_delegatee == address(this)) revert Errors.InvalidDelegatee();
-        IBerachainBGT($.bgt).delegate(_delegatee);
+        IBerachainBGT(bgt).delegate(_delegatee);
     }
 
     function updateIBERABribesWeight(RewardsStorage storage $, uint256 _weight)
-        internal
+        external
     {
         if (_weight > WEIGHT_UNIT) revert Errors.InvalidWeight();
         $.collectBribesWeight = _weight;
@@ -424,7 +449,7 @@ library RewardsLib {
         RewardsStorage storage $,
         ConfigTypes.FeeType _t,
         uint256 _fee
-    ) internal {
+    ) external {
         if (_fee > FEE_UNIT) revert Errors.InvalidFee();
         $.fees[uint256(_t)] = _fee;
     }
@@ -434,37 +459,24 @@ library RewardsLib {
         address _to,
         address _token,
         uint256 _amount
-    ) internal {
+    ) external {
         if (_amount > $.protocolFeeAmounts[_token]) {
             revert Errors.MaxProtocolFeeAmount();
         }
         $.protocolFeeAmounts[_token] -= _amount;
-        IERC20(_token).safeTransfer(_to, _amount);
+        ERC20(_token).safeTransfer(_to, _amount);
     }
 
-    function getBGTBalance(RewardsStorage storage $)
-        public
+    function getBGTBalance(RewardsStorage storage, address bgt)
+        external
         view
         returns (uint256)
     {
-        return _getBGTBalance($);
+        return _getBGTBalance(bgt);
     }
 
-    function _getBGTBalance(RewardsStorage storage $)
-        internal
-        view
-        returns (uint256)
-    {
-        return IBerachainBGT($.bgt).balanceOf(address(this));
-    }
-
-    function updateRewardsDuration(
-        RewardsStorage storage $,
-        uint256 newDuration
-    ) internal {
-        if (newDuration == 0) revert Errors.ZeroAmount();
-
-        $.rewardsDuration = newDuration;
+    function _getBGTBalance(address bgt) internal view returns (uint256) {
+        return IBerachainBGT(bgt).balanceOf(address(this));
     }
 
     function updateRedMintRate(RewardsStorage storage $, uint256 _iredMintRate)
@@ -484,14 +496,5 @@ library RewardsLib {
         // uint256 _redAmt = Math.mulDiv(_bgtAmt, $.redMintRate, RATE_UNIT);
 
         $.redMintRate = _iredMintRate;
-    }
-
-    function setRed(RewardsStorage storage $, address _red) external {
-        if (_red == address(0)) revert Errors.ZeroAddress();
-        if ($.red != address(0)) revert Errors.AlreadySet();
-        if (!IRED(_red).hasRole(IRED(_red).MINTER_ROLE(), address(this))) {
-            revert Errors.Unauthorized(address(this));
-        }
-        $.red = _red;
     }
 }

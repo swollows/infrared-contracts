@@ -15,14 +15,11 @@ library ValidatorManagerLib {
     struct ValidatorStorage {
         EnumerableSet.Bytes32Set validatorIds; // Set of validator IDs
         mapping(bytes32 => bytes) validatorPubkeys; // Maps validator ID to public key
-        address distributor; // Address of the distributor contract
-        address bgt;
-        address ibgt;
     }
 
     // Public function to check if a validator exists, accessible to any external contract or account
     function isValidator(ValidatorStorage storage $, bytes memory pubkey)
-        public
+        external
         view
         returns (bool)
     {
@@ -41,8 +38,9 @@ library ValidatorManagerLib {
 
     function addValidators(
         ValidatorStorage storage $,
+        address distributor,
         ValidatorTypes.Validator[] memory _validators
-    ) internal {
+    ) external {
         for (uint256 i = 0; i < _validators.length; i++) {
             ValidatorTypes.Validator memory v = _validators[i];
             if (v.addr == address(0)) revert Errors.ZeroAddress();
@@ -54,14 +52,15 @@ library ValidatorManagerLib {
             $.validatorPubkeys[id] = v.pubkey;
 
             // add pubkey to those elligible for iBGT rewards
-            IInfraredDistributor($.distributor).add(v.pubkey, v.addr);
+            IInfraredDistributor(distributor).add(v.pubkey, v.addr);
         }
     }
 
     function removeValidators(
         ValidatorStorage storage $,
+        address distributor,
         bytes[] memory _pubkeys
-    ) internal {
+    ) external {
         for (uint256 i = 0; i < _pubkeys.length; i++) {
             bytes memory pubkey = _pubkeys[i];
             bytes32 id = keccak256(pubkey);
@@ -72,25 +71,26 @@ library ValidatorManagerLib {
             delete $.validatorPubkeys[id];
 
             // remove pubkey from those elligible for iBGT rewards
-            IInfraredDistributor($.distributor).remove(pubkey);
+            IInfraredDistributor(distributor).remove(pubkey);
         }
     }
 
     function replaceValidator(
         ValidatorStorage storage $,
+        address distributor,
         bytes calldata _current,
         bytes calldata _new
-    ) internal {
+    ) external {
         bytes32 id = keccak256(_current);
         if (!$.validatorIds.contains(id)) {
             revert Errors.InvalidValidator();
         }
-        address _addr = _getValidatorAddress($, _current);
+        address _addr = _getValidatorAddress($, distributor, _current);
 
         // remove current from set
         $.validatorIds.remove(id);
         delete $.validatorPubkeys[id];
-        IInfraredDistributor($.distributor).remove(_current);
+        IInfraredDistributor(distributor).remove(_current);
 
         // add new to set
         id = _getValidatorId(_new);
@@ -100,14 +100,16 @@ library ValidatorManagerLib {
         $.validatorIds.add(id);
         $.validatorPubkeys[id] = _new;
 
-        IInfraredDistributor($.distributor).add(_new, _addr);
+        IInfraredDistributor(distributor).add(_new, _addr);
     }
 
     function queueBoosts(
         ValidatorStorage storage $,
+        address bgt,
+        address ibgt,
         bytes[] memory _pubkeys,
         uint128[] memory _amts
-    ) internal {
+    ) external {
         if (_pubkeys.length != _amts.length) {
             revert Errors.InvalidArrayLength();
         }
@@ -125,50 +127,54 @@ library ValidatorManagerLib {
         // are less than or equal to the total supply of iBGT
         if (
             _totalBoosts
-                > IIBGT($.ibgt).totalSupply()
+                > IIBGT(ibgt).totalSupply()
                     - (
-                        IBerachainBGT($.bgt).boosts(address(this))
-                            + IBerachainBGT($.bgt).queuedBoost(address(this))
+                        IBerachainBGT(bgt).boosts(address(this))
+                            + IBerachainBGT(bgt).queuedBoost(address(this))
                     )
         ) {
             revert Errors.BoostExceedsSupply();
         }
         // check if all pubkeys are valid
         for (uint256 i = 0; i < _pubkeys.length; i++) {
-            IBerachainBGT($.bgt).queueBoost(_pubkeys[i], _amts[i]);
+            IBerachainBGT(bgt).queueBoost(_pubkeys[i], _amts[i]);
         }
     }
 
     function cancelBoosts(
-        ValidatorStorage storage $,
+        ValidatorStorage storage,
+        address bgt,
         bytes[] memory _pubkeys,
         uint128[] memory _amts
-    ) internal {
+    ) external {
         if (_pubkeys.length != _amts.length) {
             revert Errors.InvalidArrayLength();
         }
         for (uint256 i = 0; i < _pubkeys.length; i++) {
             if (_amts[i] == 0) revert Errors.ZeroAmount();
-            IBerachainBGT($.bgt).cancelBoost(_pubkeys[i], _amts[i]);
+            IBerachainBGT(bgt).cancelBoost(_pubkeys[i], _amts[i]);
         }
     }
 
-    function activateBoosts(ValidatorStorage storage $, bytes[] memory _pubkeys)
-        internal
-    {
+    function activateBoosts(
+        ValidatorStorage storage $,
+        address bgt,
+        bytes[] memory _pubkeys
+    ) external {
         for (uint256 i = 0; i < _pubkeys.length; i++) {
             if (!$.validatorIds.contains(keccak256(_pubkeys[i]))) {
                 revert Errors.InvalidValidator();
             }
-            IBerachainBGT($.bgt).activateBoost(address(this), _pubkeys[i]);
+            IBerachainBGT(bgt).activateBoost(address(this), _pubkeys[i]);
         }
     }
 
     function queueDropBoosts(
         ValidatorStorage storage $,
+        address bgt,
         bytes[] memory _pubkeys,
         uint128[] memory _amts
-    ) internal {
+    ) external {
         if (_pubkeys.length != _amts.length) {
             revert Errors.InvalidArrayLength();
         }
@@ -177,37 +183,40 @@ library ValidatorManagerLib {
                 revert Errors.InvalidValidator();
             }
             if (_amts[i] == 0) revert Errors.ZeroAmount();
-            IBerachainBGT($.bgt).queueDropBoost(_pubkeys[i], _amts[i]);
+            IBerachainBGT(bgt).queueDropBoost(_pubkeys[i], _amts[i]);
         }
     }
 
     function cancelDropBoosts(
-        ValidatorStorage storage $,
+        ValidatorStorage storage,
+        address bgt,
         bytes[] memory _pubkeys,
         uint128[] memory _amts
-    ) internal {
+    ) external {
         if (_pubkeys.length != _amts.length) {
             revert Errors.InvalidArrayLength();
         }
         for (uint256 i = 0; i < _pubkeys.length; i++) {
             if (_amts[i] == 0) revert Errors.ZeroAmount();
-            IBerachainBGT($.bgt).cancelDropBoost(_pubkeys[i], _amts[i]);
+            IBerachainBGT(bgt).cancelDropBoost(_pubkeys[i], _amts[i]);
         }
     }
 
-    function dropBoosts(ValidatorStorage storage $, bytes[] memory _pubkeys)
-        internal
-    {
+    function dropBoosts(
+        ValidatorStorage storage $,
+        address bgt,
+        bytes[] memory _pubkeys
+    ) external {
         for (uint256 i = 0; i < _pubkeys.length; i++) {
             if (!$.validatorIds.contains(keccak256(_pubkeys[i]))) {
                 revert Errors.InvalidValidator();
             }
-            IBerachainBGT($.bgt).dropBoost(address(this), _pubkeys[i]);
+            IBerachainBGT(bgt).dropBoost(address(this), _pubkeys[i]);
         }
     }
 
-    function infraredValidators(ValidatorStorage storage $)
-        public
+    function infraredValidators(ValidatorStorage storage $, address distributor)
+        external
         view
         returns (ValidatorTypes.Validator[] memory validators)
     {
@@ -219,14 +228,14 @@ library ValidatorManagerLib {
             bytes memory pubkey = $.validatorPubkeys[ids[i]];
             validators[i] = ValidatorTypes.Validator({
                 pubkey: pubkey,
-                addr: _getValidatorAddress($, pubkey)
+                addr: _getValidatorAddress($, distributor, pubkey)
             });
         }
     }
 
     // Public function to return the number of validators
     function numInfraredValidators(ValidatorStorage storage $)
-        public
+        external
         view
         returns (uint256)
     {
@@ -235,9 +244,10 @@ library ValidatorManagerLib {
 
     // Helper function to retrieve validator address from distributor
     function _getValidatorAddress(
-        ValidatorStorage storage $,
+        ValidatorStorage storage,
+        address distributor,
         bytes memory pubkey
     ) internal view returns (address) {
-        return IInfraredDistributor($.distributor).validators(pubkey);
+        return IInfraredDistributor(distributor).validators(pubkey);
     }
 }

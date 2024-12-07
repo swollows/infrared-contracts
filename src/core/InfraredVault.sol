@@ -7,7 +7,10 @@ import {IRewardVaultFactory as IBerachainRewardsVaultFactory} from
     "@berachain/pol/interfaces/IRewardVaultFactory.sol";
 
 import {Errors} from "src/utils/Errors.sol";
-import {MultiRewards, IERC20, SafeERC20} from "src/core/MultiRewards.sol";
+import {MultiRewards} from "src/core/MultiRewards.sol";
+
+import {ERC20} from "@solmate/tokens/ERC20.sol";
+import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 
 import {IInfrared} from "src/interfaces/IInfrared.sol";
 import {IInfraredVault} from "src/interfaces/IInfraredVault.sol";
@@ -19,7 +22,7 @@ import {IInfraredVault} from "src/interfaces/IInfraredVault.sol";
  * @dev Does not support staking tokens with non-standard ERC20 transfer tax behavior.
  */
 contract InfraredVault is MultiRewards, IInfraredVault {
-    using SafeERC20 for IERC20;
+    using SafeTransferLib for ERC20;
 
     /// @notice Maximum number of reward tokens that can be supported
     /// @dev Limited to prevent gas issues with reward calculations
@@ -90,7 +93,7 @@ contract InfraredVault is MultiRewards, IInfraredVault {
      * @param amount The amount of staking token transferred in to the contract
      */
     function onStake(uint256 amount) internal override {
-        stakingToken.safeIncreaseAllowance(address(rewardsVault), amount);
+        stakingToken.safeApprove(address(rewardsVault), amount);
         rewardsVault.stake(amount);
     }
 

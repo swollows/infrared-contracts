@@ -7,7 +7,7 @@ import "src/core/Infrared.sol";
 
 import "./Keeper.sol";
 
-import "../../../unit/mocks/MockERC20.sol";
+import {MockERC20} from "../../../unit/mocks/MockERC20.sol";
 
 contract User is Test {
     Infrared public infrared;

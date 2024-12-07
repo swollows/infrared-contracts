@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.26;
 
-import {SafeERC20} from
-    "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {ERC20} from "@solmate/tokens/ERC20.sol";
+import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 
 import {IBeaconDeposit as IBerachainBeaconDeposit} from
     "@berachain/pol/interfaces/IBeaconDeposit.sol";
@@ -17,10 +16,10 @@ import {Errors} from "src/utils/Errors.sol";
 /// @title InfraredDistributor
 /// @notice A contract for distributing rewards in a single ERC20 token (iBERA) to validators
 contract InfraredDistributor is InfraredUpgradeable, IInfraredDistributor {
-    using SafeERC20 for IERC20;
+    using SafeTransferLib for ERC20;
 
     /// @inheritdoc IInfraredDistributor
-    IERC20 public token;
+    ERC20 public token;
 
     /// @inheritdoc IInfraredDistributor
     uint256 public amountsCumulative;
@@ -34,7 +33,7 @@ contract InfraredDistributor is InfraredUpgradeable, IInfraredDistributor {
     }
 
     function initialize(address _token) external initializer {
-        token = IERC20(_token);
+        token = ERC20(_token);
 
         // claim amounts calculated via differences so absolute amount not relevant
         amountsCumulative++;

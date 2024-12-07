@@ -42,7 +42,7 @@ contract BribeCollectorTest is Helper {
 
         // Act
         vm.startPrank(searcher);
-        IERC20(payoutToken).approve(address(collector), payoutAmount);
+        ERC20(payoutToken).approve(address(collector), payoutAmount);
         collector.claimFees(recipient, feeTokens, feeAmounts);
         vm.stopPrank();
 

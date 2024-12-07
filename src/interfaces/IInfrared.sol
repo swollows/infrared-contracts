@@ -1,18 +1,16 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {ERC20} from "@solmate/tokens/ERC20.sol";
 
 import {IBeraChef} from "@berachain/pol/interfaces/IBeraChef.sol";
 import {IRewardVaultFactory as IBerachainRewardsVaultFactory} from
     "@berachain/pol/interfaces/IRewardVaultFactory.sol";
-
 import {IVoter} from "src/voting/interfaces/IVoter.sol";
 import {IIBERA} from "src/interfaces/IIBERA.sol";
 import {IRED} from "src/interfaces/IRED.sol";
 
 import {IWBERA} from "src/interfaces/IWBERA.sol";
-import {IERC20Mintable} from "src/interfaces/IERC20Mintable.sol";
 import {IIBGT} from "src/interfaces/IIBGT.sol";
 import {IBribeCollector} from "src/interfaces/IBribeCollector.sol";
 import {IInfraredDistributor} from "src/interfaces/IInfraredDistributor.sol";
@@ -97,9 +95,9 @@ interface IInfrared is IInfraredUpgradeable {
 
     /**
      * @notice Honey ERC20 token
-     * @return IERC20 The honey token contract address
+     * @return ERC20 The honey token contract address
      */
-    function honey() external view returns (IERC20);
+    function honey() external view returns (ERC20);
 
     /**
      * @notice bribe collector contract

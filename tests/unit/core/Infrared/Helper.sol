@@ -22,7 +22,7 @@ import {InfraredDistributor} from "src/core/InfraredDistributor.sol";
 import {BribeCollector} from "src/core/BribeCollector.sol";
 
 // internal
-import {IERC20, Infrared} from "src/core/Infrared.sol";
+import {ERC20, Infrared} from "src/core/Infrared.sol";
 import {InfraredDistributor} from "src/core/InfraredDistributor.sol";
 import {IBGT} from "src/core/IBGT.sol";
 import {RED} from "src/core/RED.sol";
@@ -223,7 +223,7 @@ abstract contract Helper is POLTest {
     ) internal {
         deal(asset, user, amount);
         vm.startPrank(user);
-        IERC20(asset).approve(iVault, amount);
+        ERC20(asset).approve(iVault, amount);
         InfraredVault(iVault).stake(amount);
         vm.stopPrank();
     }

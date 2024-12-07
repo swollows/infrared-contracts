@@ -6,9 +6,8 @@ import {IERC721Receiver} from
 import {IVeArtProxy} from "./interfaces/IVeArtProxy.sol";
 import {IVotingEscrow} from "./interfaces/IVotingEscrow.sol";
 import {IVoter} from "./interfaces/IVoter.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {SafeERC20} from
-    "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {ERC20} from "@solmate/tokens/ERC20.sol";
+import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {IERC6372} from "@openzeppelin/contracts/interfaces/IERC6372.sol";
 import {ReentrancyGuard} from
     "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
@@ -27,7 +26,7 @@ import {IInfrared} from "src/interfaces/IInfrared.sol";
 /// @author Infrared, @NoFront
 /// @dev Vote weight decays linearly over time. Lock time cannot be more than `MAXTIME` (4 years).
 contract VotingEscrow is IVotingEscrow, ReentrancyGuard {
-    using SafeERC20 for IERC20;
+    using SafeTransferLib for ERC20;
     using SafeCastLib for uint256;
     using SafeCastLib for int128;
     /*//////////////////////////////////////////////////////////////
@@ -861,7 +860,7 @@ contract VotingEscrow is IVotingEscrow, ReentrancyGuard {
         _checkpoint(_tokenId, _oldLocked, newLocked);
 
         if (_value != 0) {
-            IERC20(token).safeTransferFrom(msg.sender, address(this), _value);
+            ERC20(token).safeTransferFrom(msg.sender, address(this), _value);
         }
 
         emit Deposit(
@@ -1025,7 +1024,7 @@ contract VotingEscrow is IVotingEscrow, ReentrancyGuard {
         // Both can have >= 0 amount
         _checkpoint(_tokenId, oldLocked, LockedBalance(0, 0, false));
 
-        IERC20(token).safeTransfer(msg.sender, value);
+        ERC20(token).safeTransfer(msg.sender, value);
 
         emit Withdraw(msg.sender, _tokenId, value, block.timestamp);
         emit Supply(supplyBefore, supplyBefore - value);

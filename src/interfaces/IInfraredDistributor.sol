@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {ERC20} from "@solmate/tokens/ERC20.sol";
 
 /**
  * @title Infrared Distributor Interface
@@ -69,7 +69,7 @@ interface IInfraredDistributor {
      * @notice Token used for reward distributions
      * @return The ERC20 token interface of the reward token
      */
-    function token() external view returns (IERC20);
+    function token() external view returns (ERC20);
 
     /**
      * @notice Tracks reward amount accumulation per validator

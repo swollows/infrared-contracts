@@ -3,21 +3,21 @@ pragma solidity 0.8.26;
 
 import {IMultiRewards} from "../interfaces/IMultiRewards.sol";
 
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {ReentrancyGuard} from
     "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import {SafeERC20} from
-    "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Errors} from "src/utils/Errors.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+
+import {ERC20} from "@solmate/tokens/ERC20.sol";
+import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 
 /**
  * @title MultiRewards
  * @dev Fork of https://github.com/curvefi/multi-rewards with hooks on stake/withdraw of LP tokens
  */
 abstract contract MultiRewards is ReentrancyGuard, Pausable, IMultiRewards {
-    using SafeERC20 for IERC20;
+    using SafeTransferLib for ERC20;
 
     /*//////////////////////////////////////////////////////////////
                                 STATE
@@ -27,7 +27,7 @@ abstract contract MultiRewards is ReentrancyGuard, Pausable, IMultiRewards {
      * @notice The token that users stake to earn rewards
      * @dev This is the base token that users deposit into the contract
      */
-    IERC20 public immutable stakingToken;
+    ERC20 public immutable stakingToken;
 
     /**
      * @notice Stores reward-related data for each reward token
@@ -99,7 +99,7 @@ abstract contract MultiRewards is ReentrancyGuard, Pausable, IMultiRewards {
      * @param _stakingToken address The token that users stake to earn rewards.
      */
     constructor(address _stakingToken) {
-        stakingToken = IERC20(_stakingToken);
+        stakingToken = ERC20(_stakingToken);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -234,7 +234,7 @@ abstract contract MultiRewards is ReentrancyGuard, Pausable, IMultiRewards {
             uint256 reward = rewards[_user][_rewardsToken];
             if (reward > 0) {
                 rewards[_user][_rewardsToken] = 0;
-                IERC20(_rewardsToken).safeTransfer(_user, reward);
+                ERC20(_rewardsToken).safeTransfer(_user, reward);
                 emit RewardPaid(_user, _rewardsToken, reward);
             }
         }
@@ -289,9 +289,7 @@ abstract contract MultiRewards is ReentrancyGuard, Pausable, IMultiRewards {
     {
         // handle the transfer of reward tokens via `transferFrom` to reduce the number
         // of transactions required and ensure correctness of the reward amount
-        IERC20(_rewardsToken).safeTransferFrom(
-            msg.sender, address(this), reward
-        );
+        ERC20(_rewardsToken).safeTransferFrom(msg.sender, address(this), reward);
         // add in the prior residual amount and account for new residual
         // @dev residual used to account for precision loss when dividing reward by rewardsDuration
         reward = reward + rewardData[_rewardsToken].rewardResidual;
@@ -336,7 +334,7 @@ abstract contract MultiRewards is ReentrancyGuard, Pausable, IMultiRewards {
             rewardData[tokenAddress].lastUpdateTime == 0,
             "Cannot withdraw reward token"
         );
-        IERC20(tokenAddress).safeTransfer(to, tokenAmount);
+        ERC20(tokenAddress).safeTransfer(to, tokenAmount);
         emit Recovered(tokenAddress, tokenAmount);
     }
 

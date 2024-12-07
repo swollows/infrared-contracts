@@ -3,16 +3,15 @@ pragma solidity ^0.8.0;
 
 import {EnumerableSet} from
     "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {SafeERC20} from
-    "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {ERC20} from "@solmate/tokens/ERC20.sol";
+import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {IInfraredVault} from "src/interfaces/IInfraredVault.sol";
 import {Errors} from "src/utils/Errors.sol";
 import {InfraredVaultDeployer} from "src/utils/InfraredVaultDeployer.sol";
 
 library VaultManagerLib {
     using EnumerableSet for EnumerableSet.AddressSet;
-    using SafeERC20 for IERC20;
+    using SafeTransferLib for ERC20;
 
     struct VaultStorage {
         bool pausedVaultRegistration;
@@ -34,7 +33,7 @@ library VaultManagerLib {
 
     /// @notice Registers a new vault for a specific asset with specified reward tokens.
     function registerVault(VaultStorage storage $, address asset)
-        public
+        external
         notPaused($)
         returns (address)
     {
@@ -56,13 +55,13 @@ library VaultManagerLib {
      * @param pause True to pause, False to un pause
      */
     function setVaultRegistrationPauseStatus(VaultStorage storage $, bool pause)
-        internal
+        external
     {
         $.pausedVaultRegistration = pause;
     }
 
     /// @notice Toggles the pause status of a specific vault.
-    function pauseVault(VaultStorage storage $, address asset) internal {
+    function pauseVault(VaultStorage storage $, address asset) external {
         IInfraredVault vault = $.vaultRegistry[asset];
         if (address(vault) == address(0)) revert Errors.NoRewardsVault();
 
@@ -74,7 +73,7 @@ library VaultManagerLib {
         VaultStorage storage $,
         address token,
         bool whitelisted
-    ) internal {
+    ) external {
         if (whitelisted) {
             $.whitelistedRewardTokens.add(token);
         } else {
@@ -118,17 +117,17 @@ library VaultManagerLib {
             revert Errors.RewardTokenNotWhitelisted();
         }
 
-        IERC20(_rewardsToken).safeTransferFrom(
+        ERC20(_rewardsToken).safeTransferFrom(
             msg.sender, address(this), _amount
         );
-        IERC20(_rewardsToken).safeIncreaseAllowance(address(vault), _amount);
+        ERC20(_rewardsToken).safeApprove(address(vault), _amount);
 
         vault.notifyRewardAmount(_rewardsToken, _amount);
     }
 
     /// @notice Updates the rewards duration for vaults.
     function updateRewardsDuration(VaultStorage storage $, uint256 newDuration)
-        internal
+        external
     {
         if (newDuration == 0) revert Errors.ZeroAmount();
         $.rewardsDuration = newDuration;

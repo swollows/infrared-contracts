@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
-import {Base, BribeVotingReward, IERC20, MockERC20} from "./Base.t.sol";
+import {Base, BribeVotingReward, ERC20, MockERC20} from "./Base.t.sol";
 import {IVoter} from "src/voting/interfaces/IVoter.sol";
 // import {assertApproxEq} from "forge-std/StdAssertions.sol";
 
@@ -334,7 +334,7 @@ contract VoterTest is Base {
         // point to bribeVault (gauge)
         address bribeVault = voter.bribeVaults(stakingTokens[0]);
         // add rewards for stakingToken
-        IERC20(stakingTokens[0]).approve(bribeVault, TOKEN_1);
+        ERC20(stakingTokens[0]).approve(bribeVault, TOKEN_1);
         BribeVotingReward(bribeVault).notifyRewardAmount(
             stakingTokens[0], TOKEN_1
         );
@@ -364,7 +364,7 @@ contract VoterTest is Base {
         // add rewards for stakingToken2
         address bribeVault2 = voter.bribeVaults(stakingTokens[1]);
 
-        IERC20(stakingTokens[1]).approve(bribeVault2, TOKEN_1);
+        ERC20(stakingTokens[1]).approve(bribeVault2, TOKEN_1);
         BribeVotingReward(bribeVault2).notifyRewardAmount(
             stakingTokens[1], TOKEN_1
         );
@@ -493,7 +493,7 @@ contract VoterTest is Base {
         // point to bribeVault (gauge)
         address bribeVault = voter.bribeVaults(stakingTokens[0]);
         // add rewards for stakingToken
-        IERC20(stakingTokens[0]).approve(bribeVault, TOKEN_1);
+        ERC20(stakingTokens[0]).approve(bribeVault, TOKEN_1);
         BribeVotingReward(bribeVault).notifyRewardAmount(
             stakingTokens[0], TOKEN_1
         );
@@ -513,7 +513,7 @@ contract VoterTest is Base {
         skip(1 days);
 
         // add rewards for stakingToken2
-        IERC20(stakingTokens[0]).approve(bribeVault, TOKEN_1);
+        ERC20(stakingTokens[0]).approve(bribeVault, TOKEN_1);
         BribeVotingReward(bribeVault).notifyRewardAmount(
             stakingTokens[0], TOKEN_1
         );
@@ -538,14 +538,14 @@ contract VoterTest is Base {
 
         address bribeVault = voter.bribeVaults(stakingTokens[0]);
         // add rewards for stakingToken
-        IERC20(stakingTokens[0]).approve(bribeVault, TOKEN_1);
+        ERC20(stakingTokens[0]).approve(bribeVault, TOKEN_1);
         BribeVotingReward(bribeVault).notifyRewardAmount(
             stakingTokens[0], TOKEN_1
         );
 
         address bribeVault2 = voter.bribeVaults(stakingTokens[1]);
         // add rewards for stakingToken
-        IERC20(stakingTokens[1]).approve(bribeVault2, TOKEN_1);
+        ERC20(stakingTokens[1]).approve(bribeVault2, TOKEN_1);
         BribeVotingReward(bribeVault2).notifyRewardAmount(
             stakingTokens[1], TOKEN_1
         );
