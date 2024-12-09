@@ -14,8 +14,7 @@ import {InfraredBERAConstants} from "./InfraredBERAConstants.sol";
 /// @notice Depositor to deposit BERA to CL for Infrared liquid staking token
 contract InfraredBERADepositor is Upgradeable, IInfraredBERADepositor {
     uint8 public constant ETH1_ADDRESS_WITHDRAWAL_PREFIX = 0x01;
-    address public constant DEPOSIT_CONTRACT =
-        0x00000000219ab540356cBB839Cbe05303d7705Fa; // TODO: change if different for berachain
+    address public DEPOSIT_CONTRACT;
 
     /// @inheritdoc IInfraredBERADepositor
     address public InfraredBERA;
@@ -42,16 +41,22 @@ contract InfraredBERADepositor is Upgradeable, IInfraredBERADepositor {
 
     /// @notice Initialize the contract (replaces the constructor)
     /// @param admin Address for admin to upgrade
-    /// @param ibera The initial InfraredBERA address
-    function initialize(address admin, address ibera) public initializer {
-        if (admin == address(0) || ibera == address(0)) {
-            revert Errors.ZeroAddress();
-        }
+    /// @param ibera The initial IBERA address
+
+    function initialize(address admin, address ibera, address _depositContract)
+        public
+        initializer
+    {
+        if (
+            admin == address(0) || ibera == address(0)
+                || _depositContract == address(0)
+        ) revert Errors.ZeroAddress();
         __Upgradeable_init();
         InfraredBERA = ibera;
         nonceSlip = 1;
         nonceSubmit = 1;
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
+        DEPOSIT_CONTRACT = _depositContract;
     }
 
     /// @notice Checks whether enough time has passed beyond min delay

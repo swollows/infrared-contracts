@@ -2,37 +2,39 @@
 pragma solidity 0.8.26;
 
 import {IBeraChef} from "@berachain/pol/interfaces/IBeraChef.sol";
-import {InfraredForkTest} from "../InfraredForkTest.t.sol";
+// import {BeaconDeposit} from "@berachain/pol/BeaconDeposit.sol";
+import {ValidatorTypes} from "src/core/libraries/ValidatorTypes.sol";
+import "../InfraredForkTest.t.sol";
 
-// TODO: test validator mgmt with bribes accumulated
 contract ValidatorMgmtForkTest is InfraredForkTest {
-/* TODO: fix for bytes validators
+    ValidatorTypes.Validator[] public infraredValidators;
+
+    function setUp() public virtual override {
+        super.setUp();
+
+        ValidatorTypes.Validator memory infraredValidator = ValidatorTypes
+            .Validator({pubkey: _create48Byte(), addr: address(infrared)});
+        infraredValidators.push(infraredValidator);
+
+        // BeaconDeposit(address(beaconDepositContract)).setOperator(infraredValidator.pubkey, infraredValidator.addr);
+    }
+
     function testAddValidators() public {
         vm.startPrank(admin);
 
         // priors checked
         assertEq(infrared.numInfraredValidators(), 0);
-        assertEq(infrared.isInfraredValidator(infraredValidator), false);
+        assertEq(
+            infrared.isInfraredValidator(infraredValidators[0].pubkey), false
+        );
 
-        (, uint256 rate) = bgt.commissions(infraredValidator);
-        assertEq(rate, 0);
-
-        // add validator with commission weight
-        address[] memory _validators = new address[](1);
-        uint256[] memory _commissions = new uint256[](1);
-
-        _validators[0] = infraredValidator;
-        _commissions[0] = 1e2; // 1%
-
-        infrared.addValidators(_validators, _commissions);
+        infrared.addValidators(infraredValidators);
 
         // check validator added to infrared set
         assertEq(infrared.numInfraredValidators(), 1);
-        assertEq(infrared.isInfraredValidator(infraredValidator), true);
-
-        // check bgt commission rate updated for validator
-        (, rate) = bgt.commissions(infraredValidator);
-        assertEq(rate, 1e2);
+        assertEq(
+            infrared.isInfraredValidator(infraredValidators[0].pubkey), true
+        );
 
         vm.stopPrank();
     }
@@ -42,21 +44,18 @@ contract ValidatorMgmtForkTest is InfraredForkTest {
 
         // move forward beyond buffer length so enough time passed
         vm.roll(block.number + HISTORY_BUFFER_LENGTH + 1);
+
+        bytes[] memory pubkeys = new bytes[](1);
+        pubkeys[0] = infraredValidators[0].pubkey;
         vm.startPrank(admin);
 
-        // remove infrared validator
-        address[] memory _validators = new address[](1);
-        _validators[0] = infraredValidator;
-
-        infrared.removeValidators(_validators);
+        infrared.removeValidators(pubkeys);
 
         // check valdiator removed from infrared set
         assertEq(infrared.numInfraredValidators(), 0);
-        assertEq(infrared.isInfraredValidator(infraredValidator), false);
-
-        // check bgt commission rate zeroed for validator
-        (, uint256 rate) = bgt.commissions(infraredValidator);
-        assertEq(rate, 0);
+        assertEq(
+            infrared.isInfraredValidator(infraredValidators[0].pubkey), false
+        );
 
         vm.stopPrank();
     }
@@ -64,50 +63,45 @@ contract ValidatorMgmtForkTest is InfraredForkTest {
     function testReplaceValidator() public {
         testAddValidators();
 
-        address _newValidator = address(0xA);
-        vm.prank(_newValidator);
-        beraChef.setOperator(address(infrared));
+        ValidatorTypes.Validator memory infraredValidator = ValidatorTypes
+            .Validator({pubkey: bytes("dummy"), addr: address(0x99872876234876)});
 
         // move forward beyond buffer length so enough time passed
         vm.roll(block.number + HISTORY_BUFFER_LENGTH + 1);
         vm.startPrank(admin);
 
-        infrared.replaceValidator(infraredValidator, _newValidator);
+        infrared.replaceValidator(
+            infraredValidators[0].pubkey, infraredValidator.pubkey
+        );
 
         // check validator replaced in infrared set
         assertEq(infrared.numInfraredValidators(), 1);
-        assertEq(infrared.isInfraredValidator(infraredValidator), false);
-        assertEq(infrared.isInfraredValidator(_newValidator), true);
-
-        // check bgt commission rate zeroed for prior validator and updated for new validator
-        (, uint256 oldRate) = bgt.commissions(infraredValidator);
-        (, uint256 newRate) = bgt.commissions(_newValidator);
-        assertEq(oldRate, 0);
-        assertEq(newRate, 1e2);
+        assertEq(
+            infrared.isInfraredValidator(infraredValidators[0].pubkey), false
+        );
+        assertEq(infrared.isInfraredValidator(infraredValidator.pubkey), true);
 
         vm.stopPrank();
     }
 
-    function testUpdateValidatorCommission() public {
+    function testDeposit() public {
+        // add validator to infrared
         testAddValidators();
 
-        // move forward beyond buffer length so enough time passed
-        vm.roll(block.number + HISTORY_BUFFER_LENGTH + 1);
-        vm.startPrank(admin);
+        // deposit to ibera
+        vm.deal(address(this), 32 ether);
+        ibera.mint{value: 32 ether}(address(this));
 
-        infrared.updateValidatorCommission(infraredValidator, 2e2);
+        // set deposit signature from admin account
+        ibera.setDepositSignature(infraredValidators[0].pubkey, _create96Byte());
 
-        // check bgt commission rate updated
-        (, uint256 rate) = bgt.commissions(infraredValidator);
-        assertEq(rate, 2e2);
-
-        vm.stopPrank();
+        // keeper call to execute beacon deposit
+        vm.prank(keeper);
+        depositor.execute(infraredValidators[0].pubkey, 32 ether);
     }
 
     function testQueueNewCuttingBoard() public {
-        testAddValidators();
-
-        vm.startPrank(admin);
+        testDeposit();
 
         // weight 100% of distributed rewards to lp vault
         address lpRewardsVaultAddress = address(lpVault.rewardsVault());
@@ -117,13 +111,19 @@ contract ValidatorMgmtForkTest is InfraredForkTest {
             percentageNumerator: 1e4
         });
         uint64 _startBlock =
-            uint64(block.number) + beraChef.cuttingBoardBlockDelay() + 1;
+            uint64(block.number) + beraChef.rewardAllocationBlockDelay() + 1;
 
-        infrared.queueNewCuttingBoard(infraredValidator, _startBlock, _weights);
+        vm.prank(beraChef.owner());
+        beraChef.setVaultWhitelistedStatus(lpRewardsVaultAddress, true, "");
+
+        vm.startPrank(admin);
+        infrared.queueNewCuttingBoard(
+            infraredValidators[0].pubkey, _startBlock, _weights
+        );
 
         // check cutting board queued for validator
-        IBeraChef.CuttingBoard memory qcb =
-            beraChef.getQueuedCuttingBoard(infraredValidator);
+        IBeraChef.RewardAllocation memory qcb =
+            beraChef.getQueuedRewardAllocation(infraredValidators[0].pubkey);
         assertEq(qcb.startBlock, _startBlock);
         assertEq(qcb.weights.length, 1);
         assertEq(qcb.weights[0].receiver, lpRewardsVaultAddress);
@@ -133,21 +133,19 @@ contract ValidatorMgmtForkTest is InfraredForkTest {
         vm.roll(block.number + HISTORY_BUFFER_LENGTH + 1);
 
         // roll with pol now over single block
-        rollPol(infraredValidator, block.number + 1);
+        // rollPol(block.number + 1);
 
-        // check cutting board activates for validator once roll pol again
-        IBeraChef.CuttingBoard memory acb =
-            beraChef.getActiveCuttingBoard(infraredValidator);
-        assertEq(acb.startBlock, qcb.startBlock);
-        assertEq(acb.weights.length, 1);
-        assertEq(acb.weights[0].receiver, lpRewardsVaultAddress);
-        assertEq(acb.weights[0].percentageNumerator, 1e4);
+        // // check cutting board activates for validator once roll pol again
+        // IBeraChef.RewardAllocation memory acb =
+        //     beraChef.getActiveRewardAllocation(infraredValidators[0].pubkey);
+        // assertEq(acb.startBlock, qcb.startBlock);
+        // assertEq(acb.weights.length, 1);
+        // assertEq(acb.weights[0].receiver, lpRewardsVaultAddress);
+        // assertEq(acb.weights[0].percentageNumerator, 1e4);
 
-        // check queued cutting board deleted
-        qcb = beraChef.getQueuedCuttingBoard(infraredValidator);
-        assertEq(qcb.startBlock, 0);
-        assertEq(qcb.weights.length, 0);
+        // // check queued cutting board deleted
+        // qcb = beraChef.getQueuedRewardAllocation(infraredValidators[0].pubkey);
+        // assertEq(qcb.startBlock, 0);
+        // assertEq(qcb.weights.length, 0);
     }
-    */
-// TODO: BGTMgmtForkTest.t.sol separately for boosts
 }

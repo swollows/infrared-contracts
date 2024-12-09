@@ -8,6 +8,7 @@ import "forge-std/Test.sol";
 import {ERC1967Proxy} from
     "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
+import {BeaconDeposit} from "@berachain/pol/BeaconDeposit.sol";
 
 import {Voter} from "src/voting/Voter.sol";
 import {VotingEscrow} from "src/voting/VotingEscrow.sol";
@@ -34,7 +35,7 @@ import {IInfrared} from "src/interfaces/IInfrared.sol";
 // mocks
 import {MockERC20} from "tests/unit/mocks/MockERC20.sol";
 import {RewardVaultFactory} from "@berachain/pol/rewards/RewardVaultFactory.sol";
-import {POLTest} from "@berachain/../test/pol/POL.t.sol";
+import {BeaconDepositMock, POLTest} from "@berachain/../test/pol/POL.t.sol";
 
 abstract contract Helper is POLTest {
     Infrared public infrared;
@@ -50,41 +51,43 @@ abstract contract Helper is POLTest {
     InfraredBERAClaimor public claimor;
     InfraredBERAFeeReceivor public receivor;
 
-    BribeCollector public collector;
-    InfraredDistributor public infraredDistributor;
+    BribeCollector internal collector;
+    InfraredDistributor internal infraredDistributor;
 
-    address public admin;
-    address public keeper;
-    address public infraredGovernance;
+    address internal admin;
+    address internal keeper;
+    address internal infraredGovernance;
 
-    // MockERC20 public bgt;
-    MockERC20 public wibera;
-    MockERC20 public honey;
-    address public beraVault;
+    // MockERC20 internal bgt;
+    MockERC20 internal wibera;
+    MockERC20 internal honey;
+    address internal beraVault;
 
-    MockERC20 public mockPool;
-    address public chef = makeAddr("chef");
+    MockERC20 internal mockPool;
+    // address internal chef = makeAddr("chef");
 
     string vaultName;
     string vaultSymbol;
-    address[] rewardTokens;
+    // address[] rewardTokens;
     address stakingAsset;
     address poolAddress;
 
-    IInfraredVault public ibgtVault;
-    InfraredVault public infraredVault;
+    IInfraredVault internal ibgtVault;
+    InfraredVault internal infraredVault;
 
     address validator = address(888);
     address validator2 = address(999);
 
     // New declaration for mock pools
-    MockERC20[] public mockPools;
+    // MockERC20[] internal mockPools;
 
     function setUp() public virtual override {
         super.setUp();
 
+        address depositContract = address(new BeaconDeposit());
+
         ibgt = new InfraredBGT(address(bgt));
-        wibera = new MockERC20("WInfraredBERA", "WInfraredBERA", 18);
+        wibera = new MockERC20("WIBERA", "WIBERA", 18);
         honey = new MockERC20("HONEY", "HONEY", 18);
 
         // Set up addresses for roles
@@ -108,7 +111,7 @@ abstract contract Helper is POLTest {
                     new Infrared(
                         address(ibgt),
                         address(factory),
-                        address(chef),
+                        address(beraChef),
                         payable(address(wbera)),
                         address(honey)
                     )
@@ -141,7 +144,7 @@ abstract contract Helper is POLTest {
 
         red = new RED(address(ibgt), address(infrared));
 
-        // IRED voting
+        // ired voting
         voter = Voter(setupProxy(address(new Voter(address(infrared)))));
         ired = new VotingEscrow(
             address(this), address(red), address(voter), address(infrared)
@@ -160,7 +163,7 @@ abstract contract Helper is POLTest {
         voter.initialize(address(ired));
 
         // initialize ibera proxies
-        depositor.initialize(admin, address(ibera));
+        depositor.initialize(admin, address(ibera), depositContract);
         withdrawor.initialize(admin, address(ibera));
         claimor.initialize(admin);
         receivor.initialize(admin, address(ibera), address(infrared));
@@ -179,6 +182,7 @@ abstract contract Helper is POLTest {
         );
 
         ibera.grantRole(ibera.GOVERNANCE_ROLE(), address(this));
+        ibera.grantRole(ibera.KEEPER_ROLE(), keeper);
 
         uint16 feeShareholders = 4; // 25% of fees
         // address(this) is the governor
@@ -214,7 +218,7 @@ abstract contract Helper is POLTest {
         vm.label(stakingAsset, "stakingAsset");
         vm.label(infraredGovernance, "infraredGovernance");
         vm.label(address(factory), "rewardsFactory");
-        vm.label(address(chef), "chef");
+        vm.label(address(beraChef), "chef");
         vm.label(address(ibgtVault), "ibgtVault");
         vm.label(address(collector), "collector");
     }
@@ -258,5 +262,17 @@ abstract contract Helper is POLTest {
         returns (address proxy)
     {
         proxy = address(new ERC1967Proxy(implementation, ""));
+    }
+
+    function _credential(address addr) internal pure returns (bytes memory) {
+        return abi.encodePacked(bytes1(0x01), bytes11(0x0), addr);
+    }
+
+    function _create96Byte() internal pure returns (bytes memory) {
+        return abi.encodePacked(bytes32("32"), bytes32("32"), bytes32("32"));
+    }
+
+    function _create48Byte() internal pure returns (bytes memory) {
+        return abi.encodePacked(bytes32("32"), bytes16("16"));
     }
 }

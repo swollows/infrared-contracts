@@ -51,12 +51,14 @@ contract InfraredBERABaseTest is Test {
         abi.encodePacked(bytes32("v1"), bytes32(""), bytes32(""));
 
     function setUp() public virtual {
+        depositContract = new BeaconDeposit();
+
         infrared = new MockInfrared(ibgt, ired, rewardsFactory);
 
         deployerScript = new InfraredBERADeployer();
 
         // Call deploy script
-        deployerScript.run(address(infrared));
+        deployerScript.run(address(infrared), address(depositContract));
 
         // Fetch deployed contracts
         ibera = deployerScript.ibera();
@@ -66,9 +68,9 @@ contract InfraredBERABaseTest is Test {
         receivor = deployerScript.receivor();
 
         // etch deposit contract at depositor constant deposit contract address
-        depositContract = new BeaconDeposit();
-        address DEPOSIT_CONTRACT = depositor.DEPOSIT_CONTRACT();
-        vm.etch(DEPOSIT_CONTRACT, address(depositContract).code);
+        // depositContract = new BeaconDeposit();
+        // address DEPOSIT_CONTRACT = depositor.DEPOSIT_CONTRACT();
+        // vm.etch(DEPOSIT_CONTRACT, address(depositContract).code);
 
         // etch withdraw precompile at withdraw precompile contract address
         address WITHDRAW_PRECOMPILE = withdrawor.WITHDRAW_PRECOMPILE();

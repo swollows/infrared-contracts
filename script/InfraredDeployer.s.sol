@@ -8,6 +8,7 @@ import {ERC1967Proxy} from
 import {ERC20PresetMinterPauser} from
     "../src/vendors/ERC20PresetMinterPauser.sol";
 
+import {RED} from "src/core/RED.sol";
 import {Voter} from "src/voting/Voter.sol";
 import {VotingEscrow} from "src/voting/VotingEscrow.sol";
 
@@ -25,7 +26,7 @@ import {InfraredBERAConstants} from "src/staking/InfraredBERAConstants.sol";
 
 contract InfraredDeployer is Script {
     InfraredBGT public ibgt;
-    ERC20PresetMinterPauser public ired;
+    ERC20PresetMinterPauser public red;
 
     InfraredBERA public ibera;
     InfraredBERADepositor public depositor;
@@ -46,14 +47,13 @@ contract InfraredDeployer is Script {
         address _bgt,
         address _berachainRewardsFactory,
         address _beraChef,
-        address,
+        address _beaconDeposit,
         address _wbera,
         address _honey,
         uint256 _rewardsDuration,
         uint256 _bribeCollectorPayoutAmount
     ) external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        vm.startBroadcast(deployerPrivateKey);
+        vm.startBroadcast();
 
         ibgt = new InfraredBGT(_bgt);
 
@@ -78,9 +78,10 @@ contract InfraredDeployer is Script {
         );
 
         // IRED voting
+        red = new RED(address(ibgt), address(infrared));
         voter = Voter(setupProxy(address(new Voter(address(infrared)))));
         veIRED = new VotingEscrow(
-            _votingKeeper, address(ired), address(voter), address(infrared)
+            _votingKeeper, address(red), address(voter), address(infrared)
         );
 
         // InfraredBERA
@@ -112,7 +113,7 @@ contract InfraredDeployer is Script {
         voter.initialize(address(veIRED));
 
         // initialize ibera proxies
-        depositor.initialize(_admin, address(ibera));
+        depositor.initialize(_admin, address(ibera), _beaconDeposit);
         withdrawor.initialize(_admin, address(ibera));
         claimor.initialize(_admin);
         receivor.initialize(_admin, address(ibera), address(infrared));

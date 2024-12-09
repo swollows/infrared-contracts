@@ -18,9 +18,10 @@ contract InfraredBERADeployerTest is Test {
 
     function testDeploymentAndInitialization() public {
         address _infrared = address(0x123);
+        address _beaconDeposit = address(0x454545);
 
         // Call deploy script
-        deployer.run(_infrared);
+        deployer.run(_infrared, _beaconDeposit);
 
         // Fetch deployed contracts
         ibera = deployer.ibera();
@@ -46,9 +47,10 @@ contract InfraredBERADeployerTest is Test {
 
     function testUpgradeability() public {
         address _infrared = address(0x123);
+        address _beaconDeposit = address(0x454545);
 
-        // Deploy and initialize
-        deployer.run(_infrared);
+        // Call deploy script
+        deployer.run(_infrared, _beaconDeposit);
         ibera = deployer.ibera();
         ibera.grantRole(ibera.GOVERNANCE_ROLE(), address(this));
 

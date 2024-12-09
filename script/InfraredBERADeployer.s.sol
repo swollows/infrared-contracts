@@ -22,9 +22,8 @@ contract InfraredBERADeployer is Script {
     InfraredBERAClaimor public claimor;
     InfraredBERAFeeReceivor public receivor;
 
-    function run(address _infrared) external {
+    function run(address _infrared, address depositContract) external {
         admin = msg.sender;
-
         vm.startBroadcast();
 
         ibera = InfraredBERA(setupProxy(address(new InfraredBERA())));
@@ -42,7 +41,7 @@ contract InfraredBERADeployer is Script {
         );
 
         // initialize proxies
-        depositor.initialize(admin, address(ibera));
+        depositor.initialize(admin, address(ibera), depositContract);
         withdrawor.initialize(admin, address(ibera));
         claimor.initialize(admin);
         receivor.initialize(admin, address(ibera), _infrared);

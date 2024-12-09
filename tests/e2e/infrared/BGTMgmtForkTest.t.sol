@@ -1,32 +1,32 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.26;
 
+import {ValidatorTypes} from "src/core/libraries/ValidatorTypes.sol";
 import {InfraredForkTest} from "../InfraredForkTest.t.sol";
 
 contract BGTMgmtForkTest is InfraredForkTest {
-/* TODO: fix for bytes validators
+    ValidatorTypes.Validator[] public infraredValidators;
+
     function setUp() public virtual override {
         super.setUp();
 
+        ValidatorTypes.Validator memory infraredValidator = ValidatorTypes
+            .Validator({pubkey: _create48Byte(), addr: address(infrared)});
+        infraredValidators.push(infraredValidator);
+
         vm.startPrank(admin);
 
-        // add validator
-        address[] memory _validators = new address[](1);
-        uint256[] memory _commissions = new uint256[](1);
-
-        _validators[0] = infraredValidator;
-        _commissions[0] = 1e2; // 1%
-
-        infrared.addValidators(_validators, _commissions);
+        infrared.addValidators(infraredValidators);
 
         // roll with pol now over single block to accumulate some base + commission BGT rewards
-        rollPol(infraredValidator, block.number + 1);
+        // rollPol(infraredValidator, block.number + 1);
 
         // harvest base rewards for some bgt
-        infrared.harvestBase();
+        // infrared.harvestBase();
 
         vm.stopPrank();
     }
+    /* 
 
     function testSetUp() public virtual override {
         super.testSetUp();
