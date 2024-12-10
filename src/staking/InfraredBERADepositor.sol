@@ -113,13 +113,28 @@ contract InfraredBERADepositor is Upgradeable, IInfraredBERADepositor {
             amount == 0 || (amount % 1 gwei) != 0
                 || ((IInfraredBERA(InfraredBERA).stakes(pubkey) + amount) / 1 gwei)
                     > type(uint64).max
-                || (
-                    !IInfraredBERA(InfraredBERA).staked(pubkey)
-                        && amount != InfraredBERAConstants.INITIAL_DEPOSIT
-                )
         ) {
             revert Errors.InvalidAmount();
         }
+
+        address operator = IInfraredBERA(InfraredBERA).infrared(); // infrared operator for validator
+        address currentOperator =
+            IBeaconDeposit(DEPOSIT_CONTRACT).getOperator(pubkey);
+        // Add first deposit validation
+        if (currentOperator == address(0)) {
+            if (amount != InfraredBERAConstants.INITIAL_DEPOSIT) {
+                revert Errors.InvalidAmount();
+            }
+        } else {
+            // Verify subsequent deposit requirements
+            if (
+                currentOperator != operator
+                    || !IInfraredBERA(InfraredBERA).validator(pubkey)
+            ) {
+                revert Errors.UnauthorizedOperator();
+            }
+        }
+
         // check if governor has added a valid deposit signature to avoid keeper mistakenly burning
         bytes memory signature = IInfraredBERA(InfraredBERA).signatures(pubkey);
         if (signature.length == 0) revert Errors.InvalidSignature();
@@ -172,7 +187,6 @@ contract InfraredBERADepositor is Upgradeable, IInfraredBERADepositor {
             uint88(0), // 11 zero bytes
             withdrawor
         ); // TODO: check correct
-        address operator = IInfraredBERA(InfraredBERA).infrared(); // infrared operator for validator
         // if operator already exists on BeaconDeposit, it must be set to zero for new deposits
         if (IBeaconDeposit(DEPOSIT_CONTRACT).getOperator(pubkey) == operator) {
             operator = address(0);

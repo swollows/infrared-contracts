@@ -62,4 +62,5 @@ library Errors {
     error InvalidReceiver();
     error CallFailed();
     error InvalidReserves();
+    error UnauthorizedOperator();
 }

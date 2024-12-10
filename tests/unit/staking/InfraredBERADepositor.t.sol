@@ -545,4 +545,91 @@ contract InfraredBERADepositorTest is InfraredBERABaseTest {
         vm.prank(keeper);
         depositor.execute(pubkey0, amount);
     }
+
+    function testExecuteValidatesOperatorForSubsequentDeposits() public {
+        // Setup and do initial deposit
+        testQueueMultiple();
+        vm.prank(governor);
+        ibera.setDepositSignature(pubkey0, signature0);
+
+        // Do initial deposit
+        vm.prank(keeper);
+        depositor.execute(pubkey0, InfraredBERAConstants.INITIAL_DEPOSIT);
+
+        // Get next valid deposit amount from slip
+        uint256 nonce = depositor.nonceSubmit();
+        (,, uint256 slipAmount) = depositor.slips(nonce);
+        uint256 amount = ((slipAmount) / 1 gwei) * 1 gwei;
+        assertTrue(amount >= InfraredBERAConstants.INITIAL_DEPOSIT);
+
+        // Should succeed with subsequent deposit
+        vm.prank(keeper);
+        depositor.execute(pubkey0, amount);
+
+        // Verify final state
+        assertEq(
+            ibera.stakes(pubkey0),
+            InfraredBERAConstants.INITIAL_DEPOSIT + amount
+        );
+    }
+
+    function testExecuteRevertsWhenFirstDepositWithWrongAmount() public {
+        testQueueMultiple();
+        vm.prank(governor);
+        ibera.setDepositSignature(pubkey0, signature0);
+
+        // Test various invalid amounts for first deposit
+        uint256[] memory invalidAmounts = new uint256[](3);
+        invalidAmounts[0] = InfraredBERAConstants.INITIAL_DEPOSIT - 1;
+        invalidAmounts[1] = InfraredBERAConstants.INITIAL_DEPOSIT + 1;
+        invalidAmounts[2] = 1 ether;
+
+        for (uint256 i = 0; i < invalidAmounts.length; i++) {
+            vm.expectRevert(Errors.InvalidAmount.selector);
+            vm.prank(keeper);
+            depositor.execute(pubkey0, invalidAmounts[i]);
+        }
+
+        // Verify valid initial deposit succeeds
+        vm.prank(keeper);
+        depositor.execute(pubkey0, InfraredBERAConstants.INITIAL_DEPOSIT);
+    }
+
+    function testExecuteValidatesOperatorAndInitialDeposit() public {
+        // Setup initial state using existing pattern
+        testQueueMultiple();
+        vm.prank(governor);
+        ibera.setDepositSignature(pubkey0, signature0);
+
+        // Test first deposit must be INITIAL_DEPOSIT
+        uint256 invalidAmount = InfraredBERAConstants.INITIAL_DEPOSIT - 1;
+        vm.prank(keeper);
+        vm.expectRevert(Errors.InvalidAmount.selector);
+        depositor.execute(pubkey0, invalidAmount);
+
+        // Do valid initial deposit
+        vm.prank(keeper);
+        depositor.execute(pubkey0, InfraredBERAConstants.INITIAL_DEPOSIT);
+
+        // Verify operator is set after initial deposit
+        address operator =
+            BeaconDeposit(depositor.DEPOSIT_CONTRACT()).getOperator(pubkey0);
+        assertEq(operator, IInfraredBERA(depositor.InfraredBERA()).infrared());
+
+        // Get balances for next slip
+        uint256 nonce = depositor.nonceSubmit();
+        (,, uint256 slipAmount) = depositor.slips(nonce);
+        uint256 amount = ((slipAmount) / 1 gwei) * 1 gwei; // Must be gwei aligned
+        assertTrue(amount >= InfraredBERAConstants.INITIAL_DEPOSIT); // Must meet minimum
+
+        // Execute subsequent deposit with proper amount from slip
+        vm.prank(keeper);
+        depositor.execute(pubkey0, amount);
+
+        // Verify stakes are updated correctly
+        assertEq(
+            ibera.stakes(pubkey0),
+            InfraredBERAConstants.INITIAL_DEPOSIT + amount
+        );
+    }
 }
