@@ -13,7 +13,6 @@ import {IRewardVault as IBerachainRewardsVault} from
 import {IRewardVaultFactory as IBerachainRewardsVaultFactory} from
     "@berachain/pol/interfaces/IRewardVaultFactory.sol";
 import {IBerachainBGT} from "src/interfaces/IBerachainBGT.sol";
-import {IBerachainBGTStaker} from "src/interfaces/IBerachainBGTStaker.sol";
 
 // Internal dependencies.
 import {DataTypes} from "src/utils/DataTypes.sol";
@@ -22,7 +21,6 @@ import {Errors} from "src/utils/Errors.sol";
 import {InfraredVaultDeployer} from "src/utils/InfraredVaultDeployer.sol";
 
 import {IVoter} from "src/voting/interfaces/IVoter.sol";
-import {IReward} from "src/voting/interfaces/IReward.sol";
 
 import {IWBERA} from "src/interfaces/IWBERA.sol";
 import {IInfraredBGT} from "src/interfaces/IInfraredBGT.sol";

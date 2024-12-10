@@ -4,9 +4,6 @@ pragma solidity 0.8.26;
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 
-import {IBeaconDeposit as IBerachainBeaconDeposit} from
-    "@berachain/pol/interfaces/IBeaconDeposit.sol";
-
 import {InfraredUpgradeable} from "src/core/InfraredUpgradeable.sol";
 
 import {IInfrared} from "src/interfaces/IInfrared.sol";

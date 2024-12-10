@@ -5,10 +5,8 @@ import {IERC721Receiver} from
     "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import {IVeArtProxy} from "./interfaces/IVeArtProxy.sol";
 import {IVotingEscrow} from "./interfaces/IVotingEscrow.sol";
-import {IVoter} from "./interfaces/IVoter.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
-import {IERC6372} from "@openzeppelin/contracts/interfaces/IERC6372.sol";
 import {ReentrancyGuard} from
     "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {DelegationLogicLibrary} from "./libraries/DelegationLogicLibrary.sol";

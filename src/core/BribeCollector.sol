@@ -8,8 +8,6 @@ import {InfraredUpgradeable} from "src/core/InfraredUpgradeable.sol";
 import {Errors} from "src/utils/Errors.sol";
 
 import {IBribeCollector} from "src/interfaces/IBribeCollector.sol";
-import {IInfrared} from "src/interfaces/IInfrared.sol";
-import {IInfraredVault} from "src/interfaces/IInfraredVault.sol";
 
 /**
  * @title BribeCollector
