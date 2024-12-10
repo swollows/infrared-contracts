@@ -26,6 +26,10 @@ import {InfraredBERAFeeReceivor} from "./InfraredBERAFeeReceivor.sol";
 contract InfraredBERA is ERC20Upgradeable, Upgradeable, IInfraredBERA {
     /// @inheritdoc IInfraredBERA
     bool public withdrawalsEnabled;
+    /// @notice Whether initial mint to address(this) has happened
+    bool private _initialized;
+    /// @inheritdoc IInfraredBERA
+    uint16 public feeShareholders;
     /// @inheritdoc IInfraredBERA
     address public infrared;
     /// @inheritdoc IInfraredBERA
@@ -44,12 +48,6 @@ contract InfraredBERA is ERC20Upgradeable, Upgradeable, IInfraredBERA {
     mapping(bytes32 pubkeyHash => bool isStaked) internal _staked;
 
     mapping(bytes32 pubkeyHash => bytes) internal _signatures;
-
-    /// @inheritdoc IInfraredBERA
-    uint16 public feeShareholders;
-
-    /// @notice Whether initial mint to address(this) has happened
-    bool private _initialized;
 
     /// @inheritdoc IInfraredBERA
     function initialize(
