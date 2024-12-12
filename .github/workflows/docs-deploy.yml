@@ -1,0 +1,78 @@
+name: Deploy Natspec docs to Pages
+
+on:
+  pull_request:
+  push:
+    branches: [main, develop]
+    paths:
+      - "**.sol"
+      - ".github/workflows/docs-deploy.yaml"
+
+env:
+  FOUNDRY_PROFILE: ci
+  MDBOOK_VERSION: 0.4.36
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
+# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    strategy:
+      fail-fast: true
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone main repository
+        uses: actions/checkout@v4
+
+      - name: Add SSH private keys for submodule repositories
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Clone submodules
+        run: |
+          git submodule set-url lib/contracts-monorepo ssh://git@github.com/berachain/contracts-monorepo
+          git submodule update --init --recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Copy over sub directory docs
+        run: |
+          cp docs/core.md docs/src/src/core/README.md
+          cp docs/staking.md docs/src/src/staking/README.md
+          cp docs/voting.md docs/src/src/voting/README.md
+
+      - name: Run Forge doc
+        run: |
+          forge doc --build
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./docs/book
+
+  # Deployment job
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+

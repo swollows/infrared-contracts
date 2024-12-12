@@ -149,6 +149,40 @@ interface IInfrared {
         returns (IInfraredVault vault);
 
     /**
+     * @notice Adds a new reward token to a specific staking vault
+     * @dev Only callable by governance when contract is initialized
+     * @param _stakingToken The address of the staking token associated with the vault
+     * @param _rewardsToken The address of the token to be added as a reward
+     * @param _rewardsDuration The duration period for the rewards distribution, in seconds
+     * @custom:error ZeroAmount if _rewardsDuration is 0
+     * @custom:error RewardTokenNotWhitelisted if _rewardsToken is not whitelisted
+     * @custom:error NoRewardsVault if vault doesn't exist for _stakingToken
+     */
+    function addReward(
+        address _stakingToken,
+        address _rewardsToken,
+        uint256 _rewardsDuration
+    ) external;
+
+    /**
+     * @notice Adds reward incentives to a specific staking vault
+     * @dev Transfers reward tokens from caller to this contract, then notifies vault of new rewards
+     * @param _stakingToken The address of the staking token associated with the vault
+     * @param _rewardsToken The address of the token being added as incentives
+     * @param _amount The amount of reward tokens to add as incentives
+     * @custom:error ZeroAmount if _amount is 0
+     * @custom:error NoRewardsVault if vault doesn't exist for _stakingToken
+     * @custom:error RewardTokenNotWhitelisted if reward token hasn't been configured for the vault
+     * @custom:access Callable when contract is initialized
+     * @custom:security Requires caller to have approved this contract to spend _rewardsToken
+     */
+    function addIncentives(
+        address _stakingToken,
+        address _rewardsToken,
+        uint256 _amount
+    ) external;
+
+    /**
      * @notice Updates the whitelist status of a reward token
      * @param _token The address of the token to whitelist or remove from whitelist
      * @param _whitelisted A boolean indicating if the token should be whitelisted

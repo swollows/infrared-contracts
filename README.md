@@ -11,6 +11,8 @@ The Infrared Protocol revolutionizes the way users engage with the Berachain eco
 
 ### Core Contracts
 
+- [full overview here](./docs/core.md)
+
 - `IBERA.sol`: Main liquid staking token contract. Handles minting/burning of iBERA, facilitates POL rewards and manages validators.
 - `InfraredVault.sol`: Manages staking pools and reward distribution. Integrates with Berachain's POL system.
 - `InfraredDistributor.sol`: Handles distribution of validator rewards and commission management.
@@ -18,12 +20,16 @@ The Infrared Protocol revolutionizes the way users engage with the Berachain eco
 
 ### Staking Contracts
 
+- [full overview here](./docs/staking.md)
+
 - `IBERADepositor.sol`: Handles deposits to CL through Berachain beacon deposit contract.
 - `IBERAWithdrawor.sol`: Manages withdrawals from CL through Berachain precompiles.
 - `IBERAClaimor.sol`: Processes user claims for withdrawn funds.
 - `IBERAFeeReceivor.sol`: Receives and processes validator rewards from EL.
 
 ### Voting Contracts
+
+- [full overview here](./docs/voting.md)
 
 - `VotingEscrow.sol`: Implementation of vote-escrowed NFTs (veNFTs) for protocol governance.
 - `Voter.sol`: Manages voting logic for POL cutting board allocation.

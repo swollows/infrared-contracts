@@ -62,3 +62,6 @@ mainnet = "${RPC_URL_MAINNET}"
 [fmt]
 line_length = 80
 int_types = "long"
+
+[doc]
+title = "Infrared Smart Contract Documentation"

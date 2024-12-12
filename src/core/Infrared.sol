@@ -244,6 +244,7 @@ contract Infrared is InfraredUpgradeable, IInfrared {
         emit NewVault(msg.sender, _asset, address(vault));
     }
 
+    /// @inheritdoc IInfrared
     function addReward(
         address _stakingToken,
         address _rewardsToken,
@@ -254,6 +255,7 @@ contract Infrared is InfraredUpgradeable, IInfrared {
         );
     }
 
+    /// @inheritdoc IInfrared
     function addIncentives(
         address _stakingToken,
         address _rewardsToken,
