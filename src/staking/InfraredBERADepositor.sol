@@ -42,7 +42,7 @@ contract InfraredBERADepositor is Upgradeable, IInfraredBERADepositor {
     /// @notice Initialize the contract (replaces the constructor)
     /// @param admin Address for admin to upgrade
     /// @param ibera The initial IBERA address
-
+    /// @param _depositContract The ETH2 (Berachain) Deposit Contract Address
     function initialize(address admin, address ibera, address _depositContract)
         public
         initializer
