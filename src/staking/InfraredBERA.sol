@@ -244,24 +244,40 @@ contract InfraredBERA is ERC20Upgradeable, Upgradeable, IInfraredBERA {
         _signatures[keccak256(pubkey)] = signature;
     }
 
+    /// @param _depositor The address of the new depositor
     function setDepositor(address _depositor) public onlyGovernor {
         if (_depositor == address(0)) revert Errors.ZeroAddress();
+        address old = depositor;
         depositor = _depositor;
+
+        emit NewDepositor(_depositor, old, msg.sender);
     }
 
+    /// @param _withdrawor The address of the new withdrawor
     function setWithdrawor(address _withdrawor) public onlyGovernor {
         if (_withdrawor == address(0)) revert Errors.ZeroAddress();
+        address old = withdrawor;
         withdrawor = _withdrawor;
+
+        emit NewWithdrawor(_withdrawor, old, msg.sender);
     }
 
+    /// @param _claimor The address of the new claimor
     function setClaimor(address _claimor) public onlyGovernor {
         if (_claimor == address(0)) revert Errors.ZeroAddress();
+        address old = claimor;
         claimor = _claimor;
+
+        emit NewClaimor(_claimor, old, msg.sender);
     }
 
+    /// @param _receivor The address of the new fee receivor
     function setReceivor(address _receivor) public onlyGovernor {
         if (_receivor == address(0)) revert Errors.ZeroAddress();
+        address old = receivor;
         receivor = _receivor;
+
+        emit NewReceivor(_receivor, old, msg.sender);
     }
 
     /// @inheritdoc IInfraredBERA
