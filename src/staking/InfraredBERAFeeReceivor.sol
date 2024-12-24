@@ -68,7 +68,7 @@ contract InfraredBERAFeeReceivor is Upgradeable, IInfraredBERAFeeReceivor {
 
         // add to protocol fees and sweep amount back to ibera to deposit
         if (fees > 0) shareholderFees += fees;
-        if (amount > 0) IInfraredBERA(InfraredBERA).sweep{value: amount}();
+        IInfraredBERA(InfraredBERA).sweep{value: amount}();
         emit Sweep(InfraredBERA, amount, fees);
     }
 
