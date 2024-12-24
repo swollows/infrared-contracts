@@ -127,10 +127,7 @@ contract InfraredBERADepositor is Upgradeable, IInfraredBERADepositor {
             }
         } else {
             // Verify subsequent deposit requirements
-            if (
-                currentOperator != operator
-                    || !IInfraredBERA(InfraredBERA).validator(pubkey)
-            ) {
+            if (currentOperator != operator) {
                 revert Errors.UnauthorizedOperator();
             }
         }
