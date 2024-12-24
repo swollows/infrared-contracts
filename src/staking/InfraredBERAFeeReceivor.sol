@@ -48,7 +48,8 @@ contract InfraredBERAFeeReceivor is Upgradeable, IInfraredBERAFeeReceivor {
         returns (uint256 amount, uint256 fees)
     {
         amount = (address(this).balance - shareholderFees);
-        uint16 feeShareholders = IInfraredBERA(InfraredBERA).feeShareholders();
+        uint16 feeShareholders =
+            IInfraredBERA(InfraredBERA).feeDivisorShareholders();
 
         // take protocol fees
         if (feeShareholders > 0) {

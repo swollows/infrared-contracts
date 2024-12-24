@@ -29,7 +29,7 @@ contract InfraredBERA is ERC20Upgradeable, Upgradeable, IInfraredBERA {
     /// @notice Whether initial mint to address(this) has happened
     bool private _initialized;
     /// @inheritdoc IInfraredBERA
-    uint16 public feeShareholders;
+    uint16 public feeDivisorShareholders;
     /// @inheritdoc IInfraredBERA
     address public infrared;
     /// @inheritdoc IInfraredBERA
@@ -227,9 +227,9 @@ contract InfraredBERA is ERC20Upgradeable, Upgradeable, IInfraredBERA {
     }
 
     /// @inheritdoc IInfraredBERA
-    function setFeeShareholders(uint16 to) external onlyGovernor {
-        emit SetFeeShareholders(feeShareholders, to);
-        feeShareholders = to;
+    function setFeeDivisorShareholders(uint16 to) external onlyGovernor {
+        emit SetFeeShareholders(feeDivisorShareholders, to);
+        feeDivisorShareholders = to;
     }
 
     /// @inheritdoc IInfraredBERA
