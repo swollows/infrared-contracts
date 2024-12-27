@@ -35,9 +35,9 @@ contract InfraredBERADepositor is Upgradeable, IInfraredBERADepositor {
     uint256 public fees;
 
     /// @inheritdoc IInfraredBERADepositor
-    uint256 public nonceSlip = 1;
+    uint256 public nonceSlip;
     /// @inheritdoc IInfraredBERADepositor
-    uint256 public nonceSubmit = 1;
+    uint256 public nonceSubmit;
 
     /// @notice Initialize the contract (replaces the constructor)
     /// @param admin Address for admin to upgrade
