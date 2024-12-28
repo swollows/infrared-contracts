@@ -61,7 +61,7 @@ library VaultManagerLib {
     }
 
     /// @notice Toggles the pause status of a specific vault.
-    function pauseVault(VaultStorage storage $, address asset) external {
+    function toggleVault(VaultStorage storage $, address asset) external {
         IInfraredVault vault = $.vaultRegistry[asset];
         if (address(vault) == address(0)) revert Errors.NoRewardsVault();
 
