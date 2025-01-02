@@ -258,6 +258,41 @@ contract InfraredBERADepositorTest is InfraredBERABaseTest {
         assertEq(depositor.nonceSubmit(), nonce + 1);
     }
 
+    function testExecuteMaxStakers() public {
+        uint256 fee = InfraredBERAConstants.MINIMUM_DEPOSIT_FEE;
+        uint256 value = InfraredBERAConstants.MINIMUM_DEPOSIT + fee;
+
+        uint256 reserves = depositor.reserves();
+        uint256 fees = depositor.fees();
+
+        vm.deal(
+            address(ibera),
+            InfraredBERAConstants.INITIAL_DEPOSIT
+                + fee * InfraredBERAConstants.INITIAL_DEPOSIT
+                    / InfraredBERAConstants.MINIMUM_DEPOSIT
+        );
+        assertTrue(address(ibera).balance >= value);
+
+        vm.startPrank(address(ibera));
+        for (uint256 i; i < 320; i++) {
+            depositor.queue{value: value}(value - fee);
+        }
+        vm.stopPrank();
+
+        assertEq(depositor.reserves(), reserves + 32 ether);
+        assertEq(depositor.fees(), fees + 320 * fee);
+
+        vm.prank(governor);
+        ibera.setDepositSignature(pubkey0, signature0);
+
+        uint256 initGas = gasleft();
+
+        vm.prank(keeper);
+        depositor.execute(pubkey0, InfraredBERAConstants.INITIAL_DEPOSIT);
+
+        assertLt(initGas - gasleft(), 1000000);
+    }
+
     function testExecuteUpdatesSlipNonceFeesWhenPartialAmount() public {
         testExecuteUpdatesSlipsNonceFeesWhenFillAmounts();
 
