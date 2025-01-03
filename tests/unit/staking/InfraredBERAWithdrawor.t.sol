@@ -717,6 +717,7 @@ contract InfraredBERAWithdraworTest is InfraredBERABaseTest {
         uint256 amount = amountSubmitFirst + amountSubmitSecond / 4;
         assertTrue(amount % 1 gwei == 0);
         vm.expectRevert();
+        vm.prank(address(10));
         withdrawor.execute(pubkey0, amount);
     }
 
@@ -734,6 +735,7 @@ contract InfraredBERAWithdraworTest is InfraredBERABaseTest {
         uint256 amount = amountSubmitFirst + amountSubmitSecond / 4;
         assertTrue(amount % 1 gwei == 0);
         vm.expectRevert();
+        vm.prank(address(10));
         withdrawor.execute(pubkey0, amount);
         // should now succeed
         vm.warp(block.timestamp + InfraredBERAConstants.FORCED_MIN_DELAY + 1);
@@ -1129,6 +1131,7 @@ contract InfraredBERAWithdraworTest is InfraredBERABaseTest {
         vm.deal(address(withdrawor), 32 ether);
         // test only keeper can access
         vm.expectRevert();
+        vm.prank(address(10));
         withdrawor.sweep(32 ether, pubkey0);
 
         vm.prank(keeper);

@@ -9,7 +9,7 @@ import {InfraredForkTest} from "../InfraredForkTest.t.sol";
 
 contract RegisterVaultForkTest is InfraredForkTest {
     function testRegisterVaultWithoutRewardsVault() public {
-        vm.startPrank(admin);
+        vm.startPrank(infraredGovernance);
 
         // priors checked
         assertEq(address(infrared.vaultRegistry(address(red))), address(0));

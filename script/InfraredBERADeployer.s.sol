@@ -41,16 +41,17 @@ contract InfraredBERADeployer is Script {
         );
 
         // initialize proxies
-        depositor.initialize(admin, address(ibera), depositContract);
-        withdrawor.initialize(admin, address(ibera));
-        claimor.initialize(admin);
-        receivor.initialize(admin, address(ibera), _infrared);
+        depositor.initialize(admin, admin, address(ibera), depositContract);
+        withdrawor.initialize(admin, admin, address(ibera));
+        claimor.initialize(admin, admin);
+        receivor.initialize(admin, admin, address(ibera), _infrared);
 
         // init deposit to avoid inflation attack
         uint256 _value = InfraredBERAConstants.MINIMUM_DEPOSIT
             + InfraredBERAConstants.MINIMUM_DEPOSIT_FEE;
 
         ibera.initialize{value: _value}(
+            admin,
             admin,
             _infrared,
             address(depositor),

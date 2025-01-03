@@ -15,10 +15,13 @@ contract InfraredBERAClaimor is Upgradeable, IInfraredBERAClaimor {
     mapping(address => uint256) public claims;
 
     /// @notice Initializer function (replaces constructor)
-    /// @param admin Address of the initial admin
-    function initialize(address admin) external initializer {
+    /// @param _gov Address of the initial admin / gov
+    /// @param _keeper Address of the initial keeper
+    function initialize(address _gov, address _keeper) external initializer {
         __Upgradeable_init();
-        _grantRole(DEFAULT_ADMIN_ROLE, admin);
+        _grantRole(DEFAULT_ADMIN_ROLE, _gov);
+        _grantRole(GOVERNANCE_ROLE, _gov);
+        _grantRole(KEEPER_ROLE, _keeper);
     }
 
     /// @inheritdoc IInfraredBERAClaimor

@@ -955,6 +955,7 @@ contract InfraredBERATest is InfraredBERABaseTest {
         assertEq(ibera.feeDivisorShareholders(), 0);
         uint16 feeShareholders = 4; // 25% of fees
         vm.expectRevert();
+        vm.prank(address(10));
         ibera.setFeeDivisorShareholders(feeShareholders);
     }
 

@@ -27,7 +27,13 @@ contract InfraredForkTest is HelperForkTest {
     function setUp() public virtual override {
         super.setUp();
 
-        stakingToken = new ERC20PresetMinterPauser("Staking Token", "STAKE");
+        stakingToken = new ERC20PresetMinterPauser(
+            "Staking Token",
+            "STAKE",
+            address(this),
+            address(this),
+            address(this)
+        );
 
         // mint and deal staking tokens
         stakingToken.mint(address(this), 1000 ether);
@@ -58,9 +64,13 @@ contract InfraredForkTest is HelperForkTest {
             assertTrue(rewardDurationIbgt > 0);
         }
 
-        assertTrue(infrared.hasRole(infrared.DEFAULT_ADMIN_ROLE(), admin));
-        assertTrue(infrared.hasRole(infrared.KEEPER_ROLE(), admin));
-        assertTrue(infrared.hasRole(infrared.GOVERNANCE_ROLE(), admin));
+        assertTrue(
+            infrared.hasRole(infrared.DEFAULT_ADMIN_ROLE(), infraredGovernance)
+        );
+        assertTrue(infrared.hasRole(infrared.KEEPER_ROLE(), keeper));
+        assertTrue(
+            infrared.hasRole(infrared.GOVERNANCE_ROLE(), infraredGovernance)
+        );
 
         assertEq(stakingToken.balanceOf(address(this)), 1000 ether);
 
@@ -73,7 +83,7 @@ contract InfraredForkTest is HelperForkTest {
         address collectorImplementation = collector.currentImplementation();
         vm.expectRevert();
         BribeCollector(collectorImplementation).initialize(
-            admin, address(wbera), 10 ether
+            infraredGovernance, address(wbera), 10 ether
         );
 
         address distributorImplementation =
@@ -81,17 +91,6 @@ contract InfraredForkTest is HelperForkTest {
         vm.expectRevert();
         InfraredDistributor(distributorImplementation).initialize(
             address(ibera)
-        );
-
-        address infraredImplementation = infrared.currentImplementation();
-        vm.expectRevert();
-        Infrared(payable(infraredImplementation)).initialize(
-            admin,
-            address(collector),
-            address(distributor),
-            address(voter),
-            address(ibera),
-            10 days
         );
     }
 }

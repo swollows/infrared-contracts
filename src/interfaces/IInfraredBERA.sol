@@ -110,7 +110,8 @@ interface IInfraredBERA is IERC20, IAccessControl {
     /// @notice Initializes InfraredBERA to allow for future mints and burns
     /// @dev Must be called before InfraredBERA can offer deposits and withdraws
     function initialize(
-        address admin,
+        address _gov,
+        address _keeper,
         address _infrared,
         address _depositor,
         address _withdrawor,

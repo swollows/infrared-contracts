@@ -51,7 +51,8 @@ contract InfraredBERA is ERC20Upgradeable, Upgradeable, IInfraredBERA {
 
     /// @inheritdoc IInfraredBERA
     function initialize(
-        address admin,
+        address _gov,
+        address _keeper,
         address _infrared,
         address _depositor,
         address _withdrawor,
@@ -59,7 +60,7 @@ contract InfraredBERA is ERC20Upgradeable, Upgradeable, IInfraredBERA {
         address _receivor
     ) external payable initializer {
         if (
-            admin == address(0) || _infrared == address(0)
+            _gov == address(0) || _infrared == address(0)
                 || _depositor == address(0) || _withdrawor == address(0)
                 || _claimor == address(0) || _receivor == address(0)
         ) revert Errors.ZeroAddress();
@@ -71,7 +72,10 @@ contract InfraredBERA is ERC20Upgradeable, Upgradeable, IInfraredBERA {
         withdrawor = _withdrawor;
         claimor = _claimor;
         receivor = _receivor;
-        _grantRole(DEFAULT_ADMIN_ROLE, admin);
+
+        _grantRole(DEFAULT_ADMIN_ROLE, _gov);
+        _grantRole(GOVERNANCE_ROLE, _gov);
+        _grantRole(KEEPER_ROLE, _keeper);
 
         // burn minimum amount to mitigate inflation attack with shares
         _initialized = true;

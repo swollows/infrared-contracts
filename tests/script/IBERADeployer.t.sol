@@ -52,7 +52,6 @@ contract InfraredBERADeployerTest is Test {
         // Call deploy script
         deployer.run(_infrared, _beaconDeposit);
         ibera = deployer.ibera();
-        ibera.grantRole(ibera.GOVERNANCE_ROLE(), address(this));
 
         // Deploy new implementation
         InfraredBERA newImplementation = new InfraredBERA();

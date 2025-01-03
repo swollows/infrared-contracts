@@ -40,22 +40,27 @@ contract InfraredBERADepositor is Upgradeable, IInfraredBERADepositor {
     uint256 public nonceSubmit;
 
     /// @notice Initialize the contract (replaces the constructor)
-    /// @param admin Address for admin to upgrade
+    /// @param _gov Address for admin / gov to upgrade
+    /// @param _keeper Address for keeper
     /// @param ibera The initial IBERA address
     /// @param _depositContract The ETH2 (Berachain) Deposit Contract Address
-    function initialize(address admin, address ibera, address _depositContract)
-        public
-        initializer
-    {
+    function initialize(
+        address _gov,
+        address _keeper,
+        address ibera,
+        address _depositContract
+    ) public initializer {
         if (
-            admin == address(0) || ibera == address(0)
+            _gov == address(0) || _keeper == address(0) || ibera == address(0)
                 || _depositContract == address(0)
         ) revert Errors.ZeroAddress();
         __Upgradeable_init();
         InfraredBERA = ibera;
         nonceSlip = 1;
         nonceSubmit = 1;
-        _grantRole(DEFAULT_ADMIN_ROLE, admin);
+        _grantRole(DEFAULT_ADMIN_ROLE, _gov);
+        _grantRole(GOVERNANCE_ROLE, _gov);
+        _grantRole(KEEPER_ROLE, _keeper);
         DEPOSIT_CONTRACT = _depositContract;
     }
 

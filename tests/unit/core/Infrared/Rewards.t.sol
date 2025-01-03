@@ -20,7 +20,6 @@ contract InfraredRewardsTest is Helper {
         rewardTokens[0] = address(ibgt);
         rewardTokens[1] = address(red);
 
-        infrared.grantRole(infrared.KEEPER_ROLE(), address(this));
         // InfraredVault vault = InfraredVault(
         //     address(infrared.registerVault(address(wbera), rewardTokens))
         // );
@@ -180,18 +179,22 @@ contract InfraredRewardsTest is Helper {
 
     function testAddRewardFailsWithNonWhitelistedReward() public {
         vm.expectRevert(abi.encodeWithSignature("RewardTokenNotWhitelisted()"));
+        vm.prank(infraredGovernance);
         infrared.addReward(address(wbera), address(red), 7 days);
     }
 
     function testAddRewardFailsWithZeroDuration() public {
         vm.expectRevert(abi.encodeWithSignature("ZeroAmount()"));
+        vm.prank(infraredGovernance);
         infrared.addReward(address(wbera), address(red), 0);
     }
 
     function testAddRewardFailsWithNoVault() public {
+        vm.startPrank(infraredGovernance);
         infrared.updateWhiteListedRewardTokens(address(red), true);
         vm.expectRevert(abi.encodeWithSignature("NoRewardsVault()"));
         infrared.addReward(address(1), address(red), 7 days);
+        vm.stopPrank();
     }
 
     function testAddRewardFailsWithNotAuthorized() public {

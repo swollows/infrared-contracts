@@ -54,10 +54,15 @@ contract InfraredBERAWithdrawor is Upgradeable, IInfraredBERAWithdrawor {
     uint256 public nonceProcess;
 
     /// @notice Initialize the contract (replaces the constructor)
-    /// @param admin Address for admin to upgrade
+    /// @param _gov Address for admin / gov to upgrade
+    /// @param _keeper Address for keeper
     /// @param ibera The initial InfraredBERA address
-    function initialize(address admin, address ibera) public initializer {
-        if (admin == address(0) || ibera == address(0)) {
+    function initialize(address _gov, address _keeper, address ibera)
+        public
+        initializer
+    {
+        if (_gov == address(0) || _keeper == address(0) || ibera == address(0))
+        {
             revert Errors.ZeroAddress();
         }
         __Upgradeable_init();
@@ -67,7 +72,9 @@ contract InfraredBERAWithdrawor is Upgradeable, IInfraredBERAWithdrawor {
         nonceSubmit = 1;
         nonceProcess = 1;
 
-        _grantRole(DEFAULT_ADMIN_ROLE, admin);
+        _grantRole(DEFAULT_ADMIN_ROLE, _gov);
+        _grantRole(GOVERNANCE_ROLE, _gov);
+        _grantRole(KEEPER_ROLE, _keeper);
     }
 
     /// @notice Checks whether enough time has passed beyond min delay

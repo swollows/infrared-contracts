@@ -24,13 +24,16 @@ contract InfraredBERAFeeReceivor is Upgradeable, IInfraredBERAFeeReceivor {
     uint256 public shareholderFees;
 
     /// @notice Initializer function (replaces constructor)
-    /// @param admin Address of the initial admin
-    function initialize(address admin, address ibera, address _infrared)
-        external
-        initializer
-    {
+    /// @param _gov Address for admin / gov to upgrade
+    /// @param _keeper Address for keeper
+    function initialize(
+        address _gov,
+        address _keeper,
+        address ibera,
+        address _infrared
+    ) external initializer {
         if (
-            admin == address(0) || ibera == address(0)
+            _gov == address(0) || _keeper == address(0) || ibera == address(0)
                 || _infrared == address(0)
         ) revert Errors.ZeroAddress();
         __Upgradeable_init();
@@ -38,7 +41,9 @@ contract InfraredBERAFeeReceivor is Upgradeable, IInfraredBERAFeeReceivor {
         InfraredBERA = ibera;
         infrared = IInfrared(_infrared);
 
-        _grantRole(DEFAULT_ADMIN_ROLE, admin);
+        _grantRole(DEFAULT_ADMIN_ROLE, _gov);
+        _grantRole(GOVERNANCE_ROLE, _gov);
+        _grantRole(KEEPER_ROLE, _keeper);
     }
 
     /// @inheritdoc IInfraredBERAFeeReceivor

@@ -99,7 +99,7 @@ contract HelperForkTest is Test {
         keeper = address(1);
         infraredGovernance = address(2);
 
-        address _votingKeeper = address(this);
+        // address _votingKeeper = address(this);
         uint256 _rewardsDuration = 30 days;
         uint256 _bribeCollectorPayoutAmount = 10 ether;
 
@@ -146,8 +146,8 @@ contract HelperForkTest is Test {
         // deploy
         deployer = new InfraredDeployer();
         deployer.run(
-            admin,
-            _votingKeeper,
+            infraredGovernance,
+            keeper,
             address(bgt),
             address(factory),
             address(beraChef),
@@ -173,16 +173,9 @@ contract HelperForkTest is Test {
         claimor = deployer.claimor();
         receivor = deployer.receivor();
 
-        ibera.grantRole(ibera.GOVERNANCE_ROLE(), address(this));
-        ibera.grantRole(ibera.KEEPER_ROLE(), keeper);
-
         uint16 feeShareholders = 4; // 25% of fees
-        // address(this) is the governor
+        vm.prank(infraredGovernance);
         ibera.setFeeDivisorShareholders(feeShareholders);
-
-        // set access control
-        infrared.grantRole(infrared.KEEPER_ROLE(), keeper);
-        infrared.grantRole(infrared.GOVERNANCE_ROLE(), infraredGovernance);
     }
 
     /// @notice Simulates distribution of POL for current block.number

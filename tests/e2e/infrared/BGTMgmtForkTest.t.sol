@@ -14,7 +14,7 @@ contract BGTMgmtForkTest is InfraredForkTest {
             .Validator({pubkey: _create48Byte(), addr: address(infrared)});
         infraredValidators.push(infraredValidator);
 
-        vm.startPrank(admin);
+        vm.startPrank(infraredGovernance);
 
         infrared.addValidators(infraredValidators);
 
