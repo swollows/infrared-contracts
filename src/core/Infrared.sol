@@ -236,6 +236,14 @@ contract Infrared is InfraredUpgradeable, IInfrared {
         _vaultStorage().updateWhitelistedRewardTokens(address(wbera), true);
         _vaultStorage().updateWhitelistedRewardTokens(address(honey), true);
 
+        emit WhiteListedRewardTokensUpdated(
+            msg.sender, address(wbera), false, true
+        );
+
+        emit WhiteListedRewardTokensUpdated(
+            msg.sender, address(honey), false, true
+        );
+
         if (collector.payoutToken() != address(wbera)) {
             revert Errors.RewardTokenNotSupported();
         }
