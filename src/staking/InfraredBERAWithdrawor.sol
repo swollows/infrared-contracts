@@ -280,7 +280,7 @@ contract InfraredBERAWithdrawor is Upgradeable, IInfraredBERAWithdrawor {
             value: amount
         }(amount - InfraredBERAConstants.MINIMUM_DEPOSIT_FEE);
 
-        emit Sweep(InfraredBERA, amount);
+        emit Sweep(IInfraredBERA(InfraredBERA).depositor(), amount);
     }
 
     receive() external payable {}
