@@ -397,6 +397,8 @@ contract Infrared is InfraredUpgradeable, IInfrared {
         ibgt = InfraredBGT(_ibgt);
         _vaultStorage().updateWhitelistedRewardTokens(address(ibgt), true);
         ibgtVault = IInfraredVault(_vaultStorage().registerVault(address(ibgt)));
+
+        emit NewVault(msg.sender, address(ibgt), address(ibgtVault));
         emit IBGTSet(msg.sender, _ibgt);
     }
 
