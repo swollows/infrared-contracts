@@ -29,11 +29,19 @@ contract InfraredDistributor is InfraredUpgradeable, IInfraredDistributor {
         if (_infrared == address(0)) revert Errors.ZeroAddress();
     }
 
-    function initialize(address _token) external initializer {
+    function initialize(address _gov, address _token) external initializer {
+        if (_gov == address(0) || _token == address(0)) {
+            revert Errors.ZeroAddress();
+        }
+
         token = ERC20(_token);
 
         // claim amounts calculated via differences so absolute amount not relevant
         amountsCumulative++;
+
+        // grant admin access roles
+        _grantRole(DEFAULT_ADMIN_ROLE, _gov);
+        _grantRole(GOVERNANCE_ROLE, _gov);
 
         // init upgradeable components
         __InfraredUpgradeable_init();

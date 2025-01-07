@@ -39,7 +39,7 @@ contract InfraredDistributorTest is Test {
         distributor = InfraredDistributor(
             setupProxy(address(new InfraredDistributor(address(infrared))))
         );
-        distributor.initialize(address(token));
+        distributor.initialize(address(this), address(token));
 
         // Set up initial state for tests
         deal(address(token), user, 1000 ether);

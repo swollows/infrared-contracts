@@ -126,7 +126,7 @@ abstract contract Helper is POLTest {
         );
 
         collector.initialize(address(this), address(wbera), 10 ether);
-        infraredDistributor.initialize(address(ibera));
+        infraredDistributor.initialize(address(this), address(ibera));
 
         voter = Voter(setupProxy(address(new Voter(address(infrared)))));
 

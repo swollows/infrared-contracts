@@ -90,7 +90,7 @@ contract InfraredForkTest is HelperForkTest {
             infraredDistributor.currentImplementation();
         vm.expectRevert();
         InfraredDistributor(distributorImplementation).initialize(
-            address(ibera)
+            infraredGovernance, address(ibera)
         );
     }
 }

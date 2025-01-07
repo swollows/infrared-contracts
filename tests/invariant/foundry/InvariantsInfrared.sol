@@ -105,7 +105,7 @@ contract InvariantsInfrared is Test {
         );
 
         collector.initialize(address(this), address(mockWbera), 10 ether);
-        distributor.initialize(address(ibera));
+        distributor.initialize(address(this), address(ibera));
         Infrared.InitializationData memory data = Infrared.InitializationData(
             governance,
             keeper,
