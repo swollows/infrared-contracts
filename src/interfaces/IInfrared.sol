@@ -19,7 +19,6 @@ import {IInfraredVault} from "src/interfaces/IInfraredVault.sol";
 
 import {DataTypes} from "src/utils/DataTypes.sol";
 
-// import {IInfraredUpgradeable} from "./IInfraredUpgradeable.sol";
 import {ValidatorTypes} from "src/core/libraries/ValidatorTypes.sol";
 import {ConfigTypes} from "src/core/libraries/ConfigTypes.sol";
 
