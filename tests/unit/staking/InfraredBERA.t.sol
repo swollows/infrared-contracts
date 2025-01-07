@@ -793,7 +793,7 @@ contract InfraredBERATest is InfraredBERABaseTest {
 
         (uint256 shares, uint256 previewFee) = ibera.previewMint(value);
         assertEq(shares, 0, "Should return 0 shares for invalid amount");
-        assertEq(previewFee, fee, "Should still return fee amount");
+        assertEq(previewFee, 0, "Should still return fee amount");
     }
 
     function testPreviewBurnMatchesActualBurn() public {
@@ -886,11 +886,7 @@ contract InfraredBERATest is InfraredBERABaseTest {
     function testPreviewBurnReturnsZeroForInvalidShares() public view {
         (uint256 amount, uint256 fee) = ibera.previewBurn(0);
         assertEq(amount, 0, "Should return 0 amount for 0 shares");
-        assertEq(
-            fee,
-            InfraredBERAConstants.MINIMUM_WITHDRAW_FEE,
-            "Should still return withdraw fee"
-        );
+        assertEq(fee, 0, "Should return 0 for the fee");
     }
 
     function testRegisterUpdatesStakeWhenDeltaGreaterThanZero() public {

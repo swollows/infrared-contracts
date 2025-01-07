@@ -311,7 +311,7 @@ contract InfraredBERA is ERC20Upgradeable, Upgradeable, IInfraredBERA {
         uint256 min = InfraredBERAConstants.MINIMUM_DEPOSIT;
 
         if (beraAmount < min + fee) {
-            return (0, fee);
+            return (0, 0);
         }
 
         // Calculate shares considering both:
@@ -337,7 +337,7 @@ contract InfraredBERA is ERC20Upgradeable, Upgradeable, IInfraredBERA {
         }
 
         if (shares == 0) {
-            return (0, fee);
+            return (0, 0);
         }
     }
 
@@ -348,7 +348,7 @@ contract InfraredBERA is ERC20Upgradeable, Upgradeable, IInfraredBERA {
         returns (uint256 beraAmount, uint256 fee)
     {
         if (!_initialized || shareAmount == 0) {
-            return (0, InfraredBERAConstants.MINIMUM_WITHDRAW_FEE);
+            return (0, 0);
         }
 
         // First simulate compound effects like in actual burn
