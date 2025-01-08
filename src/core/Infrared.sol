@@ -343,6 +343,14 @@ contract Infrared is InfraredUpgradeable, IInfrared {
             revert Errors.ZeroAddress();
         }
         if (_amount == 0) revert Errors.ZeroAmount();
+        // Check if there are any tracked protocol fees for this token
+        if (
+            ERC20(_token).balanceOf(address(this))
+                - _rewardsStorage().protocolFeeAmounts[_token] < _amount
+        ) {
+            revert Errors.TokensReservedForProtocolFees();
+        }
+
         ERC20(_token).safeTransfer(_to, _amount);
         emit Recovered(msg.sender, _token, _amount);
     }
