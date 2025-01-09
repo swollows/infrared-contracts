@@ -13,7 +13,6 @@ import {IInfraredBERAWithdrawor} from
 import {InfraredBERAConstants} from "./InfraredBERAConstants.sol";
 
 /// @title InfraredBERAWithdrawor
-/// @author bungabear69420
 /// @notice Withdrawor to withdraw BERA from CL for Infrared liquid staking token
 /// @dev Assumes ETH returned via withdraw precompile credited to contract so receive unnecessary
 contract InfraredBERAWithdrawor is Upgradeable, IInfraredBERAWithdrawor {

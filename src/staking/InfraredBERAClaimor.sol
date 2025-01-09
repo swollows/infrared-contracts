@@ -7,7 +7,6 @@ import {Upgradeable} from "src/utils/Upgradeable.sol";
 import {IInfraredBERAClaimor} from "src/interfaces/IInfraredBERAClaimor.sol";
 
 /// @title InfraredBERAClaimor
-/// @author bungabear69420
 /// @notice Claimor to claim BERA withdrawn from CL for Infrared liquid staking token
 /// @dev Separate contract so withdrawor process has trusted contract to forward funds to so no issue with naked bera transfer and receive function
 contract InfraredBERAClaimor is Upgradeable, IInfraredBERAClaimor {

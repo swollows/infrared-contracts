@@ -10,7 +10,6 @@ import {IInfraredBERADepositor} from "src/interfaces/IInfraredBERADepositor.sol"
 import {InfraredBERAConstants} from "./InfraredBERAConstants.sol";
 
 /// @title InfraredBERADepositor
-/// @author bungabear69420
 /// @notice Depositor to deposit BERA to CL for Infrared liquid staking token
 contract InfraredBERADepositor is Upgradeable, IInfraredBERADepositor {
     uint8 public constant ETH1_ADDRESS_WITHDRAWAL_PREFIX = 0x01;

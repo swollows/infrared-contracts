@@ -24,7 +24,6 @@ import {IInfrared} from "src/interfaces/IInfrared.sol";
 /// @dev This contract manages votes for POL CuttingBoard allocation and respective bribeVault creation.
 ///      It also provides support for depositing and withdrawing from managed veNFTs. Inspired by Velodrome V2 Voter.
 /// @author Modified from Velodrome (https://github.com/velodrome-finance/contracts/blob/main/contracts/Voter.sol)
-/// @author Infrared, @NoFront
 /// @notice Ensure new epoch before voting and manage staking tokens and bribe vaults.
 contract Voter is IVoter, InfraredUpgradeable, ReentrancyGuardUpgradeable {
     using SafeTransferLib for ERC20;

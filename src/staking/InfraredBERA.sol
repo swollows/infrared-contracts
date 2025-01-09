@@ -20,7 +20,6 @@ import {InfraredBERAClaimor} from "./InfraredBERAClaimor.sol";
 import {InfraredBERAFeeReceivor} from "./InfraredBERAFeeReceivor.sol";
 
 /// @title InfraredBERA
-/// @author bungabear69420
 /// @notice Infrared liquid staking token for BERA
 /// @dev Assumes BERA balances do *not* change at the CL
 contract InfraredBERA is ERC20Upgradeable, Upgradeable, IInfraredBERA {

@@ -11,7 +11,6 @@ import {IInfrared} from "src/interfaces/IInfrared.sol";
 import {InfraredBERAConstants} from "./InfraredBERAConstants.sol";
 
 /// @title InfraredBERAFeeReceivor
-/// @author bungabear69420
 /// @notice Fee receivor receives coinbase priority fees + MEV credited to contract on EL upon block validation
 /// @dev CL validators should set fee_recipient to the address of this contract
 contract InfraredBERAFeeReceivor is Upgradeable, IInfraredBERAFeeReceivor {
