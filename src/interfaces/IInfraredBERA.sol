@@ -25,11 +25,6 @@ interface IInfraredBERA is IERC20, IAccessControl {
     event SetDepositSignature(bytes pubkey, bytes from, bytes to);
     event WithdrawalFlagSet(bool flag);
 
-    event NewDepositor(address indexed depositor, address from, address by);
-    event NewWithdrawor(address indexed withdrawor, address from, address by);
-    event NewReceivor(address indexed receivor, address from, address by);
-    event NewClaimor(address indexed claimor, address from, address by);
-
     /// @notice Address of the Infrared operator contract
     function infrared() external view returns (address);
 
