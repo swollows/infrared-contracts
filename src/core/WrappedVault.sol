@@ -116,10 +116,14 @@ contract WrappedVault is ERC4626 {
             if (_token == asset) continue;
             uint256 bal = _token.balanceOf(address(this));
             if (bal == 0) continue;
-            try _token.transfer(rewardDistributor, bal) returns (bool success) {
-                if (!success) continue;
-                emit RewardClaimed(_tokens[i], bal);
-            } catch {
+            (bool success, bytes memory data) = address(_token).call(
+                abi.encodeWithSelector(
+                    ERC20.transfer.selector, rewardDistributor, bal
+                )
+            );
+            if (success && (data.length == 0 || abi.decode(data, (bool)))) {
+                emit RewardClaimed(address(_token), bal);
+            } else {
                 continue;
             }
         }
