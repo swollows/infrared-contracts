@@ -55,7 +55,8 @@ contract InfraredBERATest is InfraredBERABaseTest {
         uint256 value = 1 ether;
         assertTrue(value > min + fee);
 
-        ibera.sweep{value: value}();
+        deal(ibera.receivor(), value);
+        ibera.compound();
 
         assertEq(ibera.deposits(), deposits + value - fee);
         assertEq(ibera.totalSupply(), totalSupply);
@@ -84,6 +85,22 @@ contract InfraredBERATest is InfraredBERABaseTest {
         assertTrue(value > min + fee);
         vm.expectEmit();
         emit IInfraredBERA.Sweep(value);
+        deal(ibera.receivor(), value);
+        ibera.compound();
+    }
+
+    function testSweepAccessControl() public {
+        uint256 value = 1 ether;
+        deal(ibera.receivor(), value);
+        vm.expectRevert(
+            abi.encodeWithSelector(Errors.Unauthorized.selector, address(321))
+        );
+        vm.prank(address(321));
+        ibera.sweep();
+
+        vm.expectEmit();
+        emit IInfraredBERA.Sweep(value);
+        vm.prank(address(ibera.receivor()));
         ibera.sweep{value: value}();
     }
 

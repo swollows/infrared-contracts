@@ -154,6 +154,9 @@ contract InfraredBERA is ERC20Upgradeable, Upgradeable, IInfraredBERA {
 
     /// @inheritdoc IInfraredBERA
     function sweep() external payable {
+        if (msg.sender != receivor) {
+            revert Errors.Unauthorized(msg.sender);
+        }
         _deposit(msg.value);
         emit Sweep(msg.value);
     }
