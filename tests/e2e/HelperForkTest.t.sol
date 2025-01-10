@@ -31,6 +31,7 @@ import {BribeCollector} from "src/core/BribeCollector.sol";
 
 import {RED} from "src/core/RED.sol";
 import {IWBERA} from "src/interfaces/IWBERA.sol";
+import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {MockERC20} from "tests/unit/mocks/MockERC20.sol";
 import {InfraredDeployer} from "script/InfraredDeployer.s.sol";
@@ -92,6 +93,12 @@ contract HelperForkTest is Test {
 
     uint256 internal cartioFork;
 
+    ERC20 honey;
+    ERC20 weth;
+    ERC20 usdc;
+    ERC20 usdt;
+    ERC20 wbtc;
+
     // create a cartio fork during setup
     function setUp() public virtual {
         // custom params
@@ -140,8 +147,11 @@ contract HelperForkTest is Test {
         // RewardVault 0xBED0D947E914C499877162cA01E44ca3173CB74B
         // FeeCollector 0x7B7aae85E651285f754830506086120621A04031
 
-        // todo: honey address cartio?
-        MockERC20 honey = new MockERC20("HONEY", "HONEY", 18);
+        honey = ERC20(0xd137593CDB341CcC78426c54Fb98435C60Da193c);
+        weth = ERC20(0x2d93FbcE4CffC15DD385A80B3f4CC1D4E76C38b3);
+        usdc = ERC20(0x015fd589F4f1A33ce4487E12714e1B15129c9329);
+        usdt = ERC20(0x164A2dE1bc5dc56F329909F7c97Bae929CaE557B);
+        wbtc = ERC20(0xFa5bf670A92AfF186E5176aA55690E0277010040);
 
         // deploy
         deployer = new InfraredDeployer();
