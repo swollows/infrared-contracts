@@ -11,7 +11,7 @@ interface IInfraredBERAWithdrawor {
     function InfraredBERA() external view returns (address);
 
     /// @notice Sweeps forced withdrawals to InfraredBERA to re-stake principal
-    function sweep(uint256 amount, bytes calldata pubkey) external;
+    function sweep(bytes calldata pubkey) external;
 
     /// @notice Outstanding requests for claims on previously burnt ibera
     /// @param nonce The nonce associated with the claim

@@ -59,4 +59,5 @@ library Errors {
     error CallFailed();
     error InvalidReserves();
     error UnauthorizedOperator();
+    error ValidatorForceExited();
 }

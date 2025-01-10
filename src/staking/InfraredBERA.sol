@@ -46,6 +46,8 @@ contract InfraredBERA is ERC20Upgradeable, Upgradeable, IInfraredBERA {
 
     mapping(bytes32 pubkeyHash => bool isStaked) internal _staked;
 
+    mapping(bytes32 pubkeyHash => bool hasExited) internal _exited;
+
     mapping(bytes32 pubkeyHash => bytes) internal _signatures;
 
     /// @inheritdoc IInfraredBERA
@@ -219,6 +221,9 @@ contract InfraredBERA is ERC20Upgradeable, Upgradeable, IInfraredBERA {
         if (msg.sender != depositor && msg.sender != withdrawor) {
             revert Errors.Unauthorized(msg.sender);
         }
+        if (_exited[keccak256(pubkey)]) {
+            revert Errors.ValidatorForceExited();
+        }
         // update validator pubkey stake for delta
         uint256 stake = _stakes[keccak256(pubkey)];
         if (delta > 0) stake += uint256(delta);
@@ -227,6 +232,11 @@ contract InfraredBERA is ERC20Upgradeable, Upgradeable, IInfraredBERA {
         // update whether have staked to validator before
         if (delta > 0 && !_staked[keccak256(pubkey)]) {
             _staked[keccak256(pubkey)] = true;
+        }
+        // only 0 if validator was force exited
+        if (stake == 0) {
+            _staked[keccak256(pubkey)] = false;
+            _exited[keccak256(pubkey)] = true;
         }
 
         emit Register(pubkey, delta, stake);
@@ -355,6 +365,11 @@ contract InfraredBERA is ERC20Upgradeable, Upgradeable, IInfraredBERA {
     }
 
     /// @inheritdoc IInfraredBERA
+    function hasExited(bytes calldata pubkey) external view returns (bool) {
+        return _exited[keccak256(pubkey)];
+    }
+    /// @inheritdoc IInfraredBERA
+
     function signatures(bytes calldata pubkey)
         external
         view

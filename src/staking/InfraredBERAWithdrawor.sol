@@ -253,15 +253,22 @@ contract InfraredBERAWithdrawor is Upgradeable, IInfraredBERAWithdrawor {
     }
 
     /// @inheritdoc IInfraredBERAWithdrawor
-    function sweep(uint256 amount, bytes calldata pubkey) external {
-        // only callable when withdrawals are not enabled
+    function sweep(bytes calldata pubkey) external {
+        // Check withdrawals disabled
         if (IInfraredBERA(InfraredBERA).withdrawalsEnabled()) {
             revert Errors.Unauthorized(msg.sender);
         }
-        // onlyKeeper call
+        // Check keeper authorization
         if (!IInfraredBERA(InfraredBERA).keeper(msg.sender)) {
             revert Errors.Unauthorized(msg.sender);
         }
+        // Check if validator has already exited - do this before checking stake
+        if (IInfraredBERA(InfraredBERA).hasExited(pubkey)) {
+            revert Errors.ValidatorForceExited();
+        }
+        // forced exit always withdraw entire stake of validator
+        uint256 amount = IInfraredBERA(InfraredBERA).stakes(pubkey);
+
         // do nothing if InfraredBERA deposit would revert
         uint256 min = InfraredBERAConstants.MINIMUM_DEPOSIT
             + InfraredBERAConstants.MINIMUM_DEPOSIT_FEE;
