@@ -156,7 +156,7 @@ abstract contract Helper is POLTest {
             infraredGovernance, keeper, address(ibera), depositContract
         );
         withdrawor.initialize(infraredGovernance, keeper, address(ibera));
-        claimor.initialize(infraredGovernance, keeper);
+        claimor.initialize(infraredGovernance, keeper, address(ibera));
         receivor.initialize(
             infraredGovernance, keeper, address(ibera), address(infrared)
         );

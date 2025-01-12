@@ -5,6 +5,8 @@ import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 
 import {Upgradeable} from "src/utils/Upgradeable.sol";
 import {IInfraredBERAClaimor} from "src/interfaces/IInfraredBERAClaimor.sol";
+import {IInfraredBERA} from "src/interfaces/IInfraredBERA.sol";
+import {Errors} from "src/utils/Errors.sol";
 
 /// @title InfraredBERAClaimor
 /// @notice Claimor to claim BERA withdrawn from CL for Infrared liquid staking token
@@ -13,10 +15,17 @@ contract InfraredBERAClaimor is Upgradeable, IInfraredBERAClaimor {
     /// @inheritdoc IInfraredBERAClaimor
     mapping(address => uint256) public claims;
 
+    IInfraredBERA public ibera;
+
     /// @notice Initializer function (replaces constructor)
     /// @param _gov Address of the initial admin / gov
     /// @param _keeper Address of the initial keeper
-    function initialize(address _gov, address _keeper) external initializer {
+    /// @param _ibera Address of InfraredBera proxy contract
+    function initialize(address _gov, address _keeper, address _ibera)
+        external
+        initializer
+    {
+        ibera = IInfraredBERA(_ibera);
         __Upgradeable_init();
         _grantRole(DEFAULT_ADMIN_ROLE, _gov);
         _grantRole(GOVERNANCE_ROLE, _gov);
@@ -25,6 +34,11 @@ contract InfraredBERAClaimor is Upgradeable, IInfraredBERAClaimor {
 
     /// @inheritdoc IInfraredBERAClaimor
     function queue(address receiver) external payable {
+        // Only allow the withdrawor contract to queue claims
+        if (msg.sender != ibera.withdrawor()) {
+            revert Errors.Unauthorized(msg.sender);
+        }
+
         uint256 claim = claims[receiver];
         claim += msg.value;
         claims[receiver] = claim;

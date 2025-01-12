@@ -43,7 +43,7 @@ contract InfraredBERADeployer is Script {
         // initialize proxies
         depositor.initialize(admin, admin, address(ibera), depositContract);
         withdrawor.initialize(admin, admin, address(ibera));
-        claimor.initialize(admin, admin);
+        claimor.initialize(admin, admin, address(ibera));
         receivor.initialize(admin, admin, address(ibera), _infrared);
 
         // init deposit to avoid inflation attack

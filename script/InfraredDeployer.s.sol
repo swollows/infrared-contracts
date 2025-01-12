@@ -120,7 +120,7 @@ contract InfraredDeployer is Script {
         // initialize ibera proxies
         depositor.initialize(_gov, _keeper, address(ibera), _beaconDeposit);
         withdrawor.initialize(_gov, _keeper, address(ibera));
-        claimor.initialize(_gov, _keeper);
+        claimor.initialize(_gov, _keeper, address(ibera));
         receivor.initialize(_gov, _keeper, address(ibera), address(infrared));
 
         // init deposit to avoid inflation attack
