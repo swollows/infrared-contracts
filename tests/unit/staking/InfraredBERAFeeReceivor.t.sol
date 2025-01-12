@@ -248,7 +248,7 @@ contract InfraredBERAFeeReceivorTest is InfraredBERABaseTest {
 
         vm.prank(address(ibera));
         receivor.collect();
-        assertEq(receivor.shareholderFees(), 1);
+        assertEq(receivor.shareholderFees(), 0);
     }
 
     function testCollectMintingShares() public {
@@ -267,11 +267,9 @@ contract InfraredBERAFeeReceivorTest is InfraredBERABaseTest {
             ibera.balanceOf(address(infrared)), infraredBalance + sharesMinted
         );
         // Check ETH was transferred from receivor
-        assertEq(
-            address(receivor).balance, balanceReceivor - (shareholderFees - 1)
-        );
+        assertEq(address(receivor).balance, balanceReceivor - shareholderFees);
         // Check shareholderFees was updated
-        assertEq(receivor.shareholderFees(), 1);
+        assertEq(receivor.shareholderFees(), 0);
     }
 
     function testCollectRevertsWhenNotGovernor() public {

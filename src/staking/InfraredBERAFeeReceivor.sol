@@ -79,22 +79,21 @@ contract InfraredBERAFeeReceivor is Upgradeable, IInfraredBERAFeeReceivor {
     /// @inheritdoc IInfraredBERAFeeReceivor
     function collect() external returns (uint256 sharesMinted) {
         if (msg.sender != InfraredBERA) revert Errors.Unauthorized(msg.sender);
-        if (shareholderFees == 0) return 0;
         uint256 shf = shareholderFees;
+        if (shf == 0) return 0;
+
         uint256 min = InfraredBERAConstants.MINIMUM_DEPOSIT
             + InfraredBERAConstants.MINIMUM_DEPOSIT_FEE;
         if (shf < min) {
             revert Errors.InvalidAmount();
         }
 
-        uint256 amount = shf - 1; // gas savings on sweep
-        shareholderFees -= amount;
-        if (amount > 0) {
-            (, sharesMinted) = IInfraredBERA(InfraredBERA).mint{value: amount}(
-                address(infrared)
-            );
+        if (shf > 0) {
+            delete shareholderFees;
+            (, sharesMinted) =
+                IInfraredBERA(InfraredBERA).mint{value: shf}(address(infrared));
         }
-        emit Collect(address(infrared), amount, sharesMinted);
+        emit Collect(address(infrared), shf, sharesMinted);
     }
 
     receive() external payable {}
