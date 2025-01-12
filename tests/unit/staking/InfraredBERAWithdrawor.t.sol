@@ -14,7 +14,7 @@ contract InfraredBERAWithdraworTest is InfraredBERABaseTest {
         uint256 value = 200 ether + InfraredBERAConstants.MINIMUM_DEPOSIT_FEE;
         ibera.mint{value: value}(alice);
         uint256 amount = 100 ether + InfraredBERAConstants.MINIMUM_DEPOSIT;
-        vm.prank(governor);
+        vm.prank(infraredGovernance);
         ibera.setDepositSignature(pubkey0, signature0);
         vm.prank(keeper);
         depositor.execute(pubkey0, InfraredBERAConstants.INITIAL_DEPOSIT);
@@ -1131,7 +1131,7 @@ contract InfraredBERAWithdraworTest is InfraredBERABaseTest {
         uint256 validatorStake = ibera.stakes(pubkey0);
 
         // Disable withdrawals (required for sweep)
-        vm.prank(governor);
+        vm.prank(infraredGovernance);
         ibera.setWithdrawalsEnabled(false);
 
         // Simulate forced withdrawal by dealing ETH to withdrawor
@@ -1157,7 +1157,7 @@ contract InfraredBERAWithdraworTest is InfraredBERABaseTest {
 
     function testExecuteRevertsWhenValidatorExited() public {
         // First sweep the validator
-        vm.prank(governor);
+        vm.prank(infraredGovernance);
         ibera.setWithdrawalsEnabled(false);
 
         uint256 validatorStake = ibera.stakes(pubkey0);
@@ -1169,7 +1169,7 @@ contract InfraredBERAWithdraworTest is InfraredBERABaseTest {
         uint256 value = InfraredBERAConstants.INITIAL_DEPOSIT
             + InfraredBERAConstants.MINIMUM_DEPOSIT_FEE;
         ibera.mint{value: value}(alice);
-        vm.prank(governor);
+        vm.prank(infraredGovernance);
         ibera.setDepositSignature(pubkey0, signature0);
 
         vm.prank(keeper);
@@ -1182,7 +1182,7 @@ contract InfraredBERAWithdraworTest is InfraredBERABaseTest {
         vm.deal(address(withdrawor), validatorStake);
 
         // Enable withdrawals
-        vm.prank(governor);
+        vm.prank(infraredGovernance);
         ibera.setWithdrawalsEnabled(true);
 
         // Verify withdrawals are enabled
@@ -1199,7 +1199,7 @@ contract InfraredBERAWithdraworTest is InfraredBERABaseTest {
     function testSweepRevertsWhenInsufficientBalance() public {
         uint256 validatorStake = ibera.stakes(pubkey0);
 
-        vm.prank(governor);
+        vm.prank(infraredGovernance);
         ibera.setWithdrawalsEnabled(false);
 
         // Deal less than validator stake
@@ -1214,7 +1214,7 @@ contract InfraredBERAWithdraworTest is InfraredBERABaseTest {
         uint256 validatorStake = ibera.stakes(pubkey0);
 
         // First sweep - exit the validator
-        vm.prank(governor);
+        vm.prank(infraredGovernance);
         ibera.setWithdrawalsEnabled(false);
         vm.deal(address(withdrawor), validatorStake);
         vm.prank(keeper);

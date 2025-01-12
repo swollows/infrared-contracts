@@ -17,11 +17,12 @@ import {InfraredBERAConstants} from "./InfraredBERAConstants.sol";
 /// @dev Assumes ETH returned via withdraw precompile credited to contract so receive unnecessary
 contract InfraredBERAWithdrawor is Upgradeable, IInfraredBERAWithdrawor {
     uint8 public constant WITHDRAW_REQUEST_TYPE = 0x01;
-    address public constant WITHDRAW_PRECOMPILE =
-        0x00A3ca265EBcb825B45F985A16CEFB49958cE017; // @dev: EIP7002
+    address public WITHDRAW_PRECOMPILE; // @dev: EIP7002
 
     /// @inheritdoc IInfraredBERAWithdrawor
     address public InfraredBERA;
+
+    address public claimor;
 
     struct Request {
         /// receiver of withdrawn bera funds
@@ -52,28 +53,15 @@ contract InfraredBERAWithdrawor is Upgradeable, IInfraredBERAWithdrawor {
     /// @inheritdoc IInfraredBERAWithdrawor
     uint256 public nonceProcess;
 
-    /// @notice Initialize the contract (replaces the constructor)
-    /// @param _gov Address for admin / gov to upgrade
-    /// @param _keeper Address for keeper
-    /// @param ibera The initial InfraredBERA address
-    function initialize(address _gov, address _keeper, address ibera)
-        public
-        initializer
+    function initializeV2(address _claimor, address _withdraw_precompile)
+        external
+        onlyGovernor
     {
-        if (_gov == address(0) || _keeper == address(0) || ibera == address(0))
-        {
+        if (_claimor == address(0) || _withdraw_precompile == address(0)) {
             revert Errors.ZeroAddress();
         }
-        __Upgradeable_init();
-        InfraredBERA = ibera;
-
-        nonceRequest = 1;
-        nonceSubmit = 1;
-        nonceProcess = 1;
-
-        _grantRole(DEFAULT_ADMIN_ROLE, _gov);
-        _grantRole(GOVERNANCE_ROLE, _gov);
-        _grantRole(KEEPER_ROLE, _keeper);
+        WITHDRAW_PRECOMPILE = _withdraw_precompile;
+        claimor = _claimor;
     }
 
     /// @notice Checks whether enough time has passed beyond min delay
@@ -246,7 +234,6 @@ contract InfraredBERAWithdrawor is Upgradeable, IInfraredBERAWithdrawor {
             );
         } else {
             // queue up receiver claim to claimor
-            address claimor = IInfraredBERA(InfraredBERA).claimor();
             IInfraredBERAClaimor(claimor).queue{value: amount}(r.receiver);
         }
         emit Process(r.receiver, nonce, amount);

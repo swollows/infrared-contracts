@@ -16,6 +16,8 @@ import {InfraredBERA} from "src/staking/InfraredBERA.sol";
 import {InfraredBERAClaimor} from "src/staking/InfraredBERAClaimor.sol";
 import {InfraredBERADepositor} from "src/staking/InfraredBERADepositor.sol";
 import {InfraredBERAWithdrawor} from "src/staking/InfraredBERAWithdrawor.sol";
+import {InfraredBERAWithdraworLite} from
+    "src/staking/InfraredBERAWithdraworLite.sol";
 import {InfraredBERAFeeReceivor} from "src/staking/InfraredBERAFeeReceivor.sol";
 import {InfraredBERAConstants} from "src/staking/InfraredBERAConstants.sol";
 
@@ -48,6 +50,7 @@ abstract contract Helper is POLTest {
     InfraredBERA public ibera;
     InfraredBERADepositor public depositor;
     InfraredBERAWithdrawor public withdrawor;
+    InfraredBERAWithdraworLite public withdraworLite;
     InfraredBERAClaimor public claimor;
     InfraredBERAFeeReceivor public receivor;
 
@@ -78,9 +81,6 @@ abstract contract Helper is POLTest {
     address validator = address(888);
     address validator2 = address(999);
 
-    // New declaration for mock pools
-    // MockERC20[] internal mockPools;
-
     function setUp() public virtual override {
         super.setUp();
 
@@ -109,8 +109,8 @@ abstract contract Helper is POLTest {
         depositor = InfraredBERADepositor(
             setupProxy(address(new InfraredBERADepositor()))
         );
-        withdrawor = InfraredBERAWithdrawor(
-            payable(setupProxy(address(new InfraredBERAWithdrawor())))
+        withdraworLite = InfraredBERAWithdraworLite(
+            payable(setupProxy(address(new InfraredBERAWithdraworLite())))
         );
         claimor =
             InfraredBERAClaimor(setupProxy(address(new InfraredBERAClaimor())));
@@ -155,8 +155,10 @@ abstract contract Helper is POLTest {
         depositor.initialize(
             infraredGovernance, keeper, address(ibera), depositContract
         );
-        withdrawor.initialize(infraredGovernance, keeper, address(ibera));
+        withdraworLite.initialize(infraredGovernance, keeper, address(ibera));
+
         claimor.initialize(infraredGovernance, keeper, address(ibera));
+
         receivor.initialize(
             infraredGovernance, keeper, address(ibera), address(infrared)
         );
@@ -170,8 +172,7 @@ abstract contract Helper is POLTest {
             keeper,
             address(infrared),
             address(depositor),
-            address(withdrawor),
-            address(claimor),
+            address(withdraworLite),
             address(receivor)
         );
 

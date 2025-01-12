@@ -23,7 +23,7 @@ contract InfraredBERAFeeReceivorTest is InfraredBERABaseTest {
 
     function testDistributionReturnsWhenFeeGreaterThanZero() public {
         uint16 feeShareholders = 4; // 25% fee
-        vm.prank(governor);
+        vm.prank(infraredGovernance);
         ibera.setFeeDivisorShareholders(feeShareholders);
         assertEq(ibera.feeDivisorShareholders(), feeShareholders);
 
@@ -70,7 +70,7 @@ contract InfraredBERAFeeReceivorTest is InfraredBERABaseTest {
 
     function testSweepUpdatesProtocolFees() public {
         uint16 feeShareholders = 4; // 25% fee
-        vm.prank(governor);
+        vm.prank(infraredGovernance);
         ibera.setFeeDivisorShareholders(feeShareholders);
         assertEq(ibera.feeDivisorShareholders(), feeShareholders);
 
@@ -130,7 +130,7 @@ contract InfraredBERAFeeReceivorTest is InfraredBERABaseTest {
 
     function testSweepTransfersETH() public {
         uint16 feeShareholders = 4; // 25% fee
-        vm.prank(governor);
+        vm.prank(infraredGovernance);
         ibera.setFeeDivisorShareholders(feeShareholders);
         assertEq(ibera.feeDivisorShareholders(), feeShareholders);
 
@@ -194,7 +194,7 @@ contract InfraredBERAFeeReceivorTest is InfraredBERABaseTest {
 
     function testSweepEmitsSweep() public {
         uint16 feeShareholders = 4; // 25% fee
-        vm.prank(governor);
+        vm.prank(infraredGovernance);
         ibera.setFeeDivisorShareholders(feeShareholders);
         assertEq(ibera.feeDivisorShareholders(), feeShareholders);
 
@@ -306,7 +306,7 @@ contract InfraredBERAFeeReceivorTest is InfraredBERABaseTest {
         amounts[3] = 1e18; // 1 ETH
 
         for (uint256 i = 0; i < denominators.length; i++) {
-            vm.prank(governor);
+            vm.prank(infraredGovernance);
             ibera.setFeeDivisorShareholders(denominators[i]);
 
             for (uint256 j = 0; j < amounts.length; j++) {

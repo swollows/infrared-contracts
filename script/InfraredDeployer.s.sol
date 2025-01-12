@@ -20,7 +20,8 @@ import {InfraredDistributor} from "src/core/InfraredDistributor.sol";
 import {InfraredBERA} from "src/staking/InfraredBERA.sol";
 import {InfraredBERAClaimor} from "src/staking/InfraredBERAClaimor.sol";
 import {InfraredBERADepositor} from "src/staking/InfraredBERADepositor.sol";
-import {InfraredBERAWithdrawor} from "src/staking/InfraredBERAWithdrawor.sol";
+import {InfraredBERAWithdraworLite} from
+    "src/staking/InfraredBERAWithdraworLite.sol";
 import {InfraredBERAFeeReceivor} from "src/staking/InfraredBERAFeeReceivor.sol";
 import {InfraredBERAConstants} from "src/staking/InfraredBERAConstants.sol";
 
@@ -30,8 +31,7 @@ contract InfraredDeployer is Script {
 
     InfraredBERA public ibera;
     InfraredBERADepositor public depositor;
-    InfraredBERAWithdrawor public withdrawor;
-    InfraredBERAClaimor public claimor;
+    InfraredBERAWithdraworLite public withdrawor;
     InfraredBERAFeeReceivor public receivor;
 
     BribeCollector public collector;
@@ -70,11 +70,10 @@ contract InfraredDeployer is Script {
         depositor = InfraredBERADepositor(
             setupProxy(address(new InfraredBERADepositor()))
         );
-        withdrawor = InfraredBERAWithdrawor(
-            payable(setupProxy(address(new InfraredBERAWithdrawor())))
+        withdrawor = InfraredBERAWithdraworLite(
+            payable(setupProxy(address(new InfraredBERAWithdraworLite())))
         );
-        claimor =
-            InfraredBERAClaimor(setupProxy(address(new InfraredBERAClaimor())));
+
         receivor = InfraredBERAFeeReceivor(
             payable(setupProxy(address(new InfraredBERAFeeReceivor())))
         );
@@ -120,7 +119,7 @@ contract InfraredDeployer is Script {
         // initialize ibera proxies
         depositor.initialize(_gov, _keeper, address(ibera), _beaconDeposit);
         withdrawor.initialize(_gov, _keeper, address(ibera));
-        claimor.initialize(_gov, _keeper, address(ibera));
+
         receivor.initialize(_gov, _keeper, address(ibera), address(infrared));
 
         // init deposit to avoid inflation attack
@@ -133,7 +132,6 @@ contract InfraredDeployer is Script {
             address(infrared),
             address(depositor),
             address(withdrawor),
-            address(claimor),
             address(receivor)
         );
 

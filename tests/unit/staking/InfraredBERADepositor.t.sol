@@ -214,7 +214,7 @@ contract InfraredBERADepositorTest is InfraredBERABaseTest {
         assertTrue(amount > 32 ether);
         assertTrue(amount % 1 gwei == 0);
 
-        vm.prank(governor);
+        vm.prank(infraredGovernance);
         ibera.setDepositSignature(pubkey0, signature0);
 
         vm.prank(keeper);
@@ -282,7 +282,7 @@ contract InfraredBERADepositorTest is InfraredBERABaseTest {
         assertEq(depositor.reserves(), reserves + 32 ether);
         assertEq(depositor.fees(), fees + 320 * fee);
 
-        vm.prank(governor);
+        vm.prank(infraredGovernance);
         ibera.setDepositSignature(pubkey0, signature0);
 
         uint256 initGas = gasleft();
@@ -584,7 +584,7 @@ contract InfraredBERADepositorTest is InfraredBERABaseTest {
     function testExecuteValidatesOperatorForSubsequentDeposits() public {
         // Setup and do initial deposit
         testQueueMultiple();
-        vm.prank(governor);
+        vm.prank(infraredGovernance);
         ibera.setDepositSignature(pubkey0, signature0);
 
         // Do initial deposit
@@ -610,7 +610,7 @@ contract InfraredBERADepositorTest is InfraredBERABaseTest {
 
     function testExecuteRevertsWhenFirstDepositWithWrongAmount() public {
         testQueueMultiple();
-        vm.prank(governor);
+        vm.prank(infraredGovernance);
         ibera.setDepositSignature(pubkey0, signature0);
 
         // Test various invalid amounts for first deposit
@@ -633,7 +633,7 @@ contract InfraredBERADepositorTest is InfraredBERABaseTest {
     function testExecuteValidatesOperatorAndInitialDeposit() public {
         // Setup initial state using existing pattern
         testQueueMultiple();
-        vm.prank(governor);
+        vm.prank(infraredGovernance);
         ibera.setDepositSignature(pubkey0, signature0);
 
         // Test first deposit must be INITIAL_DEPOSIT

@@ -73,7 +73,6 @@ contract HelperForkTest is Test {
     BeraChef internal beraChef;
     IBerachainBGT internal bgt;
     IBerachainBGTStaker internal bgtStaker;
-    // BlockRewardController internal blockRewardController;
     IBerachainRewardsVaultFactory internal factory;
     IBerachainFeeCollector internal feeCollector;
     BerachainDistributor internal distributor;
@@ -106,7 +105,6 @@ contract HelperForkTest is Test {
         keeper = address(1);
         infraredGovernance = address(2);
 
-        // address _votingKeeper = address(this);
         uint256 _rewardsDuration = 30 days;
         uint256 _bribeCollectorPayoutAmount = 10 ether;
 
@@ -130,7 +128,6 @@ contract HelperForkTest is Test {
 
         // Cartio deployments
         beraChef = BeraChef(0x2C2F301f380dDc9c36c206DC3df8EA8688419cC1);
-        // blockRewardController = BlockRewardController(0x25A37b8E0a090Aa952F037B8534ace17AC3DbC60);
         factory = IBerachainRewardsVaultFactory(
             0xE2257F3C674a7CBBFFCf7C01925D5bcB85ea0367
         );
@@ -179,8 +176,6 @@ contract HelperForkTest is Test {
 
         ibera = deployer.ibera();
         depositor = deployer.depositor();
-        withdrawor = deployer.withdrawor();
-        claimor = deployer.claimor();
         receivor = deployer.receivor();
 
         uint16 feeShareholders = 4; // 25% of fees

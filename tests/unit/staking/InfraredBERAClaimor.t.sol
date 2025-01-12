@@ -15,15 +15,15 @@ contract InfraredBERAClaimorTest is InfraredBERABaseTest {
         );
         // address(this) deployed contracts using IBERA deployer
         assertTrue(
-            claimor.hasRole(claimor.DEFAULT_ADMIN_ROLE(), address(this)),
+            claimor.hasRole(claimor.DEFAULT_ADMIN_ROLE(), infraredGovernance),
             "Gov not granted admin role"
         );
         assertTrue(
-            claimor.hasRole(claimor.GOVERNANCE_ROLE(), address(this)),
+            claimor.hasRole(claimor.GOVERNANCE_ROLE(), infraredGovernance),
             "Gov not granted governance role"
         );
         assertTrue(
-            claimor.hasRole(claimor.KEEPER_ROLE(), address(this)),
+            claimor.hasRole(claimor.KEEPER_ROLE(), keeper),
             "Keeper not granted keeper role"
         );
     }

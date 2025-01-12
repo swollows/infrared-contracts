@@ -34,9 +34,6 @@ interface IInfraredBERA is IERC20, IAccessControl {
     /// @notice Address of the withdrawor that interacts with chain withdraw precompile
     function withdrawor() external view returns (address);
 
-    /// @notice Address of the claimor that receivers can claim withdrawn funds from
-    function claimor() external view returns (address);
-
     /// @notice Address of the fee receivor contract that receives tx priority fees + MEV on EL
     function receivor() external view returns (address);
 
@@ -116,7 +113,6 @@ interface IInfraredBERA is IERC20, IAccessControl {
         address _infrared,
         address _depositor,
         address _withdrawor,
-        address _claimor,
         address _receivor
     ) external payable;
 

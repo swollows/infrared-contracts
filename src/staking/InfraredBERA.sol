@@ -36,8 +36,6 @@ contract InfraredBERA is ERC20Upgradeable, Upgradeable, IInfraredBERA {
     /// @inheritdoc IInfraredBERA
     address public withdrawor;
     /// @inheritdoc IInfraredBERA
-    address public claimor;
-    /// @inheritdoc IInfraredBERA
     address public receivor;
     /// @inheritdoc IInfraredBERA
     uint256 public deposits;
@@ -57,13 +55,12 @@ contract InfraredBERA is ERC20Upgradeable, Upgradeable, IInfraredBERA {
         address _infrared,
         address _depositor,
         address _withdrawor,
-        address _claimor,
         address _receivor
     ) external payable initializer {
         if (
             _gov == address(0) || _infrared == address(0)
                 || _depositor == address(0) || _withdrawor == address(0)
-                || _claimor == address(0) || _receivor == address(0)
+                || _receivor == address(0)
         ) revert Errors.ZeroAddress();
         __ERC20_init("Infrared BERA", "iBERA");
         __Upgradeable_init();
@@ -71,7 +68,6 @@ contract InfraredBERA is ERC20Upgradeable, Upgradeable, IInfraredBERA {
         infrared = _infrared;
         depositor = _depositor;
         withdrawor = _withdrawor;
-        claimor = _claimor;
         receivor = _receivor;
 
         _grantRole(DEFAULT_ADMIN_ROLE, _gov);
