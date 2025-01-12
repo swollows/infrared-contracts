@@ -280,9 +280,11 @@ contract InfraredRewardsTest is Helper {
     }
 
     function testAddRewardFailsWithZeroDuration() public {
+        vm.startPrank(infraredGovernance);
+        infrared.updateWhiteListedRewardTokens(address(red), true);
         vm.expectRevert(abi.encodeWithSignature("ZeroAmount()"));
-        vm.prank(infraredGovernance);
         infrared.addReward(address(wbera), address(red), 0);
+        vm.stopPrank();
     }
 
     function testAddRewardFailsWithNoVault() public {
