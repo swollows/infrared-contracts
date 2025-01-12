@@ -986,4 +986,48 @@ contract InfraredBERATest is InfraredBERABaseTest {
     function testSetDepositSignatureRevertsWhenUnauthorized() public view {
         assertEq(ibera.signatures(pubkey0).length, 0);
     }
+
+    function testConfirmedReturnsZeroWhenPendingExceedsDeposits() public {
+        // Setup initial deposits
+        uint256 initialDeposit = 100 ether;
+        vm.deal(address(this), initialDeposit);
+        (uint256 nonce,) = ibera.mint{value: initialDeposit}(address(this));
+
+        // Get current deposits
+        uint256 currentDeposits = ibera.deposits();
+
+        // Make a large donation to depositor to cause pending > deposits
+        uint256 donationAmount = currentDeposits * 2;
+        vm.deal(address(depositor), donationAmount);
+
+        // Verify confirmed() returns 0 when pending > deposits
+        assertEq(
+            ibera.confirmed(), 0, "Should return 0 when pending > deposits"
+        );
+
+        // Verify withdrawals revert when confirmed() is 0
+        uint256 withdrawAmount = 1 ether;
+        uint256 fee = InfraredBERAConstants.MINIMUM_WITHDRAW_FEE;
+        vm.deal(address(ibera), fee);
+
+        vm.prank(address(ibera));
+        vm.expectRevert(Errors.InvalidAmount.selector);
+        withdrawor.queue{value: fee}(alice, withdrawAmount);
+    }
+
+    function testFail_QueueDonationUnderflow() public {
+        uint256 fee = InfraredBERAConstants.MINIMUM_WITHDRAW_FEE + 1;
+        uint256 amount = 1 ether;
+        address receiver = alice;
+        uint256 confirmed = ibera.confirmed();
+        assertTrue(amount <= confirmed);
+
+        vm.deal(address(ibera), 2 * fee);
+        uint256 nonce = withdrawor.nonceRequest();
+
+        vm.deal(address(depositor), 201 ether); // DONATION
+
+        vm.prank(address(ibera));
+        withdrawor.queue{value: fee}(receiver, amount);
+    }
 }

@@ -131,7 +131,9 @@ contract InfraredBERA is ERC20Upgradeable, Upgradeable, IInfraredBERA {
 
     /// @inheritdoc IInfraredBERA
     function confirmed() external view returns (uint256) {
-        return (deposits - pending());
+        uint256 _pending = pending();
+        // If pending is greater than deposits, return 0 instead of underflowing
+        return _pending > deposits ? 0 : deposits - _pending;
     }
 
     /// @inheritdoc IInfraredBERA

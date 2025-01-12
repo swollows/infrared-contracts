@@ -52,10 +52,10 @@ interface IInfraredBERA is IERC20, IAccessControl {
     /// @return Whethere initial deposit has been staked to validator
     function staked(bytes calldata pubkey) external view returns (bool);
 
-    /// @notice Checks if a validator has been force exited from the Infrared protocol
-    /// @dev A validator is marked as exited when it has been swept during a forced exit. Once exited, a validator cannot be reused for deposits
+    /// @notice Checks if a validator has been force exited from the Consensus Layer
     /// @param pubkey The public key of the validator to check
     /// @return bool True if the validator has been force exited, false otherwise
+    /// @dev exited validators can no longer be deposited in.
     function hasExited(bytes calldata pubkey) external view returns (bool);
 
     /// @notice Returns the deposit signature to use for given pubkey
