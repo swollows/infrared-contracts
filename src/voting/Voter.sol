@@ -243,6 +243,7 @@ contract Voter is IVoter, InfraredUpgradeable, ReentrancyGuardUpgradeable {
      * @param _weight Total voting power weight available
      * @param _stakingTokenVote Array of staking tokens to vote for
      * @param _weights Array of weights to allocate to each token
+     * @param _isPoke if fees should be deposited in addition to marking tokenId as voted
      * @dev Handles vote accounting, reward deposits and event emissions
      * @dev Implementation sequence:
      * 1. Reset all existing votes and accounting via _reset

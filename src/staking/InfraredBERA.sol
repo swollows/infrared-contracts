@@ -74,7 +74,7 @@ contract InfraredBERA is ERC20Upgradeable, Upgradeable, IInfraredBERA {
         _grantRole(GOVERNANCE_ROLE, _gov);
         _grantRole(KEEPER_ROLE, _keeper);
 
-        // burn minimum amount to mitigate inflation attack with shares
+        // mint minimum amount to mitigate inflation attack with shares
         _initialized = true;
         mint(address(this));
     }

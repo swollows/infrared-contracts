@@ -84,7 +84,7 @@ contract InfraredBERADepositor is Upgradeable, IInfraredBERADepositor {
 
     /// @inheritdoc IInfraredBERADepositor
     function queue(uint256 amount) external payable returns (uint256 nonce) {
-        // @dev can be called by withdrawor when rebalancing
+        // @dev can be called by withdrawor when rebalancing and sweeping
         if (
             msg.sender != InfraredBERA
                 && msg.sender != IInfraredBERA(InfraredBERA).withdrawor()
