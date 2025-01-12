@@ -49,6 +49,7 @@ library Errors {
     error BoostExceedsSupply();
     error ETHTransferFailed();
     error TokensReservedForProtocolFees();
+    error NoRewardsToClaim();
 
     // iBERA erros
     error InvalidAmount();

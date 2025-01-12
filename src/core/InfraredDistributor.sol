@@ -86,7 +86,6 @@ contract InfraredDistributor is InfraredUpgradeable, IInfraredDistributor {
         if (validator == address(0)) revert Errors.ValidatorDoesNotExist();
 
         Snapshot memory s = _snapshots[keccak256(pubkey)];
-        if (s.amountCumulativeLast == 0) revert Errors.ZeroAmount();
         if (s.amountCumulativeLast != s.amountCumulativeFinal) {
             revert Errors.ClaimableRewardsExist();
         }
@@ -118,11 +117,14 @@ contract InfraredDistributor is InfraredUpgradeable, IInfraredDistributor {
         if (validator != msg.sender) revert Errors.InvalidValidator();
 
         Snapshot memory s = _snapshots[keccak256(pubkey)];
-        if (s.amountCumulativeLast == 0) revert Errors.ZeroAmount();
 
         uint256 fin = s.amountCumulativeFinal == 0
             ? amountsCumulative
             : s.amountCumulativeFinal;
+
+        // Check if there are any unclaimed rewards
+        if (s.amountCumulativeLast == fin) revert Errors.NoRewardsToClaim();
+
         uint256 amount;
         unchecked {
             amount = fin - s.amountCumulativeLast;
