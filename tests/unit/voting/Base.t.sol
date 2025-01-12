@@ -99,7 +99,7 @@ abstract contract Base is Test {
             1 days
         );
         infrared.initialize(data);
-        voter.initialize(address(escrow));
+        voter.initialize(address(escrow), address(this), keeper);
 
         escrow.setVoterAndDistributor(address(voter), keeper);
         escrow.setAllowedManager(keeper);

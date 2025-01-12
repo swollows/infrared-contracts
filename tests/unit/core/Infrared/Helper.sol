@@ -125,8 +125,8 @@ abstract contract Helper is POLTest {
             setupProxy(address(new InfraredDistributor(address(infrared))))
         );
 
-        collector.initialize(address(this), address(wbera), 10 ether);
-        infraredDistributor.initialize(address(this), address(ibera));
+        collector.initialize(infraredGovernance, address(wbera), 10 ether);
+        infraredDistributor.initialize(infraredGovernance, address(ibera));
 
         voter = Voter(setupProxy(address(new Voter(address(infrared)))));
 
@@ -184,7 +184,7 @@ abstract contract Helper is POLTest {
         ired = new VotingEscrow(
             address(this), address(red), address(voter), address(infrared)
         );
-        voter.initialize(address(ired));
+        voter.initialize(address(ired), infraredGovernance, keeper);
 
         uint16 feeShareholders = 4; // 25% of fees
 

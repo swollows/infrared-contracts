@@ -928,8 +928,7 @@ contract VoterTest is Base {
     }
 
     function testSetGovernor() public {
-        // address this == governor
-        infrared.grantRole(infrared.GOVERNANCE_ROLE(), user2);
+        voter.grantRole(voter.GOVERNANCE_ROLE(), user2);
 
         vm.prank(user2);
         voter.setMaxVotingNum(10);

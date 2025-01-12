@@ -128,7 +128,7 @@ contract InvariantsInfrared is Test {
         infrared.setIBGT(address(ibgt));
 
         // @dev must initialize after infrared so address(this) has keeper role
-        voter.initialize(address(veIRED));
+        voter.initialize(address(veIRED), governance, keeper);
         /* Handler Setup */
 
         // deploy the handler contracts

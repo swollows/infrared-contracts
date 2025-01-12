@@ -26,22 +26,6 @@ abstract contract InfraredUpgradeable is Upgradeable {
         _disableInitializers();
     }
 
-    /// @dev Overrides to check role on infrared contract
-    function _checkRole(bytes32 role, address account)
-        internal
-        view
-        virtual
-        override
-    {
-        if (address(infrared) == address(0)) {
-            super._checkRole(role, account);
-        } else if (
-            !IInfraredUpgradeable(address(infrared)).hasRole(role, account)
-        ) {
-            revert AccessControlUnauthorizedAccount(account, role);
-        }
-    }
-
     function __InfraredUpgradeable_init() internal onlyInitializing {
         __Upgradeable_init();
     }

@@ -124,8 +124,13 @@ contract Voter is IVoter, InfraredUpgradeable, ReentrancyGuardUpgradeable {
      * @notice Initializes the Voter contract with the voting escrow and fee vault
      * @dev Sets up initial state including fee vault with configured reward tokens
      * @param _ve Address of the voting escrow contract
+     * @param _gov Address of the governance multisig
+     * @param _keeper Address of the keeper
      */
-    function initialize(address _ve) external initializer {
+    function initialize(address _ve, address _gov, address _keeper)
+        external
+        initializer
+    {
         if (_ve == address(0)) revert Errors.ZeroAddress();
         ve = _ve;
         maxVotingNum = 30;
@@ -136,6 +141,10 @@ contract Voter is IVoter, InfraredUpgradeable, ReentrancyGuardUpgradeable {
         _rewards[1] = address(infrared.honey());
 
         feeVault = address(new BribeVotingReward(address(this), _rewards));
+
+        _grantRole(DEFAULT_ADMIN_ROLE, _gov);
+        _grantRole(GOVERNANCE_ROLE, _gov);
+        _grantRole(KEEPER_ROLE, _keeper);
 
         // init upgradeable components
         __ReentrancyGuard_init();

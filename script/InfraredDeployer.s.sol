@@ -115,7 +115,7 @@ contract InfraredDeployer is Script {
         veIRED = new VotingEscrow(
             _keeper, address(red), address(voter), address(infrared)
         );
-        voter.initialize(address(veIRED));
+        voter.initialize(address(veIRED), data._gov, data._keeper);
 
         // initialize ibera proxies
         depositor.initialize(_gov, _keeper, address(ibera), _beaconDeposit);
