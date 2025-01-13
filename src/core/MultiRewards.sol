@@ -293,6 +293,7 @@ abstract contract MultiRewards is ReentrancyGuard, Pausable, IMultiRewards {
      */
     function _notifyRewardAmount(address _rewardsToken, uint256 reward)
         internal
+        whenNotPaused
         updateReward(address(0))
     {
         // handle the transfer of reward tokens via `transferFrom` to reduce the number
