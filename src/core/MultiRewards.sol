@@ -344,10 +344,6 @@ abstract contract MultiRewards is ReentrancyGuard, Pausable, IMultiRewards {
         uint256 tokenAmount
     ) internal {
         require(
-            tokenAddress != address(stakingToken),
-            "Cannot withdraw staking token"
-        );
-        require(
             rewardData[tokenAddress].lastUpdateTime == 0,
             "Cannot withdraw reward token"
         );

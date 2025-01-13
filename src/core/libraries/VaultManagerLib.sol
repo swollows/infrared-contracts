@@ -150,9 +150,6 @@ library VaultManagerLib {
         if (address($.vaultRegistry[_asset]) == address(0)) {
             revert Errors.NoRewardsVault();
         }
-        if (!isWhitelisted($, _token)) {
-            revert Errors.RewardTokenNotWhitelisted();
-        }
 
         IInfraredVault vault = $.vaultRegistry[_asset];
         vault.recoverERC20(_to, _token, _amount);
