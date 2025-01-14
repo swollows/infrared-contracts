@@ -209,7 +209,7 @@ abstract contract MultiRewards is ReentrancyGuard, Pausable, IMultiRewards {
         _totalSupply = _totalSupply - amount;
         _balances[msg.sender] = _balances[msg.sender] - amount;
 
-        // hook withdraw then transfer staking token out, in case hook needs to bring in collateral
+        // hook withdraw then transfer staking token out
         onWithdraw(amount);
         stakingToken.safeTransfer(msg.sender, amount);
         emit Withdrawn(msg.sender, amount);
