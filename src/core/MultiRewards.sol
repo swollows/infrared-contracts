@@ -315,7 +315,8 @@ abstract contract MultiRewards is ReentrancyGuard, Pausable, IMultiRewards {
             uint256 leftover = remaining * rewardData[_rewardsToken].rewardRate;
 
             // Calculate total and its residual
-            uint256 totalAmount = reward + leftover;
+            uint256 totalAmount =
+                reward + leftover + rewardData[_rewardsToken].rewardResidual;
             rewardData[_rewardsToken].rewardResidual =
                 totalAmount % rewardData[_rewardsToken].rewardsDuration;
 
