@@ -450,6 +450,7 @@ contract Infrared is InfraredUpgradeable, IInfrared {
         view
         returns (uint256 amtRecipient, uint256 amtVoter, uint256 amtProtocol)
     {
+        if (_feeTotal > RewardsLib.FEE_UNIT) revert Errors.InvalidFee();
         return _rewardsStorage().chargedFeesOnRewards(
             _amt, _feeTotal, _feeProtocol
         );
