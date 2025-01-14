@@ -368,8 +368,6 @@ abstract contract MultiRewards is ReentrancyGuard, Pausable, IMultiRewards {
         require(_rewardsDuration > 0, "Reward duration must be non-zero");
 
         rewardData[_rewardsToken].rewardsDuration = _rewardsDuration;
-        emit RewardsDurationUpdated(
-            _rewardsToken, rewardData[_rewardsToken].rewardsDuration
-        );
+        emit RewardsDurationUpdated(_rewardsToken, _rewardsDuration);
     }
 }

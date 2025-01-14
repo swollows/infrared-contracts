@@ -458,9 +458,8 @@ contract Infrared is InfraredUpgradeable, IInfrared {
 
     /// @inheritdoc IInfrared
     function harvestBase() public {
-        uint256 bgtAmt = _rewardsStorage().harvestBase(
-            address(_bgt), address(ibgt), address(ibera)
-        );
+        uint256 bgtAmt =
+            RewardsLib.harvestBase(address(_bgt), address(ibgt), address(ibera));
         emit BaseHarvested(msg.sender, bgtAmt);
     }
 

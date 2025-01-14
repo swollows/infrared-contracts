@@ -161,7 +161,7 @@ library VaultManagerLib {
         uint256 _rewardsDuration
     ) external {
         if ($.vaultRegistry[_stakingToken] == IInfraredVault(address(0))) {
-            revert Errors.VaultNotSupported();
+            revert Errors.NoRewardsVault();
         }
 
         IInfraredVault vault = $.vaultRegistry[_stakingToken];
@@ -173,7 +173,7 @@ library VaultManagerLib {
     {
         IInfraredVault vault = $.vaultRegistry[_asset];
         if (address(vault) == address(0)) {
-            revert Errors.VaultNotSupported();
+            revert Errors.NoRewardsVault();
         }
         // unclaimed rewards will end up split between IBERA shareholders
         vault.getReward();

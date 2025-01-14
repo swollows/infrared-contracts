@@ -260,6 +260,7 @@ interface IInfrared {
 
     /**
      * @notice Updates the fee rate charged on different harvest functions
+     * @notice Please harvest all assosiated rewards for a given type before updating
      * @dev Fee rate in units of 1e6 or hundredths of 1 bip
      * @param _t   FeeType The fee type
      * @param _fee uint256 The fee rate to update to

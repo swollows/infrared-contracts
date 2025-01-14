@@ -106,12 +106,10 @@ library RewardsLib {
         emit IInfrared.ProtocolFees(_token, _amtProtocol, _amtVoter);
     }
 
-    function harvestBase(
-        RewardsStorage storage,
-        address bgt,
-        address ibgt,
-        address ibera
-    ) external returns (uint256 bgtAmt) {
+    function harvestBase(address bgt, address ibgt, address ibera)
+        external
+        returns (uint256 bgtAmt)
+    {
         uint256 minted = IInfraredBGT(ibgt).totalSupply();
         uint256 bgtBalance = _getBGTBalance(bgt);
         // @dev should never happen but check in case
