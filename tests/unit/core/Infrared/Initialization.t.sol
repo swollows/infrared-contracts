@@ -199,6 +199,14 @@ contract InfraredInitializationTest is Helper {
         infrared.updateRewardsDurationForVault(
             unsupportedStakingToken, rewardsToken, newRewardsDuration
         );
+
+        // Test for non-whitelisted reward token
+        address nonWhitelistedToken = address(0x456);
+        vm.expectRevert(Errors.RewardTokenNotWhitelisted.selector);
+        vm.prank(infraredGovernance);
+        infrared.updateRewardsDurationForVault(
+            stakingToken, nonWhitelistedToken, newRewardsDuration
+        );
     }
 
     function testRewardsStorageLayout() public {
