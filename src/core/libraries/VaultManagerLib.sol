@@ -163,11 +163,8 @@ library VaultManagerLib {
         if ($.vaultRegistry[_stakingToken] == IInfraredVault(address(0))) {
             revert Errors.VaultNotSupported();
         }
+
         IInfraredVault vault = $.vaultRegistry[_stakingToken];
-        (, uint256 rewardsDuration,,,,,) = vault.rewardData(_rewardsToken);
-        if (rewardsDuration == 0) {
-            revert Errors.RewardTokenNotWhitelisted();
-        }
         vault.updateRewardsDuration(_rewardsToken, _rewardsDuration);
     }
 
