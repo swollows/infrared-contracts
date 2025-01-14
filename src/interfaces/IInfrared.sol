@@ -301,6 +301,11 @@ interface IInfrared {
     function harvestBase() external;
 
     /**
+     * @notice Credits all accumulated rewards to the operator
+     */
+    function harvestOperatorRewards() external;
+
+    /**
      * @notice Claims all the BGT rewards for the vault associated with the given staking token.
      * @param _asset address The address of the staking asset that the vault is for.
      */

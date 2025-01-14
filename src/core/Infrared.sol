@@ -523,6 +523,7 @@ contract Infrared is InfraredUpgradeable, IInfrared {
         emit BribesCollected(msg.sender, _token, amtInfraredBERA, amtIbgtVault);
     }
 
+    /// @inheritdoc IInfrared
     function harvestOperatorRewards() public {
         uint256 _amt = _rewardsStorage().harvestOperatorRewards(
             address(ibera), address(voter), address(distributor)
