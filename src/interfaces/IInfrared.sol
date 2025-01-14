@@ -754,6 +754,16 @@ interface IInfrared {
     event RedSet(address _sender, address _red);
 
     /**
+     *
+     * @param oldMintRate The old mint rate for RED
+     * @param newMintRate The new mint rate for RED
+     * @param sender The address that initiated the update
+     */
+    event UpdatedRedMintRate(
+        uint256 oldMintRate, uint256 newMintRate, address sender
+    );
+
+    /**
      * @notice Emitted when the iBGT token is set.
      * @param _sender The address that initiated the update.
      * @param _ibgt The address of the iBGT token.

@@ -431,7 +431,10 @@ contract Infrared is InfraredUpgradeable, IInfrared {
 
     /// @inheritdoc IInfrared
     function updateRedMintRate(uint256 _redMintRate) external onlyGovernor {
+        uint256 oldRate = _rewardsStorage().redMintRate;
         _rewardsStorage().updateRedMintRate(_redMintRate);
+
+        emit UpdatedRedMintRate(oldRate, _redMintRate, msg.sender);
     }
 
     /*//////////////////////////////////////////////////////////////
