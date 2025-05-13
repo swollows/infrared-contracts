@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.26;
 
 library Errors {
@@ -8,6 +8,11 @@ library Errors {
     error UnderFlow();
     error InvalidArrayLength();
     error AlreadySet();
+    error NotPauser();
+    error InsufficientBalance();
+    error InvalidFeeToken();
+    error FeeTokenNotWhitelisted();
+    error InsufficientFeeTokenBalance();
 
     // ValidatorSet errors.
     error ValidatorAlreadyExists();
@@ -18,10 +23,10 @@ library Errors {
     error MaxNumberOfRewards();
     error Unauthorized(address sender);
     error IBGTNotRewardToken();
-    error IREDNotRewardToken();
     error IBGTNotStakingToken();
     error StakedInRewardsVault();
     error NoRewardsVault();
+    error RewardRateDecreased();
     error RegistrationPaused();
     error RewardTokenNotWhitelisted();
 
@@ -52,6 +57,7 @@ library Errors {
     error ETHTransferFailed();
     error TokensReservedForProtocolFees();
     error NoRewardsToClaim();
+    error VaultAlreadyUpToDate();
 
     // iBERA erros
     error InvalidAmount();
@@ -63,4 +69,8 @@ library Errors {
     error InvalidReserves();
     error UnauthorizedOperator();
     error ValidatorForceExited();
+    error CanNotCompoundAccumuldatedBERA();
+    error ExceedsMaxEffectiveBalance();
+    error HandleForceExitsBeforeDeposits();
+    error OperatorAlreadySet();
 }

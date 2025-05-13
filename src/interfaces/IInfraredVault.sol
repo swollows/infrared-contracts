@@ -58,11 +58,16 @@ interface IInfraredVault is IMultiRewards {
     ) external;
 
     /**
-     * @notice Toggles pause state of the vault
-     * @dev Affects all vault operations when paused
+     * @notice Pauses staking functionality on a specific vault
      * @custom:access-control Requires INFRARED_ROLE
      */
-    function togglePause() external;
+    function pauseStaking() external;
+
+    /**
+     * @notice Un-pauses staking functionality on a specific vault
+     * @custom:access-control Requires INFRARED_ROLE
+     */
+    function unpauseStaking() external;
 
     /**
      * @notice Adds a new reward token to the vault
@@ -73,6 +78,13 @@ interface IInfraredVault is IMultiRewards {
      */
     function addReward(address _rewardsToken, uint256 _rewardsDuration)
         external;
+
+    /**
+     * @notice Used to remove malicious or unused reward tokens
+     * @param _rewardsToken The reward token to remove
+     * @custom:access-control Requires INFRARED_ROLE
+     */
+    function removeReward(address _rewardsToken) external;
 
     /**
      * @notice Notifies the vault of newly added rewards

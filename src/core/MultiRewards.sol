@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.26;
 
 import {IMultiRewards} from "../interfaces/IMultiRewards.sol";
@@ -6,7 +6,6 @@ import {IMultiRewards} from "../interfaces/IMultiRewards.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {ReentrancyGuard} from
     "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
@@ -78,12 +77,14 @@ abstract contract MultiRewards is ReentrancyGuard, Pausable, IMultiRewards {
     modifier updateReward(address account) {
         for (uint256 i; i < rewardTokens.length; i++) {
             address token = rewardTokens[i];
-            rewardData[token].rewardPerTokenStored = rewardPerToken(token);
+
+            uint256 latestRewardPerToken = rewardPerToken(token);
+            rewardData[token].rewardPerTokenStored = latestRewardPerToken;
             rewardData[token].lastUpdateTime = lastTimeRewardApplicable(token);
+
             if (account != address(0)) {
                 rewards[account][token] = earned(account, token);
-                userRewardPerTokenPaid[account][token] =
-                    rewardData[token].rewardPerTokenStored;
+                userRewardPerTokenPaid[account][token] = latestRewardPerToken;
             }
         }
         _;
@@ -233,13 +234,15 @@ abstract contract MultiRewards is ReentrancyGuard, Pausable, IMultiRewards {
             address _rewardsToken = rewardTokens[i];
             uint256 reward = rewards[_user][_rewardsToken];
             if (reward > 0) {
-                rewards[_user][_rewardsToken] = 0;
-                (bool success, bytes memory data) = _rewardsToken.call(
+                (bool success, bytes memory data) = _rewardsToken.call{
+                    gas: 200000
+                }(
                     abi.encodeWithSelector(
                         ERC20.transfer.selector, _user, reward
                     )
                 );
                 if (success && (data.length == 0 || abi.decode(data, (bool)))) {
+                    rewards[_user][_rewardsToken] = 0;
                     emit RewardPaid(_user, _rewardsToken, reward);
                 } else {
                     continue;
@@ -287,13 +290,31 @@ abstract contract MultiRewards is ReentrancyGuard, Pausable, IMultiRewards {
     }
 
     /**
+     * @notice Removes a reward token from the contract.
+     * @param _rewardsToken address The address of the reward token.
+     */
+    function _removeReward(address _rewardsToken) internal {
+        require(block.timestamp >= rewardData[_rewardsToken].periodFinish);
+        // Remove from the array
+        for (uint256 i; i < rewardTokens.length; i++) {
+            if (rewardTokens[i] == _rewardsToken) {
+                rewardTokens[i] = rewardTokens[rewardTokens.length - 1];
+                rewardTokens.pop();
+                break;
+            }
+        }
+
+        delete rewardData[_rewardsToken];
+        emit RewardRemoved(_rewardsToken);
+    }
+
+    /**
      * @notice Notifies the contract that reward tokens is being sent to the contract.
      * @param _rewardsToken address The address of the reward token.
      * @param reward        uint256 The amount of reward tokens is being sent to the contract.
      */
     function _notifyRewardAmount(address _rewardsToken, uint256 reward)
         internal
-        whenNotPaused
         updateReward(address(0))
     {
         // handle the transfer of reward tokens via `transferFrom` to reduce the number
@@ -361,12 +382,28 @@ abstract contract MultiRewards is ReentrancyGuard, Pausable, IMultiRewards {
         address _rewardsToken,
         uint256 _rewardsDuration
     ) internal {
-        require(
-            block.timestamp > rewardData[_rewardsToken].periodFinish,
-            "Reward period still active"
-        );
-
         require(_rewardsDuration > 0, "Reward duration must be non-zero");
+
+        if (block.timestamp < rewardData[_rewardsToken].periodFinish) {
+            uint256 remaining =
+                rewardData[_rewardsToken].periodFinish - block.timestamp;
+            uint256 leftover = remaining * rewardData[_rewardsToken].rewardRate;
+
+            // Calculate total and its residual
+            uint256 totalAmount =
+                leftover + rewardData[_rewardsToken].rewardResidual;
+            rewardData[_rewardsToken].rewardResidual =
+                totalAmount % _rewardsDuration;
+
+            // Remove residual before setting rate
+            totalAmount = totalAmount - rewardData[_rewardsToken].rewardResidual;
+            rewardData[_rewardsToken].rewardRate =
+                totalAmount / _rewardsDuration;
+        }
+
+        rewardData[_rewardsToken].lastUpdateTime = block.timestamp;
+        rewardData[_rewardsToken].periodFinish =
+            block.timestamp + _rewardsDuration;
 
         rewardData[_rewardsToken].rewardsDuration = _rewardsDuration;
         emit RewardsDurationUpdated(_rewardsToken, _rewardsDuration);

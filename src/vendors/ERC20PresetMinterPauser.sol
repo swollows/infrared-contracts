@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: BUSL-1.1
 // OpenZeppelin Contracts (last updated v4.5.0)
 // (token/ERC20/presets/ERC20PresetMinterPauser.sol)
 
@@ -6,13 +6,10 @@
 pragma solidity ^0.8.0;
 
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import {ERC20Burnable} from
-    "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
-import {ERC20Pausable} from
-    "@openzeppelin/contracts/token/ERC20/extensions/ERC20Pausable.sol";
 import {AccessControlEnumerable} from
     "@openzeppelin/contracts/access/extensions/AccessControlEnumerable.sol";
 import {Context} from "@openzeppelin/contracts/utils/Context.sol";
+import {CustomPausable} from "./CustomPausable.sol";
 
 /**
  * @dev {ERC20} token, including:
@@ -33,11 +30,11 @@ import {Context} from "@openzeppelin/contracts/utils/Context.sol";
 contract ERC20PresetMinterPauser is
     Context,
     AccessControlEnumerable,
-    ERC20Burnable,
-    ERC20Pausable
+    CustomPausable
 {
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
+    bytes32 public constant BURNER_ROLE = keccak256("BURNER_ROLE");
 
     /**
      * @dev Grants `DEFAULT_ADMIN_ROLE`, `MINTER_ROLE` and `PAUSER_ROLE` to the
@@ -50,12 +47,16 @@ contract ERC20PresetMinterPauser is
         string memory symbol,
         address _admin,
         address _minter,
-        address _pauser
+        address _pauser,
+        address _burner
     ) ERC20(name, symbol) {
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
 
         _grantRole(MINTER_ROLE, _minter);
         _grantRole(PAUSER_ROLE, _pauser);
+        if (_burner != address(0)) {
+            _grantRole(BURNER_ROLE, _burner);
+        }
     }
 
     /**
@@ -67,12 +68,29 @@ contract ERC20PresetMinterPauser is
      *
      * - the caller must have the `MINTER_ROLE`.
      */
-    function mint(address to, uint256 amount) public virtual {
+    function mint(address to, uint256 amount) public virtual whenNotPaused {
         require(
             hasRole(MINTER_ROLE, _msgSender()),
             "ERC20PresetMinterPauser: must have minter role to mint"
         );
         _mint(to, amount);
+    }
+
+    /**
+     * @dev Burn `amount` new tokens from `from`.
+     *
+     * See {ERC20-_burn}.
+     *
+     * Requirements:
+     *
+     * - the caller must have the `BURNER_ROLE`.
+     */
+    function burn(uint256 amount) public virtual whenNotPaused {
+        require(
+            hasRole(BURNER_ROLE, _msgSender()),
+            "ERC20PresetMinterPauser: must have burner role to burn"
+        );
+        _burn(msg.sender, amount);
     }
 
     /**
@@ -112,8 +130,7 @@ contract ERC20PresetMinterPauser is
     function _update(address from, address to, uint256 value)
         internal
         virtual
-        override(ERC20, ERC20Pausable)
-        whenNotPaused
+        override(CustomPausable)
     {
         super._update(from, to, value);
     }

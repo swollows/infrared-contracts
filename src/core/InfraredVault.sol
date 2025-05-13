@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.26;
 
 import {IRewardVault as IBerachainRewardsVault} from
@@ -126,10 +126,15 @@ contract InfraredVault is MultiRewards, IInfraredVault {
     }
 
     /// @inheritdoc IInfraredVault
-    function togglePause() external onlyInfrared {
-        bool isPaused = paused();
-        if (isPaused) _unpause();
-        else _pause();
+    function unpauseStaking() external onlyInfrared {
+        if (!paused()) return;
+        _unpause();
+    }
+
+    /// @inheritdoc IInfraredVault
+    function pauseStaking() external onlyInfrared {
+        if (paused()) return;
+        _pause();
     }
 
     /// @inheritdoc IInfraredVault
@@ -139,10 +144,19 @@ contract InfraredVault is MultiRewards, IInfraredVault {
     {
         if (_rewardsToken == address(0)) revert Errors.ZeroAddress();
         if (_rewardsDuration == 0) revert Errors.ZeroAmount();
-        if (rewardTokens.length == MAX_NUM_REWARD_TOKENS) {
+        if (
+            rewardTokens.length == MAX_NUM_REWARD_TOKENS
+                && _rewardsToken != address(IInfrared(infrared).ir())
+        ) {
             revert Errors.MaxNumberOfRewards();
         }
         _addReward(_rewardsToken, infrared, _rewardsDuration);
+    }
+
+    /// @inheritdoc IInfraredVault
+    function removeReward(address _rewardsToken) external onlyInfrared {
+        if (_rewardsToken == address(0)) revert Errors.ZeroAddress();
+        _removeReward(_rewardsToken);
     }
 
     /// @inheritdoc IInfraredVault

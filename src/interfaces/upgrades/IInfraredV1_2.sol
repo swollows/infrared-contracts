@@ -18,7 +18,7 @@ import {DataTypes} from "src/utils/DataTypes.sol";
 import {ValidatorTypes} from "src/core/libraries/ValidatorTypes.sol";
 import {ConfigTypes} from "src/core/libraries/ConfigTypes.sol";
 
-interface IInfrared {
+interface IInfraredV1_2 {
     /**
      * @notice Checks if a token is a whitelisted reward token
      * @param _token The address of the token to check
@@ -278,13 +278,6 @@ interface IInfrared {
     function setIR(address _IR) external;
 
     /**
-     * @notice Sets the address of the iBGT contract
-     * @dev Infrared must be granted MINTER_ROLE on IBGT to set the address
-     * @param _ibgt The address of the iBGT contract
-     */
-    function setIBGT(address _ibgt) external;
-
-    /**
      * @notice Updates the mint rate for IR
      * @param _IRMintRate The new mint rate for IR
      */
@@ -445,6 +438,10 @@ interface IInfrared {
      * @return bgtBalance The BGT balance held by this address
      */
     function getBGTBalance() external view returns (uint256 bgtBalance);
+
+    function migrateVault(address _asset, uint8 versionToUpgradeTo)
+        external
+        returns (address newVault);
 
     /**
      * @notice Emitted when a new vault is registered
@@ -773,4 +770,18 @@ interface IInfrared {
      * @param _voter The address of the voter contract.
      */
     event VoterSet(address _sender, address _voter);
+
+    /**
+     * @notice Emitted when vault has migrated.
+     * @param sender The address that initiated the update.
+     * @param asset The address of the staking token.
+     * @param oldVault The address of the old vault.
+     * @param newVault The address of the new vault.
+     */
+    event VaultMigrated(
+        address indexed sender,
+        address indexed asset,
+        address indexed oldVault,
+        address newVault
+    );
 }
